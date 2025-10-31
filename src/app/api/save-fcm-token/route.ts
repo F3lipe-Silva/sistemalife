@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { admin, firestore } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,8 +31,9 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
       });
     } else {
+      // Use FieldValue.arrayUnion to avoid duplicates
       await userRef.update({
-        fcmTokens: admin.firestore.FieldValue.arrayUnion(token),
+        fcmTokens: FieldValue.arrayUnion(token),
         updatedAt: new Date(),
       });
     }

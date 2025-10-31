@@ -45,16 +45,35 @@ export async function getFCMToken(): Promise<string | null> {
   try {
     // Verificar se o service worker está registrado antes de tentar obter o token
     if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.ready;
+      // Try to find an existing registration for our SW; if missing, register it
+      let registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (!registration) {
+        try {
+          registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          console.log('Service worker registered for FCM:', registration.scope);
+        } catch (swErr) {
+          console.warn('Failed to register service worker for FCM:', swErr);
+          return null;
+        }
+      }
       if (!registration) {
         console.warn('Service worker is not ready');
         return null;
       }
     }
 
-    // Using Firebase's default VAPID key by not specifying one
-    // This avoids encoding issues with custom keys
-    const currentToken = await getToken(messaging);
+    // Use explicit VAPID key and service worker registration when requesting token.
+    // Prefer environment variable NEXT_PUBLIC_FIREBASE_VAPID_KEY if provided.
+    const vapidKey = typeof process !== 'undefined' ? (process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY as string | undefined) : undefined;
+
+    // Ensure we have the service worker registration to pass to getToken
+    const swRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+
+    const getTokenOptions: any = {};
+    if (vapidKey) getTokenOptions.vapidKey = vapidKey;
+    if (swRegistration) getTokenOptions.serviceWorkerRegistration = swRegistration;
+
+    const currentToken = await getToken(messaging, getTokenOptions);
     
     if (currentToken) {
       console.log('Current FCM token:', currentToken);

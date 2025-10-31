@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     
     // Remove invalid tokens
     if (response.failureCount > 0) {
-      const failedTokens = [];
+      const failedTokens: string[] = [];
       response.responses.forEach((resp: any, idx: number) => {
         if (!resp.success) {
           // Common reasons for failure include:

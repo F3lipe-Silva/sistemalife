@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { admin, firestore } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +23,9 @@ export async function POST(request: NextRequest) {
     // Using arrayRemove to remove the specific token
     const userRef = firestore.collection('users').doc(userId);
     
+    // Use FieldValue.arrayRemove to remove the token safely
     await userRef.update({
-      fcmTokens: admin.firestore.FieldValue.arrayRemove(token),
+      fcmTokens: FieldValue.arrayRemove(token),
       updatedAt: new Date(),
     });
 
