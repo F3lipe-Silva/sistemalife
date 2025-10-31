@@ -383,7 +383,9 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             const { rankedMissionId, newDailyMission } = action.payload;
             const updatedMissions = state.missions.map((rm) => {
                 if (rm.id === rankedMissionId) {
-                    const newDailyMissions = [...rm.missoes_diarias, newDailyMission];
+                    // Remove a missão ativa antiga e adiciona a nova
+                   const newDailyMissions = rm.missoes_diarias.filter(dm => dm.concluido);
+                   newDailyMissions.push(newDailyMission);
                     return {
                         ...rm,
                         missoes_diarias: newDailyMissions,
@@ -869,6 +871,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
         
         let newDailyMission = null;
+        let generationSuccessful = false;
+        
         try {
             const history = tempRankedMission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
             
@@ -894,18 +898,58 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 learningResources: result.learningResources || [],
                 subTasks: result.subTasks.map(st => ({...st, current: 0})),
             };
+            
+            generationSuccessful = true;
         } catch (err) {
-            console.error(err);
+            console.error('Erro ao gerar próxima missão diária:', err);
             toast({
                 variant: 'destructive',
                 title: 'Erro de IA',
-                description: 'Não foi possível gerar a próxima missão diária. Por favor, tente novamente mais tarde.'
+                description: 'Não foi possível gerar a próxima missão diária. O Sistema tentará novamente automaticamente.'
             });
+            
+            // Mesmo com erro na geração, vamos tentar outra abordagem para não deixar o usuário sem missão
+            // Agendar a tentativa de geração novamente mais tarde
+            setTimeout(() => {
+                // Usar o nome da função diretamente para evitar referência circular
+                if (state.missions.some(m => m.id === rankedMissionId && 
+                    !m.missoes_diarias.some(dm => !dm.concluido))) {
+                    console.log("Tentando gerar missão novamente para a missão:", rankedMissionId);
+                    generatePendingDailyMissions && generatePendingDailyMissions();
+                }
+            }, 5000); // Tentar novamente em 5 segundos
         } finally {
-            dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+            // Only clear generatingMission if this was the one that set it
+            if (state.generatingMission === rankedMissionId) {
+                dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+            }
         }
 
-        dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
+        // Se a geração foi bem-sucedida, completamos a missão normalmente
+        if (generationSuccessful) {
+            dispatch({ type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
+        } else {
+            // Se a geração falhou, vamos reverter a conclusão da missão atual para evitar o travamento
+            // Isso mantém a missão atual como ativa até que a nova missão possa ser gerada com sucesso
+            dispatch({ 
+                type: 'UPDATE_SUB_TASK_PROGRESS', 
+                payload: { 
+                    rankedMissionId, 
+                    dailyMissionId, 
+                    subTaskName: subTask.name, 
+                    amount: -amount // Reverte o progresso temporário
+                } 
+            });
+            
+            // Chama generatePendingDailyMissions para tentar gerar missões pendentes
+            // Usar setTimeout para garantir que as atualizações de estado sejam processadas primeiro
+            setTimeout(() => {
+                console.log("Chamando generatePendingDailyMissions devido a falha na geração da próxima missão");
+                generatePendingDailyMissions && generatePendingDailyMissions();
+            }, 100);
+            
+            return; // Retornar para evitar persistência com missão concluída mas sem nova missão
+        }
         
         const finalStateAfterCompletion = playerDataReducer(playerDataReducer(state, { type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } }), { type: 'COMPLETE_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId, newDailyMission } });
 
@@ -942,6 +986,12 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         if (!rankedMission) return;
     
         const meta = state.metas.find(m => m.nome === rankedMission.meta_associada);
+
+        // Check if there's already a generation in progress for this mission
+        if (state.generatingMission === rankedMissionId) {
+            console.log('Já há uma geração em andamento para esta missão.');
+            return; // Avoid multiple simultaneous executions for the same mission
+        }
     
         dispatch({ type: 'SET_GENERATING_MISSION', payload: rankedMissionId });
     
@@ -1002,14 +1052,30 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             toast({
                 variant: 'destructive',
                 title: 'Erro de IA',
-                description: 'Não foi possível ajustar a sua missão. Tente novamente mais tarde.'
+                description: 'Não foi possível ajustar a sua missão. O Sistema tentará novamente mais tarde.'
             });
+            
+            // Reverter a tentativa de ajuste e agendar nova tentativa
+            setTimeout(() => {
+                console.log("Tentando ajustar missão diária novamente para a missão:", rankedMissionId);
+                // Usar o nome da função diretamente para evitar referência circular
+                generatePendingDailyMissions && generatePendingDailyMissions();
+            }, 5000); // Tentar novamente em 5 segundos
         } finally {
-            dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+            // Only clear generatingMission if this was the one that set it
+            if (state.generatingMission === rankedMissionId) {
+                dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+            }
         }
-    }, [state, persistData, toast]);
+    }, [state, persistData, toast, state.generatingMission, state.missions, state.metas, state.profile?.nivel]);
     
     const generatePendingDailyMissions = useCallback(async () => {
+        // Check if there's already a generation in progress to avoid multiple simultaneous executions
+        if (state.generatingMission !== null) {
+            console.log('Uma geração de missão já está em andamento.');
+            return; // Avoid multiple simultaneous executions
+        }
+
         const missionsNeedingNewDaily = state.missions.filter(mission => {
             if (mission.concluido) return false;
             const hasActiveDaily = mission.missoes_diarias?.some(dm => !dm.concluido);
@@ -1017,7 +1083,18 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             return !hasActiveDaily && !wasCompletedToday;
         });
 
+        // If no missions need new daily missions, return early
+        if (missionsNeedingNewDaily.length === 0) {
+            return;
+        }
+
         for (const mission of missionsNeedingNewDaily) {
+            // Check again before starting each generation to avoid overlapping
+            if (state.generatingMission !== null) {
+                console.log('Cancelando a geração de missão adicional pois já há uma em andamento.');
+                continue; // Skip this mission if another is already being generated
+            }
+
             dispatch({ type: 'SET_GENERATING_MISSION', payload: mission.id });
             try {
                 const meta = state.metas.find((m: Meta) => m.nome === mission.meta_associada);
@@ -1058,15 +1135,24 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 
             } catch (error) {
                 console.error('Erro ao gerar missão pendente:', error);
-                 toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a próxima missão. Tente novamente mais tarde.' });
+                 toast({ variant: 'destructive', title: 'Erro de IA', description: 'Não foi possível gerar a próxima missão. O Sistema tentará novamente mais tarde.' });
+                 
+                 // Tenta novamente em alguns segundos
+                 setTimeout(() => {
+                     console.log("Tentando gerar missão pendente novamente para a missão:", mission.id);
+                     generatePendingDailyMissions && generatePendingDailyMissions();
+                 }, 10000); // Tenta novamente em 10 segundos
             } finally {
-                dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+                // Only clear generatingMission if this was the one that set it
+                if (state.generatingMission === mission.id) {
+                    dispatch({ type: 'SET_GENERATING_MISSION', payload: null });
+                }
             }
         }
         
-        setTimeout(() => persistData('missions', state.missions), 500);
+        setTimeout(() => persistData('missions', playerDataReducer(state, { type: 'SET_DATA_LOADED', payload: state.isDataLoaded }).missions), 500);
 
-    }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, dispatch, persistData, toast]);
+    }, [state.missions, state.metas, state.missionFeedback, state.profile?.nivel, state.generatingMission, dispatch, persistData, toast]);
     
     const resetUserSubCollections = useCallback(async (userRef: DocumentReference<DocumentData>) => {
         const batch = writeBatch(db);

@@ -459,7 +459,7 @@ const MissionsView = () => {
 
             if (diff <= 0) {
                 setTimeUntilMidnight('00:00:00');
-                if (generatePendingDailyMissions) {
+                if (generatePendingDailyMissions && !generatingMission) {
                     console.log("Generating pending missions...");
                     generatePendingDailyMissions();
                 }
@@ -477,7 +477,7 @@ const MissionsView = () => {
         const timerId = setInterval(calculateTimeUntilMidnight, 1000);
 
         return () => clearInterval(timerId);
-    }, [generatePendingDailyMissions]);
+    }, [generatePendingDailyMissions, generatingMission]);
 
      useEffect(() => {
         // This effect ensures the dialog state is updated when the global state changes.
@@ -689,16 +689,37 @@ const MissionsView = () => {
         try {
             const meta = metas.find(m => m.nome === mission.meta_associada);
             const history = mission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
-            const feedbackForAI = missionFeedback[mission.id] ?? `Esta é uma missão de qualificação para um rank superior. Gere uma missão diária desafiadora, mas alcançável, para provar que o Caçador está pronto para este novo nível de dificuldade.`;
+            
+            let feedbackForAI = missionFeedback[mission.id];
+            if (!feedbackForAI) {
+               if (mission.concluido) {
+                   feedbackForAI = `A missão anterior "${mission.nome}" foi concluída, mas a geração da próxima falhou. Gere uma nova missão diária que continue a progressão do Caçador.`;
+               } else {
+                   feedbackForAI = `Esta é uma missão de qualificação para um rank superior. Gere uma missão diária desafiadora, mas alcançável, para provar que o Caçador está pronto para este novo nível de dificuldade.`;
+               }
+            }
 
-            const result = await generateNextDailyMission({
-                rankedMissionName: mission.nome,
-                metaName: meta?.nome || "Objetivo geral",
-                goalDeadline: meta?.prazo,
-                history: history || `O utilizador está a tentar uma missão de rank superior.`,
-                userLevel: profile.nivel,
-                feedback: feedbackForAI,
+            const response = await fetch('/api/generate-mission', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({
+                   rankedMissionName: mission.nome,
+                   metaName: meta?.nome || "Objetivo geral",
+                   goalDeadline: meta?.prazo,
+                   history: history || `O utilizador está a tentar uma missão de rank superior.`,
+                   userLevel: profile.nivel,
+                   feedback: feedbackForAI,
+               }),
             });
+
+            if (!response.ok) {
+               const errorData = await response.json();
+               throw new Error(errorData.error || 'Failed to fetch from API');
+            }
+
+            const result = await response.json();
             
             const newDailyMission = {
                 id: Date.now(),
@@ -709,7 +730,7 @@ const MissionsView = () => {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({...st, current: 0, unit: st.unit || ''})),
+                subTasks: result.subTasks.map((st: SubTask) => ({...st, current: 0, unit: st.unit || ''})),
             };
             
             addDailyMission({ rankedMissionId: mission.id, newDailyMission });
@@ -741,7 +762,8 @@ const MissionsView = () => {
 
         let missionsToDisplay = [];
         if (statusFilter === 'active') {
-            missionsToDisplay = [...Array.from(activeEpicMissions.values()), ...manualMissions.filter((m: RankedMission) => !m.concluido)];
+            const stuckCompletedMissions = missions.filter(m => m.concluido && !m.missoes_diarias.some(dm => !dm.concluido));
+            missionsToDisplay = [...Array.from(activeEpicMissions.values()), ...manualMissions.filter((m: RankedMission) => !m.concluido), ...stuckCompletedMissions];
         } else if (statusFilter === 'completed') {
             missionsToDisplay = [...completedEpicMissions, ...manualMissions.filter((m: RankedMission) => m.concluido)];
         } else {
@@ -895,6 +917,25 @@ const MissionsView = () => {
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Criar Missão Manual
                         </Button>
+                        <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => {
+                                if (generatePendingDailyMissions && !generatingMission) {
+                                    generatePendingDailyMissions();
+                                } else if (generatingMission) {
+                                    toast({ 
+                                        variant: 'destructive', 
+                                        title: 'Geração em Andamento', 
+                                        description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
+                                    });
+                                }
+                            }}
+                            disabled={!!generatingMission}
+                        >
+                            <Sparkles className={cn("mr-2", isMobile ? "h-4 w-4" : "h-4 w-4")} />
+                            {generatingMission ? 'Gerando...' : 'Gerar Missões'}
+                        </Button>
                     </div>
                 </div>
 
@@ -933,9 +974,19 @@ const MissionsView = () => {
                                 </Select>
                             </div>
                              {generatePendingDailyMissions && (
-                                <Button onClick={generatePendingDailyMissions} variant="outline" className="text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300">
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                    Gerar Missões Pendentes (Teste)
+                                <Button onClick={() => {
+                                    if (!generatingMission) {
+                                        generatePendingDailyMissions();
+                                    } else {
+                                        toast({ 
+                                            variant: 'destructive', 
+                                            title: 'Geração em Andamento', 
+                                            description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
+                                        });
+                                    }
+                                }} variant="outline" className="text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300" disabled={!!generatingMission}>
+                                    <RefreshCw className={cn("mr-2 h-4 w-4", generatingMission ? "animate-spin" : "")} />
+                                    {generatingMission ? 'Gerando...' : 'Gerar Missões Pendentes'}
                                 </Button>
                             )}
                         </div>
@@ -1013,6 +1064,20 @@ const MissionsView = () => {
                                                         <Edit className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                                     </Button>
                                                 }
+                                                {!isManualMission && activeDailyMission && (
+                                                   <TooltipProvider>
+                                                       <Tooltip>
+                                                           <TooltipTrigger asChild>
+                                                               <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleUnlockMission(mission); }} disabled={generatingMission === mission.id} aria-label="Gerar nova missão diária">
+                                                                   <RefreshCw className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", generatingMission === mission.id ? "animate-spin" : "")} />
+                                                               </Button>
+                                                           </TooltipTrigger>
+                                                           <TooltipContent>
+                                                               <p>Gerar nova missão diária</p>
+                                                           </TooltipContent>
+                                                       </Tooltip>
+                                                   </TooltipProvider>
+                                                )}
                                                 {!isManualMission && (
                                                     <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
                                                         <GitMerge className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
@@ -1058,6 +1123,27 @@ const MissionsView = () => {
                             <Search className={isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4"} />
                             <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>Nenhuma Missão Encontrada</p>
                             <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
+                            {generatePendingDailyMissions && (
+                                <Button 
+                                    onClick={() => {
+                                        if (!generatingMission) {
+                                            generatePendingDailyMissions();
+                                        } else {
+                                            toast({ 
+                                                variant: 'destructive', 
+                                                title: 'Geração em Andamento', 
+                                                description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
+                                            });
+                                        }
+                                    }} 
+                                    variant="outline" 
+                                    className={cn("mt-4 text-primary border-primary hover:bg-primary/10", isMobile ? "h-8 text-xs" : "h-10 text-sm")}
+                                    disabled={!!generatingMission}
+                                >
+                                    <Sparkles className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                    {generatingMission ? 'Gerando...' : 'Gerar Nova Missão'}
+                                </Button>
+                            )}
                         </div>
                     )}
                 </Accordion>
