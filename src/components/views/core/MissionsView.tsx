@@ -917,25 +917,7 @@ const MissionsView = () => {
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Criar Missão Manual
                         </Button>
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => {
-                                if (generatePendingDailyMissions && !generatingMission) {
-                                    generatePendingDailyMissions();
-                                } else if (generatingMission) {
-                                    toast({ 
-                                        variant: 'destructive', 
-                                        title: 'Geração em Andamento', 
-                                        description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
-                                    });
-                                }
-                            }}
-                            disabled={!!generatingMission}
-                        >
-                            <Sparkles className={cn("mr-2", isMobile ? "h-4 w-4" : "h-4 w-4")} />
-                            {generatingMission ? 'Gerando...' : 'Gerar Missões'}
-                        </Button>
+                        {/* Botão de geração de missões removido conforme solicitação */}
                     </div>
                 </div>
 
@@ -1123,27 +1105,7 @@ const MissionsView = () => {
                             <Search className={isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4"} />
                             <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>Nenhuma Missão Encontrada</p>
                             <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
-                            {generatePendingDailyMissions && (
-                                <Button 
-                                    onClick={() => {
-                                        if (!generatingMission) {
-                                            generatePendingDailyMissions();
-                                        } else {
-                                            toast({ 
-                                                variant: 'destructive', 
-                                                title: 'Geração em Andamento', 
-                                                description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
-                                            });
-                                        }
-                                    }} 
-                                    variant="outline" 
-                                    className={cn("mt-4 text-primary border-primary hover:bg-primary/10", isMobile ? "h-8 text-xs" : "h-10 text-sm")}
-                                    disabled={!!generatingMission}
-                                >
-                                    <Sparkles className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                    {generatingMission ? 'Gerando...' : 'Gerar Nova Missão'}
-                                </Button>
-                            )}
+                            {/* Botão de geração de missões removido conforme solicitação */}
                         </div>
                     )}
                 </Accordion>
