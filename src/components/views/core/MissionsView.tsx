@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2 } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2, Star, Zap, TrendingUp as TrendingUpIcon, Filter, SortAsc, CalendarClock, Target as TargetIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -433,6 +433,8 @@ const MissionsView = () => {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [rankFilter, setRankFilter] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('active');
+    const [sortBy, setSortBy] = useState<string>('rank'); // 'rank', 'progress', 'priority'
+    const [priorityMissions, setPriorityMissions] = useState<Set<string | number>>(new Set());
 
     const [dialogState, setDialogState] = useState<DialogState>({ open: false, mission: null, isManual: false });
     const [isPanelVisible, setIsPanelVisible] = useState(false);
@@ -449,6 +451,19 @@ const MissionsView = () => {
 
     const layout = profile?.user_settings?.layout_density || 'default';
     const accordionSpacing = layout === 'compact' ? 'space-y-2' : layout === 'comfortable' ? 'space-y-6' : 'space-y-4';
+    
+    // Toggle priority for missions
+    const togglePriority = (missionId: string | number) => {
+        setPriorityMissions(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(missionId)) {
+                newSet.delete(missionId);
+            } else {
+                newSet.add(missionId);
+            }
+            return newSet;
+        });
+    };
     
      useEffect(() => {
         const calculateTimeUntilMidnight = () => {
@@ -782,14 +797,38 @@ const MissionsView = () => {
             missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.nome.toLowerCase().includes(searchTerm.toLowerCase()));
         }
 
-        return missionsToDisplay.sort((a, b) => {
+        // Apply sorting
+        missionsToDisplay.sort((a, b) => {
+            // Priority missions first
+            const aPriority = priorityMissions.has(a.id);
+            const bPriority = priorityMissions.has(b.id);
+            if (aPriority !== bPriority) {
+                return aPriority ? -1 : 1;
+            }
+            
+            // Then by completion status
             if (a.concluido !== b.concluido) {
                 return a.concluido ? 1 : -1;
             }
+            
+            // Then by selected sort option
+            if (sortBy === 'progress') {
+                const aProgress = a.isManual ? 
+                    (a.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0) / (a.subTasks?.length || 1) :
+                    (a.missoes_diarias?.filter((d: DailyMission) => d.concluido).length || 0) / (a.total_missoes_diarias || 1);
+                const bProgress = b.isManual ? 
+                    (b.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0) / (b.subTasks?.length || 1) :
+                    (b.missoes_diarias?.filter((d: DailyMission) => d.concluido).length || 0) / (b.total_missoes_diarias || 1);
+                return bProgress - aProgress;
+            }
+            
+            // Default: by rank
             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
         });
 
-    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions]);
+        return missionsToDisplay;
+
+    }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions, sortBy, priorityMissions]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
     
@@ -809,27 +848,35 @@ const MissionsView = () => {
         
         if (activeDailyMission) {
             return (
-                <div className={cn("rounded-lg animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-secondary/50 border-l-4 border-primary overflow-x-hidden", isMobile ? "p-2" : "p-2 md:p-4")}>
+                <div className={cn("rounded-lg animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-gradient-to-br from-secondary/50 to-secondary/30 border-l-4 border-primary overflow-x-hidden shadow-sm hover:shadow-md transition-shadow", isMobile ? "p-2" : "p-2 md:p-4")}>
                     <div className={cn("flex flex-col gap-2", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
                         <div className="flex-grow min-w-0">
-                            <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>{activeDailyMission.nome}</p>
-                            <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{activeDailyMission.descricao}</p>
+                            <div className="flex items-start gap-2">
+                                <Zap className={cn("text-primary flex-shrink-0 mt-1", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                                <div className="flex-1 min-w-0">
+                                    <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>{activeDailyMission.nome}</p>
+                                    <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{activeDailyMission.descricao}</p>
+                                </div>
+                            </div>
                         </div>
                         <div className={cn("text-right ml-0 flex-shrink-0 flex items-center gap-2", isMobile ? "md:ml-2" : "md:ml-4")}>
-                            <div className="flex flex-col items-end">
+                            <div className="flex flex-col items-end bg-background/40 rounded-lg px-2 py-1">
                                 {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
-                                <p className={cn("font-semibold text-primary", isMobile ? "text-xs" : "text-sm")}>+{activeDailyMission.xp_conclusao} XP</p>
+                                <p className={cn("font-semibold text-primary flex items-center gap-1", isMobile ? "text-xs" : "text-sm")}>
+                                    <Star className={isMobile ? "w-3 h-3" : "w-4 h-4"} />
+                                    {activeDailyMission.xp_conclusao} XP
+                                </p>
                             )}
                             {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
                                 <p className={cn("font-semibold text-amber-500 flex items-center", isMobile ? "text-xs" : "text-sm")}>
                                     <Gem className={cn("mr-1", isMobile ? "w-3 h-3" : "w-4 h-4")} />
-                                    +{activeDailyMission.fragmentos_conclusao || 0}
+                                    {activeDailyMission.fragmentos_conclusao || 0}
                                 </p>
                             )}
                             </div>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label="Opções da missão">
+                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label="Opções da missão">
                                         <Wand2 className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -843,20 +890,38 @@ const MissionsView = () => {
                     <div className={cn("mt-2 pt-2 border-t border-border/50 space-y-2", isMobile ? "mt-2 pt-2" : "mt-4 pt-4")}>
                         {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
                             const isCompleted = (st.current || 0) >= st.target;
+                            const progress = ((st.current || 0) / st.target) * 100;
                             return(
-                                <div key={index} className={cn("bg-background/40 rounded-md transition-all duration-300", isCompleted && "bg-green-500/10", isMobile ? "p-1" : "p-2")}>
-                                    <div className={cn("flex justify-between items-center gap-2", isMobile ? "text-xs mb-1 flex-wrap" : "text-sm mb-1")}>
-                                        <p className={cn("font-semibold text-foreground flex-1 min-w-0", isCompleted && "line-through text-muted-foreground")}>
-                                            <span className="truncate block">{st.name}</span>
-                                        </p>
+                                <div key={index} className={cn("bg-background/40 rounded-lg transition-all duration-300 border border-border/50", isCompleted && "bg-green-500/10 border-green-500/30", isMobile ? "p-2" : "p-3")}>
+                                    <div className={cn("flex justify-between items-center gap-2", isMobile ? "text-xs mb-1 flex-wrap" : "text-sm mb-2")}>
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            {isCompleted && <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />}
+                                            <p className={cn("font-semibold text-foreground flex-1 min-w-0", isCompleted && "line-through text-muted-foreground")}>
+                                                <span className="truncate block">{st.name}</span>
+                                            </p>
+                                        </div>
                                         <div className={cn("flex items-center gap-1 flex-shrink-0", isMobile ? "gap-1" : "gap-2")}>
-                                            <span className={cn("font-mono text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>[{st.current || 0}/{st.target}] {st.unit}</span>
-                                            <Button size="icon" variant="outline" className={cn("text-muted-foreground hover:text-primary flex-shrink-0", isMobile ? "h-6 w-6" : "h-7 w-7")} onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})} disabled={isCompleted} aria-label={`Adicionar progresso para ${st.name}`}>
+                                            <span className={cn("font-mono text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded", isMobile ? "text-xs" : "text-xs")}>{st.current || 0}/{st.target} {st.unit}</span>
+                                            <Button 
+                                                size="icon" 
+                                                variant="outline" 
+                                                className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0 rounded-full border-primary/30", isMobile ? "h-6 w-6" : "h-7 w-7")} 
+                                                onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})} 
+                                                disabled={isCompleted} 
+                                                aria-label={`Adicionar progresso para ${st.name}`}
+                                            >
                                                 <Plus className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
                                             </Button>
                                         </div>
                                     </div>
-                                    <Progress value={((st.current || 0) / st.target) * 100} className={isMobile ? "h-1.5" : "h-2"}/>
+                                    <div className="relative">
+                                        <Progress value={progress} className={cn("h-2 bg-secondary", isMobile ? "h-1.5" : "h-2")}/>
+                                        {progress > 0 && progress < 100 && (
+                                            <span className={cn("absolute right-0 top-1/2 -translate-y-1/2 mr-2 text-xs font-bold text-primary-foreground mix-blend-difference", isMobile ? "text-[10px]" : "text-xs")}>
+                                                {Math.round(progress)}%
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             )
                         })}
@@ -864,11 +929,14 @@ const MissionsView = () => {
                     {sortedDailyMissions && sortedDailyMissions.length > 1 && (
                          <Collapsible className={cn("mt-2", isMobile ? "mt-2" : "mt-4")}>
                             <CollapsibleTrigger asChild>
-                                <Button variant="ghost" className={cn("text-muted-foreground w-full", isMobile ? "text-xs" : "text-xs")}>Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})</Button>
+                                <Button variant="ghost" className={cn("text-muted-foreground w-full hover:bg-secondary/50", isMobile ? "text-xs h-8" : "text-xs h-9")}>
+                                    <History className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                    Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})
+                                </Button>
                             </CollapsibleTrigger>
                              <CollapsibleContent className={cn("space-y-2 mt-2", isMobile ? "space-y-1 mt-1" : "")}>
                                  {sortedDailyMissions.filter(dm => dm.concluido).map((dm: DailyMission) => (
-                                    <div key={dm.id} className={cn("bg-secondary/30 rounded-md flex items-center gap-2 min-w-0", isMobile ? "p-1 text-xs" : "p-2 text-sm")}>
+                                    <div key={dm.id} className={cn("bg-secondary/30 rounded-md flex items-center gap-2 min-w-0 border border-border/30", isMobile ? "p-1 text-xs" : "p-2 text-sm")}>
                                         <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <span className="line-through truncate">{dm.nome}</span>
                                     </div>
@@ -876,12 +944,20 @@ const MissionsView = () => {
                             </CollapsibleContent>
                         </Collapsible>
                     )}
-                    {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.map((topic: string, index: number) => (
-                        <div key={index} className={cn("flex items-center gap-2 bg-secondary p-2 rounded-md mt-2", isMobile ? "text-xs p-1" : "text-sm p-2")}>
-                            <Link className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")}/>
-                            <span className="truncate">Sugestão de pesquisa: {topic}</span>
+                    {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
+                        <div className={cn("mt-2 space-y-1", isMobile ? "mt-2" : "mt-3")}>
+                            <p className={cn("text-muted-foreground font-semibold flex items-center gap-1", isMobile ? "text-xs" : "text-sm")}>
+                                <Link className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                                Recursos de Aprendizado:
+                            </p>
+                            {activeDailyMission.learningResources.map((topic: string, index: number) => (
+                                <div key={index} className={cn("flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 p-2 rounded-md hover:bg-blue-500/20 transition-colors cursor-pointer", isMobile ? "text-xs p-1" : "text-sm p-2")}>
+                                    <TargetIcon className={cn("flex-shrink-0 text-blue-500", isMobile ? "h-3 w-3" : "h-4 w-4")}/>
+                                    <span className="truncate">{topic}</span>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    )}
                 </div>
             );
         }
@@ -900,7 +976,7 @@ const MissionsView = () => {
 
     return (
         <div className={cn("h-full flex flex-col w-full overflow-x-hidden", isMobile ? "p-0" : "p-2 md:p-6", accordionSpacing)}>
-            <div className={cn("flex-shrink-0 mb-4 overflow-x-hidden", isMobile ? "md:mb-4" : "")}>
+            <div className={cn("flex-shrink-0 mb-4 overflow-x-hidden", isMobile ? "px-2 md:mb-4" : "")}>
                 <div className={cn("flex flex-col gap-4", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
                     <h1 className={cn("font-bold text-primary font-cinzel tracking-wider text-center overflow-x-hidden", isMobile ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>Diário de Missões</h1>
                     <div className={cn("flex items-center justify-center gap-2 overflow-x-hidden", isMobile ? "hidden" : "hidden md:flex")}>
@@ -939,22 +1015,69 @@ const MissionsView = () => {
                     </div>
                 </div>
 
-                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className="mt-4 hidden md:block overflow-x-hidden">
+                {/* Mobile Quick Actions */}
+                {isMobile && (
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsPanelVisible(!isPanelVisible)}
+                            className="flex-shrink-0 text-xs h-8"
+                        >
+                            {isPanelVisible ? <EyeOff className="mr-1 h-3 w-3" /> : <Eye className="mr-1 h-3 w-3" />}
+                            {isPanelVisible ? 'Ocultar' : 'Stats'}
+                        </Button>
+                        <Button 
+                            size="sm" 
+                            onClick={() => setDialogState({open: true, mission: null, isManual: true})}
+                            className="flex-shrink-0 text-xs h-8"
+                        >
+                            <PlusCircle className="mr-1 h-3 w-3" />
+                            Nova Missão
+                        </Button>
+                        <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => {
+                                if (generatePendingDailyMissions && !generatingMission) {
+                                    generatePendingDailyMissions();
+                                } else if (generatingMission) {
+                                    toast({ 
+                                        variant: 'destructive', 
+                                        title: 'Geração em Andamento', 
+                                        description: 'Aguarde a conclusão da geração atual.' 
+                                    });
+                                }
+                            }}
+                            disabled={!!generatingMission}
+                            className="flex-shrink-0 text-xs h-8"
+                        >
+                            <Sparkles className="mr-1 h-3 w-3" />
+                            {generatingMission ? 'Gerando...' : 'Gerar'}
+                        </Button>
+                    </div>
+                )}
+
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className={cn("mt-4 overflow-x-hidden", isMobile ? "block px-2" : "block")}>
                     <CollapsibleContent className="space-y-6 animate-in fade-in-50 duration-300 overflow-x-hidden">
                         <MissionStatsPanel />
                         <div className={cn("flex flex-col gap-4", isMobile ? "md:flex-row" : "md:flex-row")}>
                             <div className={cn("flex-grow overflow-x-hidden", isMobile ? "min-w-[150px]" : "min-w-[200px]")}>
-                                <Input 
-                                    placeholder="Procurar missão..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    className="bg-card"
-                                />
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input 
+                                        placeholder="Procurar missão..."
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                        className="bg-card pl-9"
+                                    />
+                                </div>
                             </div>
-                            <div className={cn("flex gap-4 flex-grow overflow-x-hidden", isMobile ? "sm:flex-grow-0" : "sm:flex-grow-0")}>
+                            <div className={cn("flex gap-2 flex-wrap overflow-x-hidden", isMobile ? "sm:flex-grow-0" : "sm:flex-grow-0")}>
                                 <Select value={rankFilter} onValueChange={setRankFilter}>
-                                    <SelectTrigger className={cn("flex-1 overflow-x-hidden", isMobile ? "md:w-[120px]" : "md:w-[180px]")}>
-                                        <SelectValue placeholder="Filtrar por Rank" />
+                                    <SelectTrigger className={cn("flex-1 overflow-x-hidden", isMobile ? "min-w-[120px]" : "md:w-[180px]")}>
+                                        <Filter className="h-4 w-4 mr-2" />
+                                        <SelectValue placeholder="Rank" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todos os Ranks</SelectItem>
@@ -963,17 +1086,29 @@ const MissionsView = () => {
                                     </SelectContent>
                                 </Select>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className={cn("flex-1", isMobile ? "md:w-[120px]" : "md:w-[180px]")}>
-                                        <SelectValue placeholder="Filtrar por Status" />
+                                    <SelectTrigger className={cn("flex-1", isMobile ? "min-w-[120px]" : "md:w-[180px]")}>
+                                        <Filter className="h-4 w-4 mr-2" />
+                                        <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Todos os Status</SelectItem>
+                                        <SelectItem value="all">Todos</SelectItem>
                                         <SelectItem value="active">Ativas</SelectItem>
                                         <SelectItem value="completed">Concluídas</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                <Select value={sortBy} onValueChange={setSortBy}>
+                                    <SelectTrigger className={cn("flex-1", isMobile ? "min-w-[120px]" : "md:w-[180px]")}>
+                                        <SortAsc className="h-4 w-4 mr-2" />
+                                        <SelectValue placeholder="Ordenar" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="rank">Por Rank</SelectItem>
+                                        <SelectItem value="progress">Por Progresso</SelectItem>
+                                        <SelectItem value="priority">Por Prioridade</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                             {generatePendingDailyMissions && (
+                             {generatePendingDailyMissions && !isMobile && (
                                 <Button onClick={() => {
                                     if (!generatingMission) {
                                         generatePendingDailyMissions();
@@ -986,7 +1121,7 @@ const MissionsView = () => {
                                     }
                                 }} variant="outline" className="text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300" disabled={!!generatingMission}>
                                     <RefreshCw className={cn("mr-2 h-4 w-4", generatingMission ? "animate-spin" : "")} />
-                                    {generatingMission ? 'Gerando...' : 'Gerar Missões Pendentes'}
+                                    {generatingMission ? 'Gerando...' : 'Gerar Missões'}
                                 </Button>
                             )}
                         </div>
@@ -1033,20 +1168,36 @@ const MissionsView = () => {
                         };
                         
                         return (
-                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-colors relative", isMobile ? "p-1 mx-0" : "mx-0")}>
+                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-all hover:shadow-lg relative group", isMobile ? "p-1 mx-0" : "mx-0", priorityMissions.has(mission.id) && "border-yellow-500/50 shadow-yellow-500/20")}>
+                                {priorityMissions.has(mission.id) && (
+                                    <div className="absolute -top-2 -right-2 z-10">
+                                        <div className="bg-yellow-500 rounded-full p-1 shadow-lg">
+                                            <Star className="h-3 w-3 text-background fill-background" />
+                                        </div>
+                                    </div>
+                                )}
                                 <div className={cn("transition-all duration-300 overflow-x-hidden", generatingMission === mission.id ? 'opacity-50' : '', isMobile ? "p-1" : "p-2 md:p-4")}>
                                     <div className={cn("flex flex-col gap-2", isMobile ? "p-1" : "p-2 md:p-4")}>
                                         <div className={cn("flex items-center gap-2", isMobile ? "gap-2 flex-wrap" : "gap-4")}>
                                             <TriggerWrapper>
                                                 <div className="flex-1 text-left min-w-0 flex items-center gap-2 md:gap-4 overflow-x-hidden">
-                                                    <div className={cn("flex-shrink-0 flex items-center justify-center font-cinzel font-bold", getRankColor(mission.rank), isMobile ? "w-12 h-12 text-3xl" : "w-16 h-16 text-4xl")}>
+                                                    <div className={cn("flex-shrink-0 flex items-center justify-center font-cinzel font-bold rounded-lg bg-gradient-to-br from-secondary to-secondary/50 shadow-inner", getRankColor(mission.rank), isMobile ? "w-12 h-12 text-3xl" : "w-16 h-16 text-4xl")}>
                                                         {mission.rank}
                                                     </div>
                                                     <div className="flex-1 min-w-0 overflow-x-hidden">
-                                                        <div className="flex justify-between items-center flex-wrap">
+                                                        <div className="flex justify-between items-center flex-wrap gap-2">
                                                             <p className={cn("font-bold text-foreground break-words font-cinzel", isMobile ? "text-base" : "text-xl")}>
                                                                 {mission.nome}
                                                             </p>
+                                                            {!isManualMission && daysRemaining !== null && (
+                                                                <span className={cn("text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1", 
+                                                                    daysRemaining < 7 ? "bg-red-500/20 text-red-400" : 
+                                                                    daysRemaining < 30 ? "bg-yellow-500/20 text-yellow-400" : 
+                                                                    "bg-green-500/20 text-green-400")}>
+                                                                    <CalendarClock className="h-3 w-3" />
+                                                                    {daysRemaining}d
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         {associatedMeta && !isManualMission && (
                                                             <div className={cn("flex items-center gap-1 text-muted-foreground mt-1", isMobile ? "text-xs gap-1" : "text-xs gap-2")}>
@@ -1059,8 +1210,29 @@ const MissionsView = () => {
                                                 </div>
                                             </TriggerWrapper>
                                             <div className={cn("flex items-center space-x-1 self-start flex-shrink-0", isMobile ? "md:ml-2" : "md:ml-4")}>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full", 
+                                                                    priorityMissions.has(mission.id) && "text-yellow-400 bg-yellow-400/10",
+                                                                    isMobile ? "h-6 w-6" : "h-8 w-8"
+                                                                )} 
+                                                                onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
+                                                                aria-label="Marcar como prioridade"
+                                                            >
+                                                                <Star className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", priorityMissions.has(mission.id) && "fill-yellow-400")} />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{priorityMissions.has(mission.id) ? "Remover prioridade" : "Marcar como prioridade"}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                                 {isManualMission && 
-                                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
+                                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
                                                         <Edit className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                                     </Button>
                                                 }
@@ -1068,7 +1240,7 @@ const MissionsView = () => {
                                                    <TooltipProvider>
                                                        <Tooltip>
                                                            <TooltipTrigger asChild>
-                                                               <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleUnlockMission(mission); }} disabled={generatingMission === mission.id} aria-label="Gerar nova missão diária">
+                                                               <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleUnlockMission(mission); }} disabled={generatingMission === mission.id} aria-label="Gerar nova missão diária">
                                                                    <RefreshCw className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", generatingMission === mission.id ? "animate-spin" : "")} />
                                                                </Button>
                                                            </TooltipTrigger>
@@ -1079,9 +1251,18 @@ const MissionsView = () => {
                                                    </TooltipProvider>
                                                 )}
                                                 {!isManualMission && (
-                                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
-                                                        <GitMerge className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
-                                                    </Button>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                                                    <GitMerge className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Ver árvore de progressão</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 )}
                                             </div>
                                         </div>
@@ -1089,7 +1270,14 @@ const MissionsView = () => {
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger className="w-full">
-                                                        <Progress value={missionProgress} className={isMobile ? "h-1.5" : "h-2"} />
+                                                        <div className="relative">
+                                                            <Progress value={missionProgress} className={cn("bg-secondary", isMobile ? "h-2" : "h-2.5")} />
+                                                            {missionProgress > 5 && (
+                                                                <span className={cn("absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-primary-foreground mix-blend-difference", isMobile ? "text-[10px]" : "text-xs")}>
+                                                                    {Math.round(missionProgress)}%
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
                                                         <p className={isMobile ? "text-xs" : ""}>{completedDailyMissions.length} de {mission.total_missoes_diarias} missões diárias concluídas.</p>
@@ -1108,7 +1296,7 @@ const MissionsView = () => {
                                         <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>A gerar nova missão...</p>
                                     </div>
                                 ) : wasCompletedToday ? (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 flex flex-col items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 rounded-lg flex flex-col items-center justify-center p-4">
                                         <Timer className={cn("text-cyan-400 mx-auto animate-pulse", isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4")}/>
                                         <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Nova Missão em</p>
                                         <p className={cn("font-mono text-cyan-400 font-bold tracking-wider", isMobile ? "text-2xl" : "text-4xl")}>{timeUntilMidnight}</p>
