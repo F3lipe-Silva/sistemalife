@@ -102,30 +102,57 @@ export function onForegroundMessage(callback: (payload: any) => void) {
 // Save FCM token to user profile
 export async function saveFCMTokenToProfile(userId: string, token: string): Promise<void> {
   try {
-    // In a real implementation, you would save this to Firestore
-    // Example:
-    // const userRef = doc(db, 'users', userId);
-    // await updateDoc(userRef, {
-    //   fcmTokens: arrayUnion(token)
-    // });
-    console.log(`Would save FCM token ${token} for user ${userId}`);
+    if (!userId || !token) {
+      throw new Error('User ID and token are required');
+    }
+    
+    // Import Firestore from Firebase Admin
+    // Note: In a client-side environment, you'll need to call an API endpoint
+    // instead of directly accessing Firestore
+    const response = await fetch('/api/save-fcm-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, token }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to save FCM token');
+    }
+    
+    console.log(`FCM token saved for user ${userId}`);
   } catch (error) {
     console.error('Error saving FCM token to profile:', error);
+    throw error;
   }
 }
 
 // Remove FCM token from user profile
 export async function removeFCMTokenFromProfile(userId: string, token: string): Promise<void> {
   try {
-    // In a real implementation, you would remove this from Firestore
-    // Example:
-    // const userRef = doc(db, 'users', userId);
-    // await updateDoc(userRef, {
-    //   fcmTokens: arrayRemove(token)
-    // });
-    console.log(`Would remove FCM token ${token} for user ${userId}`);
+    if (!userId || !token) {
+      throw new Error('User ID and token are required');
+    }
+    
+    const response = await fetch('/api/remove-fcm-token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, token }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to remove FCM token');
+    }
+    
+    console.log(`FCM token removed for user ${userId}`);
   } catch (error) {
     console.error('Error removing FCM token from profile:', error);
+    throw error;
   }
 }
 

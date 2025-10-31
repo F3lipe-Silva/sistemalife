@@ -1,13 +1,13 @@
 import { NextRequest } from 'next/server';
 import { getMessaging } from 'firebase-admin/messaging';
-import { admin } from '@/lib/firebase-admin';
+import { admin, firestore } from '@/lib/firebase-admin';
 
 // Initialize Firebase Admin Messaging
 let messaging: any = null;
 try {
   messaging = getMessaging(admin);
 } catch (error) {
-  console.warn('Firebase Admin Messaging not available:', error);
+  console.error('Firebase Admin Messaging not available:', error);
 }
 
 export async function POST(request: NextRequest) {
@@ -16,20 +16,33 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, title, body: messageBody, data } = body;
 
-    // In a real implementation, you would:
-    // 1. Fetch the user's FCM tokens from Firestore
-    // 2. Send the notification to all tokens
-    
-    // Example implementation:
-    /*
+    if (!userId || !title || !messageBody) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: 'Missing required fields: userId, title, or body' 
+        }),
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     // Fetch user's FCM tokens from Firestore
-    const userDoc = await admin.firestore().collection('users').doc(userId).get();
+    const userDocRef = firestore.collection('users').doc(userId);
+    const userDoc = await userDocRef.get();
     const userData = userDoc.data();
     const fcmTokens = userData?.fcmTokens || [];
     
     if (fcmTokens.length === 0) {
+      console.warn(`No FCM tokens found for user ${userId}`);
       return new Response(
-        JSON.stringify({ success: false, message: 'No FCM tokens found for user' }),
+        JSON.stringify({ 
+          success: false, 
+          message: 'No FCM tokens found for user',
+          warning: 'User has not registered any devices for notifications'
+        }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -42,28 +55,42 @@ export async function POST(request: NextRequest) {
       },
       data: {
         ...data,
+        userId, // Include userId in data for tracking
+        timestamp: new Date().toISOString(),
         click_action: 'FLUTTER_NOTIFICATION_CLICK', // For mobile apps
       },
       tokens: fcmTokens,
     };
+    
+    if (!messaging) {
+      throw new Error('Firebase Messaging is not available');
+    }
     
     const response = await messaging.sendMulticast(message);
     
     // Remove invalid tokens
     if (response.failureCount > 0) {
       const failedTokens = [];
-      response.responses.forEach((resp, idx) => {
+      response.responses.forEach((resp: any, idx: number) => {
         if (!resp.success) {
-          failedTokens.push(fcmTokens[idx]);
+          // Common reasons for failure include:
+          // - Token is invalid (unregistered)
+          // - Token belongs to an app that has been uninstalled
+          if (resp.error?.code === 'messaging/invalid-registration-token' ||
+              resp.error?.code === 'messaging/registration-token-not-registered') {
+            failedTokens.push(fcmTokens[idx]);
+          }
         }
       });
       
       if (failedTokens.length > 0) {
         // Remove failed tokens from user's profile
-        const updatedTokens = fcmTokens.filter(token => !failedTokens.includes(token));
-        await admin.firestore().collection('users').doc(userId).update({
+        const updatedTokens = fcmTokens.filter((token: string) => !failedTokens.includes(token));
+        await userDocRef.update({
           fcmTokens: updatedTokens
         });
+        
+        console.log(`Removed ${failedTokens.length} invalid tokens for user ${userId}`);
       }
     }
     
@@ -72,31 +99,21 @@ export async function POST(request: NextRequest) {
         success: true, 
         message: 'Notifications sent successfully',
         successCount: response.successCount,
-        failureCount: response.failureCount
+        failureCount: response.failureCount,
+        totalTokens: fcmTokens.length
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-    */
     
-    // For now, we'll just log the notification data
-    console.log('Would send notification:', { userId, title, messageBody, data });
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Notification would be sent in production',
-        loggedData: { userId, title, messageBody, data }
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending notification:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
         message: 'Failed to send notification',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        ...(process.env.NODE_ENV === 'development' && { stack: error?.stack })
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

@@ -1,5 +1,5 @@
 // Firebase Admin SDK initialization
-import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 
@@ -7,19 +7,14 @@ import { getMessaging } from 'firebase-admin/messaging';
 let adminApp: any;
 try {
   if (getApps().length === 0) {
-    // In a production environment, you would use service account credentials
-    // For development, Firebase Admin can use default credentials
-    adminApp = initializeApp({
-      // projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      // Add other config as needed
-    });
+    adminApp = initializeApp();
     console.log('Firebase Admin initialized');
   } else {
     adminApp = getApp();
     console.log('Firebase Admin already initialized');
   }
 } catch (error) {
-  console.warn('Firebase Admin initialization failed:', error);
+  console.error('Firebase Admin initialization failed:', error);
   adminApp = null;
 }
 
@@ -30,7 +25,7 @@ try {
     firestore = getFirestore(adminApp);
   }
 } catch (error) {
-  console.warn('Firestore initialization failed:', error);
+  console.error('Firestore initialization failed:', error);
 }
 
 // Initialize Firebase Messaging
@@ -40,7 +35,7 @@ try {
     messaging = getMessaging(adminApp);
   }
 } catch (error) {
-  console.warn('Firebase Messaging initialization failed:', error);
+  console.error('Firebase Messaging initialization failed:', error);
 }
 
 export { adminApp as admin, firestore, messaging };

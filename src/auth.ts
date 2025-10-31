@@ -2,6 +2,11 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { User } from "next-auth";
 
+// Ensure NEXTAUTH_SECRET is set
+if (!process.env.NEXTAUTH_SECRET) {
+  console.error("Missing NEXTAUTH_SECRET environment variable");
+}
+
 export const {
   handlers,
   auth,
@@ -26,4 +31,20 @@ export const {
     })
   ],
   secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token.id) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
+  },
+  // Add debug logging in development
+  debug: process.env.NODE_ENV === "development",
 });

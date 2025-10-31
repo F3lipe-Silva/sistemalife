@@ -358,24 +358,31 @@ export function usePlayerNotifications({ profile, user }: UsePlayerNotifications
         body: string;
         data?: any;
     }) => {
+        if (!user?.uid) {
+            console.warn('Cannot send push notification: no user ID available');
+            return;
+        }
+
         try {
-            // In a real implementation, you would send this to your backend
-            // which would then use the FCM tokens to send the actual push notification
-            console.log('Would send push notification:', notificationData);
-            
-            // Example API call to your backend:
-            /*
-            await fetch('/api/send-notification', {
+            const response = await fetch('/api/send-notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    userId: user?.uid,
+                    userId: user.uid,
                     ...notificationData
                 }),
             });
-            */
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                console.error('Error sending push notification:', result.message);
+                throw new Error(result.message || 'Failed to send notification');
+            }
+
+            console.log('Push notification sent successfully:', result);
         } catch (error) {
             console.error('Error sending push notification:', error);
         }
