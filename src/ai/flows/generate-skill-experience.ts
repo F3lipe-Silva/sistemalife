@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { retryWithBackoff } from '@/lib/ai-utils';
 
 const GenerateSkillExperienceInputSchema = z.object({
   missionText: z.string().describe("O texto completo da missão diária concluída (nome e descrição)."),
@@ -52,21 +53,37 @@ const generateSkillExperienceFlow = ai.defineFlow(
         Responda APENAS com um número de 1 a 10 para a contribuição de dificuldade.
     `;
 
-    const {output: difficultyScoreText} = await ai.generate({
-      prompt,
-      model: 'googleai/gemini-2.5-flash',
-    });
+    try {
+      const {output: difficultyScoreText} = await retryWithBackoff(
+        async () => await ai.generate({
+          prompt,
+          model: 'googleai/gemini-2.5-flash',
+        }),
+        3,
+        1000,
+        'Generate Skill Experience'
+      );
 
-    const difficultyScore = parseInt(difficultyScoreText, 10) || 3; // Padrão para 3 se a análise falhar
+      const difficultyScore = parseInt(difficultyScoreText, 10) || 3; // Padrão para 3 se a análise falhar
 
-    // Fórmula para calcular o XP da habilidade
-    // Missões dão mais XP para habilidades de nível mais baixo para acelerar o progresso inicial.
-    const levelDivisor = Math.max(1, skillLevel / 2);
-    const calculatedXP = baseXpPerMission + (difficultyScore * difficultyMultiplier) / levelDivisor;
-    
-    // Arredondar para o número inteiro mais próximo e garantir um mínimo de 1 XP
-    const finalXP = Math.round(Math.max(1, calculatedXP));
+      // Fórmula para calcular o XP da habilidade
+      // Missões dão mais XP para habilidades de nível mais baixo para acelerar o progresso inicial.
+      const levelDivisor = Math.max(1, skillLevel / 2);
+      const calculatedXP = baseXpPerMission + (difficultyScore * difficultyMultiplier) / levelDivisor;
+      
+      // Arredondar para o número inteiro mais próximo e garantir um mínimo de 1 XP
+      const finalXP = Math.round(Math.max(1, calculatedXP));
 
-    return {xp: finalXP};
+      return {xp: finalXP};
+    } catch (error) {
+      console.error('Failed to generate skill XP with AI, using fallback:', error);
+      
+      // Fallback: calculate based on mission text length and skill level
+      const missionComplexity = Math.min(10, Math.max(3, Math.floor(missionText.length / 30)));
+      const levelDivisor = Math.max(1, skillLevel / 2);
+      const fallbackXP = baseXpPerMission + (missionComplexity * difficultyMultiplier) / levelDivisor;
+      
+      return {xp: Math.round(Math.max(1, fallbackXP))};
+    }
   }
 );

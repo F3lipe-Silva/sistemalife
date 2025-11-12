@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { retryWithBackoff, validateAIOutput, sanitizeText } from '@/lib/ai-utils';
 
 const SmartGoalSchema = z.object({
   name: z.string().describe('O nome original da meta, conforme inserido pelo utilizador.'),
@@ -57,13 +58,34 @@ Para o campo 'timeBound', defina um prazo realista e futuro (ex: "nos próximos 
 
 Responda APENAS com o objeto JSON do "refinedGoal". Não adicione nenhuma outra palavra ou pontuação.
 `;
-        const {output} = await ai.generate({
+        const {output} = await retryWithBackoff(
+          async () => await ai.generate({
             prompt: prompt,
             model: 'googleai/gemini-2.5-flash',
             output: { schema: z.object({ refinedGoal: SmartGoalSchema }) },
-        });
+          }),
+          3,
+          1000,
+          'Generate Simple SMART Goal'
+        );
 
-        return { refinedGoal: output!.refinedGoal, fallback: false };
+        // Validate and sanitize output
+        validateAIOutput(output, ['refinedGoal'], 'Simple SMART Goal');
+        
+        if (!output || !output.refinedGoal) {
+          throw new Error('AI returned invalid SMART goal');
+        }
+
+        const refinedGoal = {
+          name: sanitizeText(output.refinedGoal.name, 200),
+          specific: sanitizeText(output.refinedGoal.specific, 500),
+          measurable: sanitizeText(output.refinedGoal.measurable, 500),
+          achievable: sanitizeText(output.refinedGoal.achievable, 500),
+          relevant: sanitizeText(output.refinedGoal.relevant, 500),
+          timeBound: sanitizeText(output.refinedGoal.timeBound, 200),
+        };
+
+        return { refinedGoal, fallback: false };
     } catch (error) {
         console.error("Falha ao gerar meta SMART, acionando fallback:", error);
         

@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {generateMissionRewards} from './generate-mission-rewards';
 import {z} from 'genkit';
+import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText } from '@/lib/ai-utils';
 
 const SubTaskSchema = z.object({
   name: z.string().describe("O nome da sub-tarefa específica e acionável (ex: 'Ler um capítulo', 'Fazer 20 flexões')."),
@@ -105,30 +106,75 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
         subTasks: z.array(SubTaskSchema),
     });
 
-    const {output} = await ai.generate({
-      prompt: finalPrompt,
-      model: 'googleai/gemini-2.5-flash',
-      output: {schema: MissionSchema},
-    });
+    try {
+      const {output} = await retryWithBackoff(
+        async () => await ai.generate({
+          prompt: finalPrompt,
+          model: 'googleai/gemini-2.5-flash',
+          output: {schema: MissionSchema},
+        }),
+        3,
+        1000,
+        'Generate Next Daily Mission'
+      );
 
-    const missionTextForRewards = `${output!.nextMissionName}: ${output!.subTasks.map(st => st.name).join(', ')}`;
-    const rewards = await generateMissionRewards({
-      missionText: missionTextForRewards,
-      userLevel: input.userLevel,
-    });
-    
-    const finalXp = rewards.xp;
-    const finalFragments = rewards.fragments;
+      // Validate output
+      validateAIOutput(output, ['nextMissionName', 'nextMissionDescription', 'subTasks'], 'Next Daily Mission');
+      
+      if (!output!.subTasks || output!.subTasks.length === 0) {
+        throw new Error('AI generated mission with no subtasks');
+      }
 
-    const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0 }));
+      // Sanitize the output
+      const sanitizedName = sanitizeText(output!.nextMissionName, 100);
+      const sanitizedDescription = sanitizeText(output!.nextMissionDescription, 500);
+      const sanitizedResources = sanitizeUrls(output!.learningResources);
 
-    return {
-      nextMissionName: output!.nextMissionName,
-      nextMissionDescription: output!.nextMissionDescription,
-      xp: finalXp,
-      fragments: finalFragments,
-      learningResources: output!.learningResources,
-      subTasks: subTasksWithProgress,
-    };
+      const missionTextForRewards = `${sanitizedName}: ${output!.subTasks.map(st => st.name).join(', ')}`;
+      const rewards = await generateMissionRewards({
+        missionText: missionTextForRewards,
+        userLevel: input.userLevel,
+      });
+      
+      const finalXp = rewards.xp;
+      const finalFragments = rewards.fragments;
+
+      const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0 }));
+
+      return {
+        nextMissionName: sanitizedName,
+        nextMissionDescription: sanitizedDescription,
+        xp: finalXp,
+        fragments: finalFragments,
+        learningResources: sanitizedResources,
+        subTasks: subTasksWithProgress,
+      };
+    } catch (error) {
+      console.error('Failed to generate next daily mission, using fallback:', error);
+      
+      // Fallback: Generate a simple continuation mission
+      const fallbackName = `Continuar: ${input.rankedMissionName}`;
+      const fallbackDescription = `Continue progredindo na sua meta "${input.metaName}" com esta tarefa.`;
+      const fallbackSubTasks = [{
+        name: 'Trabalhar na meta',
+        target: 1,
+        unit: 'sessão',
+        current: 0
+      }];
+      
+      const rewards = await generateMissionRewards({
+        missionText: `${fallbackName}: ${fallbackSubTasks[0].name}`,
+        userLevel: input.userLevel,
+      });
+
+      return {
+        nextMissionName: fallbackName,
+        nextMissionDescription: fallbackDescription,
+        xp: rewards.xp,
+        fragments: rewards.fragments,
+        learningResources: [],
+        subTasks: fallbackSubTasks,
+      };
+    }
   }
 );

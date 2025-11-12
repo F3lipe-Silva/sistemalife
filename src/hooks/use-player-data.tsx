@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer, useRef } from 'react';
 import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, DocumentReference, DocumentData } from "firebase/firestore";
@@ -15,6 +15,7 @@ import { differenceInCalendarDays, isToday, endOfDay, parseISO } from 'date-fns'
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
 import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
+import { debounce, AsyncQueue } from '@/lib/ai-utils';
 
 
 // Type definitions
@@ -451,6 +452,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     const { user, authState } = useAuth();
     const [state, dispatch] = useReducer(playerDataReducer, initialState);
     const { toast } = useToast();
+    const persistQueueRef = useRef(new AsyncQueue());
+    const debouncedPersistRef = useRef<Map<DataKey, ReturnType<typeof setTimeout>>>(new Map());
     
     const { 
         questNotification, setQuestNotification,
@@ -468,7 +471,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
-    const persistData = useCallback(async (key: DataKey, data: any) => {
+    // Immediate persist (without debounce) for critical operations
+    const persistDataImmediate = useCallback(async (key: DataKey, data: any) => {
         if (!user) return;
         
         const singleDocCollections: Record<string, () => DocumentReference<DocumentData, DocumentData>> = {
@@ -527,6 +531,56 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
              await batch.commit();
         }
     }, [user]);
+
+    // Debounced persist for frequent updates
+    const persistData = useCallback(async (key: DataKey, data: any, immediate: boolean = false) => {
+        if (!user) return;
+        
+        // Update local state immediately
+        const typeMap: Record<DataKey, string> = {
+            profile: 'SET_PROFILE',
+            metas: 'SET_METAS',
+            missions: 'SET_MISSIONS',
+            skills: 'SET_SKILLS',
+            routine: 'SET_ROUTINE',
+            routineTemplates: 'SET_ROUTINE_TEMPLATES',
+            allUsers: 'SET_ALL_USERS',
+            worldEvents: 'SET_WORLD_EVENTS'
+        };
+
+        const actionType = typeMap[key];
+        if (actionType) {
+            dispatch({ type: actionType, payload: data });
+        }
+
+        // If immediate, persist right away
+        if (immediate) {
+            await persistDataImmediate(key, data);
+            return;
+        }
+
+        // Clear existing timeout for this key
+        const existingTimeout = debouncedPersistRef.current.get(key);
+        if (existingTimeout) {
+            clearTimeout(existingTimeout);
+        }
+
+        // Set new timeout - persist after 500ms of no changes
+        const timeout = setTimeout(async () => {
+            await persistQueueRef.current.add(() => persistDataImmediate(key, data));
+            debouncedPersistRef.current.delete(key);
+        }, 500);
+
+        debouncedPersistRef.current.set(key, timeout);
+    }, [user, persistDataImmediate]);
+
+    // Cleanup timeouts on unmount
+    useEffect(() => {
+        return () => {
+            debouncedPersistRef.current.forEach(timeout => clearTimeout(timeout));
+            debouncedPersistRef.current.clear();
+        };
+    }, []);
 
     const handleLevelUp = (currentProfile: Profile): Profile => {
         const newLevel = currentProfile.nivel + 1;
@@ -1476,9 +1530,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
 
     // Skill Decay & Tower/Dungeon Lives & HP Reset Logic
     useEffect(() => {
-        if (!state.isDataLoaded || !state.profile) return;
+        if (!state.isDataLoaded) return;
 
         const checkSystems = () => {
+            if (!state.profile) return;
             let profileChanged = false;
             let updatedProfile = JSON.parse(JSON.stringify(state.profile!));
             const now = new Date();
@@ -1554,7 +1609,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         checkSystems(); 
 
         return () => clearInterval(intervalId);
-    }, [state.isDataLoaded, state.profile, state.skills, state.worldEvents, dispatch, toast, handleShowSkillDecayNotification, handleShowSkillAtRiskNotification]);
+    }, [state.isDataLoaded]);
 
     // Narrative event trigger
     useEffect(() => {

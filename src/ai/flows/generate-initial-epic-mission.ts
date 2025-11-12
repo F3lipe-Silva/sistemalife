@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {generateMissionRewards} from './generate-mission-rewards';
 import {z} from 'genkit';
+import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText } from '@/lib/ai-utils';
 
 const EpicMissionSchema = z.object({
     epicMissionName: z.string().describe("O nome temático e inspirador para a Missão Épica (ex: 'A Senda do Maratonista')."),
@@ -88,17 +89,35 @@ A sua tarefa é:
             firstDailyMission: FirstDailyMissionSchema,
         })
 
-        const {output} = await ai.generate({
+        const {output} = await retryWithBackoff(
+          async () => await ai.generate({
             prompt: finalPrompt,
             model: 'googleai/gemini-2.5-flash',
             output: { schema: MissionSchema },
-        });
+          }),
+          3,
+          1000,
+          'Generate Initial Epic Mission'
+        );
 
-        if (!output || !output.progression || output.progression.length === 0 || !output.firstDailyMission) {
-            throw new Error("A IA não conseguiu gerar uma árvore de progressão válida.");
+        // Validate output
+        validateAIOutput(output, ['progression', 'firstDailyMission'], 'Initial Epic Mission');
+        
+        if (!output || !output.progression || output.progression.length === 0) {
+            throw new Error('AI generated empty progression');
+        }
+        
+        if (!output.firstDailyMission || !output.firstDailyMission.firstDailyMissionSubTasks || 
+            output.firstDailyMission.firstDailyMissionSubTasks.length === 0) {
+            throw new Error('AI generated first mission without subtasks');
         }
 
-        const missionTextForRewards = `${output.firstDailyMission.firstDailyMissionName}: ${output.firstDailyMission.firstDailyMissionSubTasks.map(st => st.name).join(', ')}`;
+        // Sanitize outputs
+        const sanitizedName = sanitizeText(output.firstDailyMission.firstDailyMissionName, 100);
+        const sanitizedDescription = sanitizeText(output.firstDailyMission.firstDailyMissionDescription, 500);
+        const sanitizedResources = sanitizeUrls(output.firstDailyMission.firstDailyMissionLearningResources);
+
+        const missionTextForRewards = `${sanitizedName}: ${output.firstDailyMission.firstDailyMissionSubTasks.map(st => st.name).join(', ')}`;
         const rewards = await generateMissionRewards({
             missionText: missionTextForRewards,
             userLevel: input.userLevel,
@@ -106,12 +125,12 @@ A sua tarefa é:
 
         return {
             progression: output.progression,
-            firstDailyMissionName: output.firstDailyMission.firstDailyMissionName,
-            firstDailyMissionDescription: output.firstDailyMission.firstDailyMissionDescription,
+            firstDailyMissionName: sanitizedName,
+            firstDailyMissionDescription: sanitizedDescription,
             firstDailyMissionXp: rewards.xp,
             firstDailyMissionFragments: rewards.fragments,
             firstDailyMissionSubTasks: output.firstDailyMission.firstDailyMissionSubTasks.map(st => ({...st, current: 0 })),
-            firstDailyMissionLearningResources: output.firstDailyMission.firstDailyMissionLearningResources || [],
+            firstDailyMissionLearningResources: sanitizedResources,
             fallback: false,
         };
     } catch (error) {

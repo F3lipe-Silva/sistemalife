@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { retryWithBackoff } from '@/lib/ai-utils';
 
 const GenerateMissionRewardsInputSchema = z.object({
   missionText: z.string().describe("O texto completo da missão (nome e descrição)."),
@@ -59,25 +60,43 @@ const generateMissionRewardsFlow = ai.defineFlow(
         Responda APENAS com um número de 1 a 10 para a dificuldade.
     `;
 
-    const {output: difficultyScoreText} = await ai.generate({
-      prompt,
-      model: 'googleai/gemini-2.5-flash',
-    });
+    try {
+      const {output: difficultyScoreText} = await retryWithBackoff(
+        async () => await ai.generate({
+          prompt,
+          model: 'googleai/gemini-2.5-flash',
+        }),
+        3,
+        1000,
+        'Generate Mission Rewards'
+      );
 
-    const difficultyScore = parseInt(difficultyScoreText, 10) || 4; // Padrão para 4 se a análise falhar
+      const difficultyScore = parseInt(difficultyScoreText, 10) || 4; // Padrão para 4 se a análise falhar
 
-    // Fórmula para calcular o XP
-    const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + (userLevel * levelMultiplier);
-    const finalXP = Math.round(Math.max(10, Math.min(100, calculatedXP)));
-    
-    // Fórmula para calcular os fragmentos
-    const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier);
-    const finalFragments = Math.round(Math.max(1, Math.min(20, calculatedFragments)));
+      // Fórmula para calcular o XP
+      const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + (userLevel * levelMultiplier);
+      const finalXP = Math.round(Math.max(10, Math.min(100, calculatedXP)));
+      
+      // Fórmula para calcular os fragmentos
+      const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier);
+      const finalFragments = Math.round(Math.max(1, Math.min(20, calculatedFragments)));
 
-
-    return {
-      xp: finalXP,
-      fragments: finalFragments
-    };
+      return {
+        xp: finalXP,
+        fragments: finalFragments
+      };
+    } catch (error) {
+      console.error('Failed to generate mission rewards with AI, using fallback calculation:', error);
+      
+      // Fallback: estimate based on mission text length and user level
+      const missionComplexity = Math.min(10, Math.max(3, Math.floor(missionText.length / 20)));
+      const fallbackXP = Math.round(baseXP + (missionComplexity * difficultyMultiplier) + (userLevel * levelMultiplier));
+      const fallbackFragments = Math.round(baseFragments + (missionComplexity * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier));
+      
+      return {
+        xp: Math.max(10, Math.min(100, fallbackXP)),
+        fragments: Math.max(1, Math.min(20, fallbackFragments))
+      };
+    }
   }
 );
