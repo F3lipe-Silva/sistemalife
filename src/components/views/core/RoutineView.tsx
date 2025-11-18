@@ -97,7 +97,7 @@ const AgendaView = ({
                     <div className={cn("", isMobile ? "space-y-2" : "space-y-3")}>
                         {missions.length > 0 ? (
                             missions.map(mission => (
-                                <Collapsible key={mission.id} className={cn("bg-card/60 border border-border rounded-lg", isMobile ? "" : "")}>
+                                <Collapsible key={mission.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border rounded-lg hover:shadow-lg transition-all duration-200", isMobile ? "" : "")}>
                                     <CollapsibleTrigger className={cn("w-full text-left", isMobile ? "p-2" : "p-3")}>
                                          <div className="flex justify-between items-center gap-4">
                                             <CardTitle className={cn("flex-1", isMobile ? "text-sm" : "text-base")}>{mission.nome}</CardTitle>
@@ -159,7 +159,7 @@ const AgendaView = ({
                             return (
                                 <div
                                     key={item.id}
-                                    className="absolute left-16 right-0 bg-primary/20 border-l-4 border-primary rounded-r-lg cursor-pointer"
+                                    className="absolute left-16 right-0 bg-gradient-to-r from-primary/30 to-primary/10 border-l-4 border-primary rounded-r-lg cursor-pointer hover:shadow-lg hover:from-primary/40 hover:to-primary/20 transition-all duration-200"
                                     style={{ top: `${top}px`, height: `${height}px` }}
                                     onClick={() => onEditItem(item)}
                                 >
@@ -213,7 +213,7 @@ const ListView = ({
                         {routineItems.map(item => (
                             <div key={item.id} className={cn("relative", isMobile ? "pl-4" : "pl-6")}>
                                 <div className={cn("absolute bg-primary rounded-full border-2 border-background", isMobile ? "-left-1 top-1 h-2 w-2" : "-left-1.5 top-1 h-3 w-3")}></div>
-                                <div className={cn("bg-card/80 border border-border rounded-lg flex flex-col justify-between gap-2", isMobile ? "p-2" : "p-3 sm:flex-row sm:items-start")}>
+                                <div className={cn("bg-gradient-to-br from-card/90 to-card/50 border border-border rounded-lg flex flex-col justify-between gap-2 hover:shadow-lg transition-all duration-200", isMobile ? "p-2" : "p-3 sm:flex-row sm:items-start")}>
                                     <div className={cn("", isMobile ? "flex-col gap-y-1" : "flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1")}>
                                         <span className={cn("font-mono text-primary", isMobile ? "text-sm" : "text-base")}>{item.start_time} - {item.end_time}</span>
                                         <p className={cn("text-card-foreground break-all", isMobile ? "text-sm" : "text-base")}>{item.activity}</p>

@@ -848,7 +848,7 @@ const MissionsView = () => {
         
         if (activeDailyMission) {
             return (
-                <div className={cn("rounded-lg animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-gradient-to-br from-secondary/50 to-secondary/30 border-l-4 border-primary overflow-x-hidden shadow-sm hover:shadow-md transition-shadow", isMobile ? "p-2" : "p-2 md:p-4")}>
+                <div className={cn("rounded-lg animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-gradient-to-br from-secondary/60 to-secondary/20 border-l-4 border-primary overflow-x-hidden shadow-md hover:shadow-xl transition-all hover:scale-[1.01]", isMobile ? "p-2" : "p-2 md:p-4")}>
                     <div className={cn("flex flex-col gap-2", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
                         <div className="flex-grow min-w-0">
                             <div className="flex items-start gap-2">
@@ -989,29 +989,6 @@ const MissionsView = () => {
                             {isPanelVisible ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
                             {isPanelVisible ? 'Ocultar Painel' : 'Mostrar Painel'}
                         </Button>
-                        <Button size="sm" onClick={() => setDialogState({open: true, mission: null, isManual: true})}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Criar Missão Manual
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => {
-                                if (generatePendingDailyMissions && !generatingMission) {
-                                    generatePendingDailyMissions();
-                                } else if (generatingMission) {
-                                    toast({ 
-                                        variant: 'destructive', 
-                                        title: 'Geração em Andamento', 
-                                        description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
-                                    });
-                                }
-                            }}
-                            disabled={!!generatingMission}
-                        >
-                            <Sparkles className={cn("mr-2", isMobile ? "h-4 w-4" : "h-4 w-4")} />
-                            {generatingMission ? 'Gerando...' : 'Gerar Missões'}
-                        </Button>
                     </div>
                 </div>
 
@@ -1026,34 +1003,6 @@ const MissionsView = () => {
                         >
                             {isPanelVisible ? <EyeOff className="mr-1 h-3 w-3" /> : <Eye className="mr-1 h-3 w-3" />}
                             {isPanelVisible ? 'Ocultar' : 'Stats'}
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            onClick={() => setDialogState({open: true, mission: null, isManual: true})}
-                            className="flex-shrink-0 text-xs h-8"
-                        >
-                            <PlusCircle className="mr-1 h-3 w-3" />
-                            Nova Missão
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => {
-                                if (generatePendingDailyMissions && !generatingMission) {
-                                    generatePendingDailyMissions();
-                                } else if (generatingMission) {
-                                    toast({ 
-                                        variant: 'destructive', 
-                                        title: 'Geração em Andamento', 
-                                        description: 'Aguarde a conclusão da geração atual.' 
-                                    });
-                                }
-                            }}
-                            disabled={!!generatingMission}
-                            className="flex-shrink-0 text-xs h-8"
-                        >
-                            <Sparkles className="mr-1 h-3 w-3" />
-                            {generatingMission ? 'Gerando...' : 'Gerar'}
                         </Button>
                     </div>
                 )}
@@ -1168,7 +1117,7 @@ const MissionsView = () => {
                         };
                         
                         return (
-                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-card/60 border border-border rounded-lg data-[state=open]:border-primary/50 transition-all hover:shadow-lg relative group", isMobile ? "p-1 mx-0" : "mx-0", priorityMissions.has(mission.id) && "border-yellow-500/50 shadow-yellow-500/20")}>
+                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border rounded-lg data-[state=open]:border-primary/50 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] relative group", isMobile ? "p-1 mx-0" : "mx-0", priorityMissions.has(mission.id) && "border-yellow-500/50 shadow-yellow-500/30 shadow-lg")}>
                                 {priorityMissions.has(mission.id) && (
                                     <div className="absolute -top-2 -right-2 z-10">
                                         <div className="bg-yellow-500 rounded-full p-1 shadow-lg">
@@ -1298,8 +1247,8 @@ const MissionsView = () => {
                                 ) : wasCompletedToday ? (
                                     <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 rounded-lg flex flex-col items-center justify-center p-4">
                                         <Timer className={cn("text-cyan-400 mx-auto animate-pulse", isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4")}/>
-                                        <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Nova Missão em</p>
-                                        <p className={cn("font-mono text-cyan-400 font-bold tracking-wider", isMobile ? "text-2xl" : "text-4xl")}>{timeUntilMidnight}</p>
+                                        <p className={cn("font-cinzel font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Nova Missão em</p>
+                                        <p className={cn("font-cinzel text-cyan-400 font-bold tracking-wider", isMobile ? "text-2xl" : "text-4xl")}>{timeUntilMidnight}</p>
                                         <p className={cn("text-muted-foreground mt-2", isMobile ? "text-xs" : "text-xs")}>Missão concluída hoje!</p>
                                     </div>
                                 ) : null}
@@ -1422,3 +1371,4 @@ const MissionsView = () => {
 };
 
 export default memo(MissionsView);
+

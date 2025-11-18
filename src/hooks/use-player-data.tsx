@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useReducer, useRef } from 'react';
@@ -15,6 +13,7 @@ import { differenceInCalendarDays, isToday, endOfDay, parseISO } from 'date-fns'
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
 import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
+import { generateStorySegment } from '@/ai/flows/generate-story-segment';
 import { debounce, AsyncQueue } from '@/lib/ai-utils';
 
 
@@ -26,7 +25,33 @@ interface SubTask {
   current: number;
 }
 
-interface DailyMission {
+interface StoryChoice {
+  id: string;
+  text: string;
+  consequenceHint: string;
+}
+
+interface StorySegment {
+  id: string;
+  title: string;
+  content: string;
+  choices: StoryChoice[];
+  selectedChoiceId?: string;
+  timestamp: string;
+  genre: string;
+}
+
+interface StoryState {
+  segments: StorySegment[];
+  summary: string;
+  currentArc: string;
+  isGenerating: boolean;
+  preferences?: {
+    allowNSFW?: boolean;
+    preferredGenre?: string | null;
+  };
+  canMakeChoice?: boolean;
+}interface DailyMission {
   id: string | number;
   nome: string;
   descricao: string;
@@ -211,6 +236,7 @@ interface Profile {
   last_known_level?: number;
   routineTemplates?: Record<string, any>; // Adicionando a propriedade routineTemplates ao tipo Profile
   last_hp_regen_date?: string;
+  story_state?: StoryState;
 }
 
 interface Guild {
@@ -272,8 +298,48 @@ interface StreakMilestones {
 
 interface StatMapping {
   [key: string]: string[];
-}
+};
 
+const DEFAULT_STORY_SUMMARY = "O Caçador acabou de despertar o Sistema.";
+const DEFAULT_STORY_ARC = "O Despertar";
+
+const resolveStoryState = (storyState?: StoryState): StoryState => {
+    const base = storyState
+        ? { ...storyState }
+        : {
+            segments: [],
+            summary: DEFAULT_STORY_SUMMARY,
+            currentArc: DEFAULT_STORY_ARC,
+            isGenerating: false,
+        };
+
+    return {
+        ...base,
+        segments: base.segments || [],
+        summary: base.summary || DEFAULT_STORY_SUMMARY,
+        currentArc: base.currentArc || DEFAULT_STORY_ARC,
+        isGenerating: base.isGenerating ?? false,
+        preferences: {
+            allowNSFW: base.preferences?.allowNSFW ?? false,
+            preferredGenre: base.preferences?.preferredGenre || null,
+        },
+        canMakeChoice: base.canMakeChoice ?? false,
+    };
+};
+
+const getXPForLevel = (level: number): number => {
+    if (level <= 1) return 0;
+    
+    let totalXP = 0;
+    let currentXPForNextLevel = 100; // XP necessário para ir do nível 1 para o 2
+    
+    for (let i = 2; i <= level; i++) {
+        totalXP += currentXPForNextLevel;
+        currentXPForNextLevel = Math.floor(currentXPForNextLevel * 1.5);
+    }
+    
+    return totalXP;
+};
 
 const getProfileRank = (level: number): { rank: string; title: string } => {
     if (level <= 5) return { rank: 'F', title: 'Novato' };
@@ -428,6 +494,13 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
             return {
                 ...state,
                 skills: state.skills.map((s: Skill) => s.id === skillId ? { ...s, ...updates } : s)
+            };
+        }
+        case 'SET_STORY_STATE': {
+            if (!state.profile) return state;
+            return {
+                ...state,
+                profile: { ...state.profile, story_state: action.payload }
             };
         }
         default:
@@ -803,6 +876,101 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     
     }, [state.profile, state.metas, state.missions, persistData, toast]);
 
+    const generateStoryFromMission = useCallback(async (missionContext: string, preferredGenre?: string, isNSFW?: boolean) => {
+        if (!state.profile) return;
+        
+        const currentStoryState = resolveStoryState(state.profile.story_state);
+
+        if (currentStoryState.isGenerating) return;
+
+        // Prevent accumulation of choices
+        if (currentStoryState.canMakeChoice) {
+            toast({
+                variant: 'destructive',
+                title: "Escolha Pendente",
+                description: "Você tem uma escolha aguardando na sua história. Faça a escolha antes de continuar.",
+            });
+            return;
+        }
+
+        const normalizedGenre = preferredGenre?.trim()?.length ? preferredGenre.trim() : currentStoryState.preferences?.preferredGenre;
+        const allowNSFW = typeof isNSFW === 'boolean' ? isNSFW : currentStoryState.preferences?.allowNSFW ?? false;
+        const updatedPreferences = {
+            allowNSFW,
+            preferredGenre: normalizedGenre,
+        };
+
+        // Set generating state
+        const generatingState = { ...currentStoryState, isGenerating: true, preferences: updatedPreferences, canMakeChoice: false };
+        dispatch({ type: 'SET_STORY_STATE', payload: generatingState });
+
+        try {
+            // Prepare context
+            const userProfileSummary = `Nome: ${state.profile.nome_utilizador}, Nível: ${state.profile.nivel}, Rank: ${getProfileRank(state.profile.nivel).rank}`;
+            
+            const recentMissions = state.missions
+                .filter(m => m.concluido)
+                .slice(0, 3)
+                .map(m => m.nome)
+                .join(", ");
+            
+            const recentEvents = `Missão recém completada: "${missionContext}". Missões recentes: ${recentMissions || "Nenhuma"}. Nível atual: ${state.profile.nivel}.`;
+            
+            let userChoiceText = "";
+            if (currentStoryState.segments.length > 0) {
+                const lastSegment = currentStoryState.segments[currentStoryState.segments.length - 1];
+                if (lastSegment.selectedChoiceId) {
+                    const choice = lastSegment.choices.find(c => c.id === lastSegment.selectedChoiceId);
+                    if (choice) {
+                        userChoiceText = choice.text;
+                    }
+                } else {
+                    // If no choice was made, we can assume the mission completion IS the choice or action
+                    userChoiceText = `O utilizador não fez uma escolha explícita, mas completou a missão "${missionContext}".`;
+                }
+            }
+
+            const result = await generateStorySegment({
+                userProfile: userProfileSummary,
+                recentEvents: recentEvents,
+                storyContext: currentStoryState.summary,
+                userChoice: userChoiceText,
+                preferredGenre: normalizedGenre || undefined,
+                isNSFW: allowNSFW
+            });
+
+            const newSegment: StorySegment = {
+                id: Date.now().toString(),
+                title: result.title,
+                content: result.content,
+                choices: result.choices,
+                timestamp: new Date().toISOString(),
+                genre: result.genre
+            };
+
+            const newStoryState: StoryState = {
+                ...generatingState,
+                segments: [...currentStoryState.segments, newSegment],
+                summary: result.newSummary,
+                currentArc: currentStoryState.currentArc, // Could be updated by AI too if we wanted
+                isGenerating: false,
+                preferences: updatedPreferences,
+                canMakeChoice: true,
+            };
+
+            dispatch({ type: 'SET_STORY_STATE', payload: newStoryState });
+            await persistData('profile', { ...state.profile, story_state: newStoryState });
+            
+            toast({ title: "Novo Capítulo da História!", description: `"${result.title}" está disponível.` });
+            toast({ title: "Escolha Disponível!", description: "Uma decisão aguarda na sua jornada épica." });
+
+        } catch (error) {
+            console.error("Error generating story:", error);
+            toast({ variant: 'destructive', title: "Erro na História", description: "Não foi possível gerar o próximo capítulo." });
+            dispatch({ type: 'SET_STORY_STATE', payload: { ...currentStoryState, isGenerating: false } });
+        }
+    }, [state.profile, state.missions, persistData, toast]);
+
     const completeMission = useCallback(async ({ rankedMissionId, dailyMissionId, subTask, amount, feedback: feedbackForNextMission }: CompleteMissionParams) => {
         dispatch({ type: 'UPDATE_SUB_TASK_PROGRESS', payload: { rankedMissionId, dailyMissionId, subTaskName: subTask.name, amount } });
         
@@ -1031,7 +1199,12 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('missions', finalStateAfterCompletion.missions);
         await persistData('skills', finalStateAfterCompletion.skills);
 
-    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder]);
+        // Trigger Story Generation
+        // We use the mission name as context. 
+        // Note: We don't await this to avoid blocking the UI response for mission completion
+        generateStoryFromMission(tempDailyMission.nome).catch((err: unknown) => console.error("Failed to auto-generate story:", err));
+
+    }, [state, persistData, toast, handleShowStreakBonusNotification, handleLevelUp, handleShowSkillUpNotification, handleShowNewEpicMissionNotification, handleShowGoalCompletedNotification, rankOrder, generateStoryFromMission]);
     
     const adjustDailyMission = useCallback(async (rankedMissionId: string | number, dailyMission: DailyMission, feedback: 'too_easy' | 'too_hard') => {
         if (!state.profile || !state.missions) return;
@@ -1528,6 +1701,92 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         toast({ title: 'Evento Mundial de Teste Ativado!', description: `"${eventToActivate.name}" começou!`});
     }, [state.worldEvents, persistData, toast]);
 
+    const handleMakeStoryChoice = useCallback(async (choiceId: string) => {
+        if (!state.profile) return;
+        
+        const currentStoryState = resolveStoryState(state.profile.story_state);
+
+        if (currentStoryState.segments.length === 0) return;
+
+        const lastSegment = currentStoryState.segments[currentStoryState.segments.length - 1];
+        if (!currentStoryState.canMakeChoice) {
+            toast({
+                variant: 'destructive',
+                title: "Complete uma missão primeiro",
+                description: "As escolhas só são liberadas após concluir uma missão recente.",
+            });
+            return;
+        }
+        
+        // If already chosen, do nothing
+        if (lastSegment.selectedChoiceId) return;
+
+        const choice = lastSegment.choices.find(c => c.id === choiceId);
+        if (!choice) return;
+
+        // Update the last segment with the selected choice
+        const updatedSegments = [...currentStoryState.segments];
+        updatedSegments[updatedSegments.length - 1] = {
+            ...lastSegment,
+            selectedChoiceId: choiceId
+        };
+
+        const newStoryState: StoryState = {
+            ...currentStoryState,
+            segments: updatedSegments,
+            canMakeChoice: false,
+        };
+
+        dispatch({ type: 'SET_STORY_STATE', payload: newStoryState });
+        await persistData('profile', { ...state.profile, story_state: newStoryState });
+        
+        toast({ title: "Escolha Registada", description: "Complete a próxima missão para ver as consequências." });
+    }, [state.profile, persistData, toast]);
+
+    const updateStoryPreferences = useCallback(async (prefs: { preferredGenre?: string; allowNSFW?: boolean }) => {
+        if (!state.profile) return;
+
+        const currentStoryState = resolveStoryState(state.profile.story_state);
+        const normalizedGenre = prefs.preferredGenre !== undefined
+            ? (prefs.preferredGenre.trim() || null)
+            : currentStoryState.preferences?.preferredGenre;
+        const allowNSFW = prefs.allowNSFW !== undefined
+            ? prefs.allowNSFW
+            : currentStoryState.preferences?.allowNSFW ?? false;
+
+        const newStoryState: StoryState = {
+            ...currentStoryState,
+            preferences: {
+                allowNSFW,
+                preferredGenre: normalizedGenre,
+            },
+        };
+
+        dispatch({ type: 'SET_STORY_STATE', payload: newStoryState });
+        await persistData('profile', { ...state.profile, story_state: newStoryState });
+    }, [state.profile, persistData]);
+
+    const resetStory = useCallback(async () => {
+        if (!state.profile) return;
+
+        const resetStoryState: StoryState = {
+            segments: [],
+            summary: DEFAULT_STORY_SUMMARY,
+            currentArc: DEFAULT_STORY_ARC,
+            isGenerating: false,
+            preferences: {
+                allowNSFW: false,
+                preferredGenre: null,
+            },
+            canMakeChoice: false,
+        };
+
+        dispatch({ type: 'SET_STORY_STATE', payload: resetStoryState });
+        await persistData('profile', { ...state.profile, story_state: resetStoryState });
+
+        toast({ title: "História Resetada", description: "Sua jornada foi reiniciada." });
+    }, [state.profile, persistData, toast]);
+
     // Skill Decay & Tower/Dungeon Lives & HP Reset Logic
     useEffect(() => {
         if (!state.isDataLoaded) return;
@@ -1551,8 +1810,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 const daysInactive = differenceInCalendarDays(now, lastActivity);
 
                 if (daysInactive > decayDays) { 
-                    const xpToLose = 5;
-                    if (skill.xp_atual > 0) {
+                    const daysBeyondDecay = daysInactive - decayDays;
+                    const xpToLose = daysBeyondDecay * 5;
+                    if (skill.xp_atual > 0 && xpToLose > 0) {
                         const newXp = Math.max(0, skill.xp_atual - xpToLose);
                         skillsToUpdate.push({ ...skill, xp_atual: newXp, ultima_atividade_em: now.toISOString() });
                         decayedSkills.push({ name: skill.nome, xpLost: xpToLose });
@@ -1563,8 +1823,8 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
             });
 
             if (skillsToUpdate.length > 0) {
-                const updatedSkills = state.skills.map(s => skillsToUpdate.find(u => u.id === s.id) || s);
-                dispatch({ type: 'SET_SKILLS', payload: updatedSkills });
+                const skillsWithDecay = state.skills.map((s: Skill) => skillsToUpdate.find(u => u.id === s.id) || s);
+                dispatch({ type: 'SET_SKILLS', payload: skillsWithDecay });
                 handleShowSkillDecayNotification(decayedSkills);
             }
             if (atRiskSkills.length > 0) {
@@ -1593,6 +1853,47 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 updatedProfile.last_hp_regen_date = now.toISOString();
                 profileChanged = true;
             }
+
+            // Daily HP Penalty for Absence
+            const lastLogin = new Date(updatedProfile.ultimo_login_em || now);
+            const daysSinceLastLogin = differenceInCalendarDays(now, lastLogin);
+            if (daysSinceLastLogin > 1) { // Start penalty after 1 day
+                const penaltyDays = daysSinceLastLogin - 1;
+                const hpToLose = penaltyDays * 10; // 10 HP per day absent
+                if (hpToLose > 0 && updatedProfile.hp_atual > 0) {
+                    const originalHP = updatedProfile.hp_atual;
+                    updatedProfile.hp_atual = Math.max(0, updatedProfile.hp_atual - hpToLose);
+
+                    // Level Down Penalty: If HP reaches 0, lose one level
+                    if (updatedProfile.hp_atual === 0 && updatedProfile.nivel > 1) {
+                        const previousLevel = updatedProfile.nivel;
+                        updatedProfile.nivel = Math.max(1, updatedProfile.nivel - 1);
+
+                        // Calculate XP loss for level down (lose 50% of current level XP)
+                        const xpForPreviousLevel = getXPForLevel(previousLevel - 1);
+                        const xpForCurrentLevel = getXPForLevel(previousLevel);
+                        const xpInCurrentLevel = updatedProfile.xp_atual - xpForPreviousLevel;
+                        const xpToLoseForLevel = Math.floor(xpInCurrentLevel * 0.5);
+
+                        updatedProfile.xp_atual = Math.max(xpForPreviousLevel, updatedProfile.xp_atual - xpToLoseForLevel);
+
+                        toast({
+                            variant: 'destructive',
+                            title: 'PUNIÇÃO SUPREMA!',
+                            description: `Você perdeu toda a vida por ausência prolongada! Nível reduzido de ${previousLevel} para ${updatedProfile.nivel}.`
+                        });
+                    } else {
+                        toast({
+                            variant: 'destructive',
+                            title: 'Penalidade por Ausência!',
+                            description: `Você ficou ${daysSinceLastLogin} dias sem acessar o app e perdeu ${hpToLose} de vida.`
+                        });
+                    }
+                    profileChanged = true;
+                }
+            }
+            // Update last login to now
+            updatedProfile.ultimo_login_em = now.toISOString();
 
 
             if (profileChanged) {
@@ -1807,6 +2108,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         setMissionFeedback,
         generatePendingDailyMissions,
         checkAndApplyTowerRewards,
+        handleGenerateStory: generateStoryFromMission, // Expose as handleGenerateStory for backward compatibility if needed, but UI should use handleMakeStoryChoice
+        handleMakeStoryChoice,
+        updateStoryPreferences,
+        resetStory,
         addDailyMission: (payload: { rankedMissionId: string | number; newDailyMission: DailyMission; }) => dispatch({ type: 'ADD_DAILY_MISSION', payload }),
         setGeneratingMission: (id: string | number | null) => dispatch({ type: 'SET_GENERATING_MISSION', payload: id }),
     };
@@ -1827,16 +2132,15 @@ export const usePlayerDataContext = () => {
 };
 
 
-    
-    
-
-    
 
 
 
 
 
 
-      
 
-    
+
+
+
+
+

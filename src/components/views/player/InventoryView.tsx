@@ -30,7 +30,15 @@ const InventoryViewComponent = () => {
     const isMobile = useIsMobile();
 
     if (!profile) {
-        return <div>A carregar perfil...</div>;
+        return (
+            <div className="h-full flex items-center justify-center">
+                <div className="animate-pulse flex flex-col items-center">
+                    <Backpack className="w-16 h-16 text-muted-foreground mb-4 animate-bounce" />
+                    <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-48"></div>
+                </div>
+            </div>
+        );
     }
 
     const inventoryItems = (profile.inventory || []).map((invItem: any) => {
@@ -119,16 +127,22 @@ const InventoryViewComponent = () => {
 
     return (
         <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
-            <div className={cn("mb-4", isMobile ? "mb-4" : "mb-8")}>
-                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Inventário</h1>
-                <p className={cn("text-muted-foreground max-w-3xl", isMobile ? "mt-1 text-sm" : "mt-2")}>
+            {/* Header com gradientes e animações */}
+            <div className={cn("mb-4 animate-fade-in", isMobile ? "mb-4" : "mb-8")}>
+                <h1 className={cn(
+                    "font-bold text-primary font-cinzel tracking-wider bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent",
+                    isMobile ? "text-2xl" : "text-3xl"
+                )}>
+                    Inventário
+                </h1>
+                <p className={cn("text-muted-foreground max-w-3xl animate-slide-up", isMobile ? "mt-1 text-sm" : "mt-2")}>
                     Estes são os itens que você adquiriu na sua jornada. Use-os com sabedoria.
                 </p>
             </div>
 
             {inventoryItems.length > 0 ? (
-                 <div className={cn(
-                    "grid gap-4", 
+                <div className={cn(
+                    "grid gap-4 animate-fade-in", 
                     isMobile 
                         ? "grid-cols-1 sm:grid-cols-2" 
                         : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -140,15 +154,28 @@ const InventoryViewComponent = () => {
                         const timeAgo = formatDistanceToNowStrict(purchaseDate, { addSuffix: true, locale: ptBR });
                         const isEffectActive = profile.active_effects?.some((eff: any) => eff.itemId === item.id);
                         const isCosmetic = item.category === 'Cosméticos';
+                        const isEquipped = profile.equipped_items?.some((eq: any) => eq.itemId === item.id);
 
                         return (
                             <Card 
                                 key={item.instanceId}
-                                className={cn("bg-card/60 border-border/80 flex flex-col", isEffectActive && "border-primary/50", isMobile ? "p-2" : "p-0")}
+                                className={cn(
+                                    "bg-gradient-to-br from-card/80 to-card/40 border-border/80 flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.02] cursor-pointer",
+                                    isEffectActive && "shadow-lg shadow-primary/20 border-primary/50",
+                                    isEquipped && "ring-2 ring-accent/50 bg-gradient-to-br from-accent/20 to-accent/10",
+                                    isMobile ? "p-2" : "p-0"
+                                )}
                             >
                                 <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-6")}>
-                                     <div className={cn("rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0", isMobile ? "w-12 h-12" : "w-14 h-14")}>
-                                        <Icon className={isMobile ? "w-6 h-6" : "w-8 h-8"}/>
+                                    <div className={cn(
+                                        "rounded-lg bg-secondary text-primary flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:scale-110",
+                                        isMobile ? "w-12 h-12" : "w-14 h-14"
+                                    )}>
+                                        <Icon className={cn(
+                                            "transition-all duration-300",
+                                            isEffectActive ? "animate-pulse text-primary" : "",
+                                            isMobile ? "w-6 h-6" : "w-8 h-8"
+                                        )}/>
                                     </div>
                                     <div className="flex-1">
                                         <CardTitle className={cn("text-foreground", isMobile ? "text-base" : "text-lg")}>
@@ -163,17 +190,29 @@ const InventoryViewComponent = () => {
                                     </p>
                                 </CardContent>
                                 <CardFooter className={isMobile ? "p-3 pt-0" : "p-6 pt-0"}>
-                                     {isCosmetic ? (
-                                        <Button className={cn("w-full", isMobile ? "h-8 text-sm" : "")} onClick={() => handleEquipItem(item)}>
-                                            Equipar
+                                    {isCosmetic ? (
+                                        <Button 
+                                            className={cn(
+                                                "w-full transition-all duration-200 hover:scale-105 hover:shadow-md",
+                                                isEquipped && "bg-accent text-accent-foreground",
+                                                isMobile ? "h-8 text-sm" : ""
+                                            )} 
+                                            onClick={() => handleEquipItem(item)}
+                                            disabled={isEquipped}
+                                        >
+                                            {isEquipped ? "Equipado" : "Equipar"}
                                         </Button>
                                     ) : (
                                         <Button 
-                                            className={cn("w-full", isMobile ? "h-8 text-sm" : "")} 
+                                            className={cn(
+                                                "w-full transition-all duration-200 hover:scale-105 hover:shadow-md",
+                                                isEffectActive && "bg-primary text-primary-foreground",
+                                                isMobile ? "h-8 text-sm" : ""
+                                            )} 
                                             onClick={() => handleUseItem(item)}
                                             disabled={isEffectActive}
                                         >
-                                            {isEffectActive ? (isMobile ? "Efeito Ativo" : "Efeito Ativo") : (isMobile ? "Usar Item" : "Usar Item")}
+                                            {isEffectActive ? "Efeito Ativo" : "Usar Item"}
                                         </Button>
                                     )}
                                 </CardFooter>
@@ -182,8 +221,11 @@ const InventoryViewComponent = () => {
                     })}
                 </div>
             ) : (
-                <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg", isMobile ? "h-48 p-4" : "h-64 p-8")}>
-                    <Backpack className={isMobile ? "h-12 w-12 mb-3" : "h-16 w-16 mb-4"} />
+                <div className={cn(
+                    "flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg bg-gradient-to-br from-muted/20 to-muted/10 animate-fade-in",
+                    isMobile ? "h-48 p-4" : "h-64 p-8"
+                )}>
+                    <Backpack className={cn("animate-bounce", isMobile ? "h-12 w-12 mb-3" : "h-16 w-16 mb-4")} />
                     <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>Inventário Vazio</p>
                     <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Visite a Loja para adquirir itens e melhorar a sua jornada.</p>
                 </div>

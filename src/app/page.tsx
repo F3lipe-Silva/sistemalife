@@ -28,6 +28,7 @@ import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
 import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
 import DungeonLobbyView from '@/components/views/gamification/DungeonLobbyView';
+import { StoryView } from '@/components/views/core/StoryView';
 
 const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNotificationPrompt').then(mod => mod.PushNotificationPrompt), { ssr: false });
 
@@ -133,6 +134,7 @@ export default function App() {
               <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" inSheet={inSheet}/>
               <NavItem icon={BookOpen} label="Metas" page="metas" inSheet={inSheet} />
               <NavItem icon={Target} label="Missões" page="missions" inSheet={inSheet}/>
+              <NavItem icon={ScrollText} label="História" page="story" inSheet={inSheet}/>
               <NavItem icon={TowerControl} label="Torre" page="tower" inSheet={inSheet}/>
               <NavItem icon={KeySquare} label="Masmorra" page="dungeon" inSheet={inSheet}/>
               <NavItem icon={BarChart3} label="Habilidades" page="skills" inSheet={inSheet}/>
@@ -238,6 +240,7 @@ export default function App() {
       'dashboard': <DashboardView />,
       'metas': <MetasView />,
       'missions': <MissionsView />,
+      'story': <StoryView />,
       'skills': <SkillsView onEnterDungeon={handleEnterDungeon} />,
       'class': <ClassView />,
       'routine': <RoutineView />,
@@ -370,6 +373,18 @@ export default function App() {
                     >
                       <Target className="h-4 w-4" />
                       <span className="text-sm">Missões</span>
+                    </button>
+                  </DropdownMenuPrimitive.Item>
+                  <DropdownMenuPrimitive.Item asChild>
+                    <button
+                      onClick={() => handleNavigate('story')}
+                      className={cn(
+                        'w-full flex items-center space-x-3 px-4 py-2 text-left cursor-pointer',
+                        currentPage === 'story' ? 'bg-primary/20 text-primary' : 'text-card-foreground hover:bg-secondary'
+                      )}
+                    >
+                      <ScrollText className="h-4 w-4" />
+                      <span className="text-sm">História</span>
                     </button>
                   </DropdownMenuPrimitive.Item>
                 </DropdownMenu>

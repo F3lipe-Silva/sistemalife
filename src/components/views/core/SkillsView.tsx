@@ -153,10 +153,10 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
 
                     return(
                     <div key={skill.id} className={cn(
-                        "bg-card/60 border border-l-4 rounded-lg transition-all",
+                        "bg-gradient-to-br from-card/80 to-card/40 border border-l-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01]",
                         isMobile ? "p-2" : "p-4",
-                        isDecaying ? "border-purple-600 animate-pulse-slow" : getSkillColor(skill.categoria),
-                        isAtRisk && "border-yellow-500"
+                        isDecaying ? "border-purple-600 animate-pulse-slow shadow-purple-500/20" : getSkillColor(skill.categoria),
+                        isAtRisk && "border-yellow-500 shadow-yellow-500/20"
                     )}>
                         <div className={cn("flex flex-col gap-3", isMobile ? "sm:flex-row sm:items-start" : "sm:flex-row sm:items-start")}>
                             <div className="flex-1 min-w-0">
@@ -247,9 +247,9 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
                                 </div>
                                 <div className={cn("w-full bg-secondary rounded-full", isMobile ? "h-2" : "h-2.5")}>
                                     <div className={cn(
-                                        "rounded-full transition-all duration-500",
+                                        "rounded-full transition-all duration-500 shadow-inner",
                                         isMobile ? "h-2" : "h-2.5",
-                                        isDecaying ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-primary to-cyan-400"
+                                        isDecaying ? "bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600" : "bg-gradient-to-r from-primary via-primary/80 to-cyan-400"
                                      )} style={{ width: `${skillProgress}%` }}></div>
                                 </div>
                             </div>
