@@ -69,40 +69,40 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Sair da Masmorra
                 </Button>
-                 <div className="text-center mb-8">
-                    <div className="inline-block bg-primary/10 p-3 rounded-full border-2 border-primary/20 mb-2">
-                        <KeySquare className="h-8 w-8 text-primary" />
+                 <div className="text-center mb-4 md:mb-8">
+                    <div className="inline-block bg-primary/10 p-2 md:p-3 rounded-full border-2 border-primary/20 mb-2">
+                        <KeySquare className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                     </div>
-                    <h1 className="text-3xl font-bold text-primary font-cinzel tracking-wider">Masmorra: {skill.nome}</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider">Masmorra: {skill.nome}</h1>
+                    <p className="text-muted-foreground mt-1 text-sm md:text-base">
                         Aprimore a sua habilidade com desafios práticos e focados.
                     </p>
                 </div>
             </div>
 
-            <div className="mt-8 flex-grow flex items-center justify-center">
+            <div className="mt-4 md:mt-8 flex-grow flex items-center justify-center">
                 {isLoading ? (
                      <div className="text-center">
-                        <LoaderCircle className="h-16 w-16 text-primary animate-spin mx-auto mb-4"/>
-                        <h2 className="text-2xl font-bold">Processando...</h2>
+                        <LoaderCircle className="h-12 md:h-16 w-12 md:w-16 text-primary animate-spin mx-auto mb-4"/>
+                        <h2 className="text-xl md:text-2xl font-bold">Processando...</h2>
                     </div>
                 ) : challenge ? (
                     <Card className="w-full max-w-3xl">
                         <CardHeader className="text-center">
-                             <CardDescription>Sala {roomLevel}</CardDescription>
+                             <CardDescription className="text-sm md:text-base">Sala {roomLevel}</CardDescription>
                             <div className="flex justify-center items-center gap-4">
-                                <CardTitle>{challenge.challengeName}</CardTitle>
+                                <CardTitle className="text-lg md:text-xl">{challenge.challengeName}</CardTitle>
                             </div>
                              <span className="text-primary font-bold text-sm">+{challenge.xpReward} XP de Habilidade</span>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <p className="text-center text-muted-foreground">{challenge.challengeDescription}</p>
+                            <p className="text-center text-muted-foreground text-sm md:text-base">{challenge.challengeDescription}</p>
                              <div className="pt-4">
                                 <Label htmlFor="challenge-submission" className="font-semibold text-muted-foreground">Prova de Conclusão</Label>
                                 <Textarea
                                     id="challenge-submission"
                                     placeholder={challenge.successCriteria}
-                                    className="mt-2 min-h-[150px] font-mono text-sm"
+                                    className="mt-2 min-h-[100px] md:min-h-[150px] font-mono text-sm"
                                     value={submission}
                                     onChange={(e) => setSubmission(e.target.value)}
                                 />
@@ -132,8 +132,8 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
                 ) : (
                     <div className="text-center">
                         <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold">Sala {roomLevel -1} Concluída!</h2>
-                        <p className="text-muted-foreground mt-2 mb-6">Você está pronto para o próximo desafio.</p>
+                        <h2 className="text-xl md:text-2xl font-bold">Sala {roomLevel -1} Concluída!</h2>
+                        <p className="text-muted-foreground mt-2 mb-6 text-sm md:text-base">Você está pronto para o próximo desafio.</p>
                         <Button onClick={handleGenerateChallenge}>
                             <Sparkles className="mr-2 h-4 w-4" />
                             Ir para a Sala {roomLevel}

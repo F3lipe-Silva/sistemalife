@@ -36,7 +36,7 @@ const GenerateNextDailyMissionOutputSchema = z.object({
     nextMissionDescription: z.string().describe("Uma breve descrição da missão diária, explicando o seu propósito em 1-2 frases."),
     xp: z.number().describe("A quantidade de XP para a nova missão."),
     fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
-    learningResources: z.array(z.string()).optional().describe("Uma lista de até 2 TÓPICOS DE PESQUISA ou termos para procurar (ex: 'Documentação oficial do React sobre hooks', 'Tutorial de flexbox CSS no YouTube') relevantes para a missão, se aplicável."),
+    learningResources: z.array(z.string()).optional().describe("Uma lista de até 2 recursos TEXTUAIS ou artigos para consultar (ex: 'Documentação oficial do React sobre hooks', 'MDN Web Docs sobre Flexbox CSS'). NUNCA sugira vídeos ou conteúdo do YouTube."),
     subTasks: z.array(SubTaskSchema).describe("Uma lista de 1 a 5 sub-tarefas que compõem a missão diária. Estas devem ser as ações concretas que o utilizador irá realizar e acompanhar."),
 });
 export type GenerateNextDailyMissionOutput = z.infer<typeof GenerateNextDailyMissionOutputSchema>;
@@ -91,9 +91,11 @@ Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de 
     *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste").
     *   Defina um **'target'** numérico claro para cada sub-tarefa.
     *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-4.  **Recursos de Aprendizagem (Opcional e IMPORTANTE):** Se a missão envolver conhecimento técnico, forneça até 2 **TÓPICOS DE PESQUISA**, não URLs diretas. Estes devem ser termos que o utilizador possa pesquisar.
-    *   **EXEMPLO BOM:** "Pesquisar: Documentação oficial de React Hooks"
-    *   **EXEMPLO BOM:** "Vídeo sugerido: Pesquisar 'CSS Flexbox tutorial para iniciantes' no YouTube"
+4.  **Recursos de Aprendizagem (Opcional e IMPORTANTE):** Se a missão envolver conhecimento técnico, forneça até 2 **RECURSOS TEXTUAIS** como documentação oficial, artigos ou guias. NUNCA sugira vídeos, tutoriais do YouTube ou conteúdo em vídeo.
+    *   **EXEMPLO BOM:** "Documentação oficial de React Hooks"
+    *   **EXEMPLO BOM:** "MDN Web Docs: CSS Flexbox Guide"
+    *   **EXEMPLO BOM:** "Artigo: Como usar Flexbox no desenvolvimento web"
+    *   **EXEMPLO MAU:** "Tutorial em vídeo de React" (NÃO FAÇA ISTO)
     *   **EXEMPLO MAU:** "https://some-random-blog.com/react-hooks" (NÃO FAÇA ISTO)
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.

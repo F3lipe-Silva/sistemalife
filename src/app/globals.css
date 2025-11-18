@@ -143,4 +143,12 @@
   .animate-slide-up {
     animation: slide-up 0.5s ease-out 0.2s both;
   }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
 }

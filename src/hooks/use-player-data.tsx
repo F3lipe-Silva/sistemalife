@@ -1872,10 +1872,10 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                         // Calculate XP loss for level down (lose 50% of current level XP)
                         const xpForPreviousLevel = getXPForLevel(previousLevel - 1);
                         const xpForCurrentLevel = getXPForLevel(previousLevel);
-                        const xpInCurrentLevel = updatedProfile.xp_atual - xpForPreviousLevel;
-                        const xpToLoseForLevel = Math.floor(xpInCurrentLevel * 0.5);
+                        const xpInCurrentLevel = (updatedProfile.xp || 0) - xpForPreviousLevel;
+                        const xpToLoseForLevel = Math.floor(Math.max(0, xpInCurrentLevel) * 0.5);
 
-                        updatedProfile.xp_atual = Math.max(xpForPreviousLevel, updatedProfile.xp_atual - xpToLoseForLevel);
+                        updatedProfile.xp = Math.max(xpForPreviousLevel, (updatedProfile.xp || 0) - xpToLoseForLevel);
 
                         toast({
                             variant: 'destructive',

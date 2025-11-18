@@ -14,12 +14,12 @@ const DungeonLobbyView = ({ onNavigateToSkills }: { onNavigateToSkills: () => vo
         <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)] -z-10"></div>
             
-            <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center border-4 border-primary/30 mb-4">
-                <KeySquare className="w-10 h-10 text-primary" />
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/20 flex items-center justify-center border-4 border-primary/30 mb-4">
+                <KeySquare className="w-8 h-8 md:w-10 md:h-10 text-primary" />
             </div>
 
-            <h2 className="text-3xl font-bold text-primary font-cinzel mb-4">Masmorra das Habilidades</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-primary font-cinzel mb-4">Masmorra das Habilidades</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-8 text-sm md:text-base">
                 As masmorras são desafios intensivos e focados, projetados para acelerar a maestria de uma habilidade específica. Não há vidas aqui, apenas o seu conhecimento e a sua vontade de evoluir.
             </p>
 

@@ -975,10 +975,10 @@ const MissionsView = () => {
     };
 
     return (
-        <div className={cn("h-full flex flex-col w-full overflow-x-hidden", isMobile ? "p-0" : "p-2 md:p-6", accordionSpacing)}>
-            <div className={cn("flex-shrink-0 mb-4 overflow-x-hidden", isMobile ? "px-2 md:mb-4" : "")}>
-                <div className={cn("flex flex-col gap-4", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
-                    <h1 className={cn("font-bold text-primary font-cinzel tracking-wider text-center overflow-x-hidden", isMobile ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>Diário de Missões</h1>
+        <div className={cn("h-full flex flex-col w-full overflow-x-hidden", isMobile ? "p-2" : "p-2 md:p-6", accordionSpacing)}>
+            <div className={cn("flex-shrink-0 mb-4 overflow-x-hidden", isMobile ? "px-1 mb-3" : "")}>
+                <div className={cn("flex flex-col gap-4", isMobile ? "gap-2 md:flex-row md:items-center" : "md:flex-row md:items-center")}>
+                    <h1 className={cn("font-bold text-primary font-cinzel tracking-wider text-center overflow-x-hidden", isMobile ? "text-xl" : "text-2xl md:text-3xl")}>Diário de Missões</h1>
                     <div className={cn("flex items-center justify-center gap-2 overflow-x-hidden", isMobile ? "hidden" : "hidden md:flex")}>
                         <Button
                             variant="ghost"
@@ -994,38 +994,59 @@ const MissionsView = () => {
 
                 {/* Mobile Quick Actions */}
                 {isMobile && (
-                    <div className="mt-3 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="mt-2 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setIsPanelVisible(!isPanelVisible)}
-                            className="flex-shrink-0 text-xs h-8"
+                            className="flex-shrink-0 text-xs h-8 px-3"
                         >
                             {isPanelVisible ? <EyeOff className="mr-1 h-3 w-3" /> : <Eye className="mr-1 h-3 w-3" />}
                             {isPanelVisible ? 'Ocultar' : 'Stats'}
                         </Button>
+                        {generatePendingDailyMissions && (
+                            <Button 
+                                onClick={() => {
+                                    if (!generatingMission) {
+                                        generatePendingDailyMissions();
+                                    } else {
+                                        toast({ 
+                                            variant: 'destructive', 
+                                            title: 'Geração em Andamento', 
+                                            description: 'Aguarde a conclusão da geração atual.' 
+                                        });
+                                    }
+                                }} 
+                                variant="outline" 
+                                className="flex-shrink-0 text-xs h-8 px-3 text-yellow-400 border-yellow-400/50" 
+                                disabled={!!generatingMission}
+                            >
+                                <RefreshCw className={cn("mr-1 h-3 w-3", generatingMission ? "animate-spin" : "")} />
+                                {generatingMission ? 'Gerando...' : 'Gerar'}
+                            </Button>
+                        )}
                     </div>
                 )}
 
-                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className={cn("mt-4 overflow-x-hidden", isMobile ? "block px-2" : "block")}>
+                <Collapsible open={isPanelVisible} onOpenChange={setIsPanelVisible} className={cn("mt-4 overflow-x-hidden", isMobile ? "block px-1 mt-3" : "block")}>
                     <CollapsibleContent className="space-y-6 animate-in fade-in-50 duration-300 overflow-x-hidden">
                         <MissionStatsPanel />
-                        <div className={cn("flex flex-col gap-4", isMobile ? "md:flex-row" : "md:flex-row")}>
-                            <div className={cn("flex-grow overflow-x-hidden", isMobile ? "min-w-[150px]" : "min-w-[200px]")}>
+                        <div className={cn("flex flex-col gap-4", isMobile ? "gap-2 md:flex-row" : "md:flex-row")}>
+                            <div className={cn("flex-grow overflow-x-hidden", isMobile ? "min-w-full" : "min-w-[200px]")}>
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                     <Input 
                                         placeholder="Procurar missão..."
                                         value={searchTerm}
                                         onChange={e => setSearchTerm(e.target.value)}
-                                        className="bg-card pl-9"
+                                        className={cn("bg-card", isMobile ? "pl-8 h-9 text-sm" : "pl-9")}
                                     />
                                 </div>
                             </div>
-                            <div className={cn("flex gap-2 flex-wrap overflow-x-hidden", isMobile ? "sm:flex-grow-0" : "sm:flex-grow-0")}>
+                            <div className={cn("flex gap-2 flex-wrap overflow-x-hidden", isMobile ? "gap-2 sm:flex-grow-0" : "sm:flex-grow-0")}>
                                 <Select value={rankFilter} onValueChange={setRankFilter}>
-                                    <SelectTrigger className={cn("flex-1 overflow-x-hidden", isMobile ? "min-w-[120px]" : "md:w-[180px]")}>
-                                        <Filter className="h-4 w-4 mr-2" />
+                                    <SelectTrigger className={cn("flex-1 overflow-x-hidden", isMobile ? "min-w-[100px] h-9 text-sm" : "md:w-[180px]")}>
+                                        <Filter className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <SelectValue placeholder="Rank" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1035,8 +1056,8 @@ const MissionsView = () => {
                                     </SelectContent>
                                 </Select>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className={cn("flex-1", isMobile ? "min-w-[120px]" : "md:w-[180px]")}>
-                                        <Filter className="h-4 w-4 mr-2" />
+                                    <SelectTrigger className={cn("flex-1", isMobile ? "min-w-[100px] h-9 text-sm" : "md:w-[180px]")}>
+                                        <Filter className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1046,8 +1067,8 @@ const MissionsView = () => {
                                     </SelectContent>
                                 </Select>
                                 <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className={cn("flex-1", isMobile ? "min-w-[120px]" : "md:w-[180px]")}>
-                                        <SortAsc className="h-4 w-4 mr-2" />
+                                    <SelectTrigger className={cn("flex-1", isMobile ? "min-w-[100px] h-9 text-sm" : "md:w-[180px]")}>
+                                        <SortAsc className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <SelectValue placeholder="Ordenar" />
                                     </SelectTrigger>
                                     <SelectContent>

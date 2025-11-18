@@ -27,13 +27,13 @@ const getProfileRank = (level: number) => {
 };
   
 const StatItem = ({ label, value, icon: Icon = null, isMobile = false }: { label: string; value: string | number; icon?: React.ComponentType<SVGProps<SVGSVGElement>> | null; isMobile?: boolean }) => (
-    <div className={cn("rounded-lg border border-border/50 transition-all duration-300 hover:bg-secondary/80 hover:border-primary/50 hover:shadow-lg hover:scale-105", 
-        isMobile ? "bg-secondary/50 p-2" : "bg-secondary/50 p-4")}>
-        <span className={cn("flex items-center gap-2", isMobile ? "text-xs text-muted-foreground" : "text-sm text-muted-foreground")}>
-            {Icon && <Icon className={isMobile ? "h-3 w-3" : "h-4 w-4"} />}
+    <div className={cn("rounded-lg border border-border/50 transition-all duration-200 hover:shadow-md", 
+        isMobile ? "bg-secondary/60 p-3 touch-manipulation" : "bg-secondary/50 p-3")}>
+        <span className={cn("flex items-center gap-3", isMobile ? "text-sm text-muted-foreground" : "text-sm text-muted-foreground")}>
+            {Icon && <Icon className={isMobile ? "h-4 w-4" : "h-4 w-4"} />}
             {label}
         </span>
-        <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>{value}</p>
+        <p className={cn("font-bold text-foreground mt-1", isMobile ? "text-lg" : "text-lg")}>{value}</p>
     </div>
 );
 
@@ -46,17 +46,17 @@ const WorldEventCard = ({ event, userContribution, isMobile = false }: { event: 
 
     return (
         <Card className={cn("bg-gradient-to-br from-purple-900/40 to-red-900/40 border-purple-500/60 animate-in fade-in-50 duration-500 shadow-lg hover:shadow-xl transition-shadow", 
-            isMobile ? "mt-4" : "mt-6")}>
-            <CardHeader className={isMobile ? "p-3" : "p-6"}>
+            isMobile ? "mt-4" : "mt-3")}>
+            <CardHeader className={isMobile ? "p-3" : "p-4"}>
                 <div className={cn("items-center gap-3", isMobile ? "flex" : "flex items-center gap-3")}>
-                    <ShieldAlert className={isMobile ? "h-6 w-6 text-purple-400" : "h-8 w-8 text-purple-400"} />
+                    <ShieldAlert className={isMobile ? "h-6 w-6 text-purple-400" : "h-5 w-5 text-purple-400"} />
                     <div>
-                        <CardTitle className={cn("text-purple-300", isMobile ? "text-base" : "text-xl")}>{event.name}</CardTitle>
-                        <CardDescription className={isMobile ? "text-xs" : ""}>{event.description}</CardDescription>
+                        <CardTitle className={cn("text-purple-300", isMobile ? "text-base" : "text-lg")}>{event.name}</CardTitle>
+                        <CardDescription className={isMobile ? "text-xs" : "text-sm"}>{event.description}</CardDescription>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className={cn("space-y-3", isMobile ? "p-3" : "p-6 space-y-4")}>
+            <CardContent className={cn("space-y-3", isMobile ? "p-3" : "p-4 space-y-2")}>
                 <div>
                     <div className={cn("justify-between mb-1", isMobile ? "flex text-xs text-muted-foreground" : "flex justify-between text-sm text-muted-foreground mb-1")}>
                         <span>Progresso Global</span>
@@ -64,7 +64,7 @@ const WorldEventCard = ({ event, userContribution, isMobile = false }: { event: 
                     </div>
                     <Progress value={progressPercentage} className={cn("bg-purple-400/20 [&>div]:bg-purple-500", isMobile ? "h-2" : "h-3")} />
                 </div>
-                <div className={cn("gap-2", isMobile ? "grid grid-cols-2" : "grid grid-cols-2 gap-4")}>
+                <div className={cn("gap-2", isMobile ? "grid grid-cols-2" : "grid grid-cols-2 gap-2")}>
                     <div className={cn("rounded-md", isMobile ? "bg-background/30 p-1" : "bg-background/30 p-2")}>
                         <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs text-muted-foreground")}>Sua Contribuição</p>
                         <p className={cn("font-bold flex items-center justify-center gap-2", isMobile ? "text-base" : "text-lg font-bold flex items-center justify-center gap-2")}>
@@ -120,47 +120,47 @@ const DashboardViewComponent = () => {
     { subject: 'Carisma', value: profile.estatisticas.carisma, fullMark: 100 },
   ];
 
-  return (
-    <div className={cn("p-4 h-full overflow-y-auto font-sans animate-in fade-in-50 slide-in-from-bottom-4 duration-700", isMobile ? "p-2" : "md:p-6")}>
-        <div className={cn("flex flex-col mb-4 gap-2", isMobile ? "sm:flex-col items-start" : "sm:flex-row justify-between items-start mb-6 gap-2")}>
-            <h1 className={cn("font-cinzel font-bold text-primary tracking-wider", isMobile ? "text-2xl" : "text-4xl")}>STATUS</h1>
+    return (
+        <div className={cn("p-4 h-full font-sans animate-in fade-in-50 slide-in-from-bottom-4 duration-700", isMobile ? "p-3 pb-40" : "md:p-4")}>
+        <div className={cn("flex items-center mb-3 gap-2", isMobile ? "flex-row" : "sm:flex-row justify-between items-start mb-4 gap-2")}>
+            <h1 className={cn("font-cinzel font-bold text-primary tracking-wider", isMobile ? "text-xl" : "text-3xl")}>STATUS</h1>
         </div>
 
-        <div className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border/80 rounded-lg space-y-4 backdrop-blur-sm shadow-xl", isMobile ? "p-2" : "p-4 md:p-6")}>
+        <div className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border/80 rounded-lg space-y-3 backdrop-blur-sm shadow-xl", isMobile ? "p-3" : "p-3 md:p-4")}>
             
-            <div className={cn("flex flex-col gap-4", isMobile ? "sm:flex-col items-center" : "sm:flex-row items-center gap-6")}>
+            <div className={cn("flex items-center gap-3", isMobile ? "flex-row items-center" : "sm:flex-row items-center gap-4")}>
                  <div className={cn("border-2 border-primary/50 flex items-center justify-center bg-gradient-to-br from-secondary/50 to-secondary/20 p-1 flex-shrink-0 shadow-lg", 
-                    isMobile ? "w-full max-w-[100px] aspect-[3/4]" : "w-full max-w-[150px] sm:max-w-[200px] aspect-[4/5]")}>
-                    <Avatar className={cn("rounded-none", isMobile ? "w-full h-full" : "w-full h-full")}>
+                    isMobile ? "w-28 h-28 rounded-md" : "w-full max-w-[120px] sm:max-w-[150px] aspect-[4/5]")}>
+                    <Avatar className={cn("rounded-md w-full h-full object-cover") }>
                         <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} />
                         <AvatarFallback>{profile.nome_utilizador?.[0]}</AvatarFallback>
                     </Avatar>
                 </div>
-                <div className={cn("w-full text-center", isMobile ? "sm:text-center" : "sm:text-left")}>
+                <div className={cn("w-full text-left", isMobile ? "ml-3" : "sm:text-left")}>
                     <p className={cn("font-bold tracking-widest text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>RANK {profileRank.rank}</p>
-                    <p className={cn("font-bold text-foreground", isMobile ? "text-xl" : "text-3xl")}>{profile.nome_utilizador}</p>
-                    <p className={cn("text-primary", isMobile ? "text-base" : "text-lg")}>{profileRank.title}</p>
+                    <p className={cn("font-bold text-foreground", isMobile ? "text-lg" : "text-2xl")}>{profile.nome_utilizador}</p>
+                    <p className={cn("text-primary", isMobile ? "text-sm" : "text-base")}>{profileRank.title}</p>
                     
-                    <div className={cn("mt-2 space-y-2", isMobile ? "space-y-1" : "space-y-3")}>
+                    <div className={cn("mt-2 space-y-2", isMobile ? "space-y-2" : "space-y-3")}>
                         <div>
-                            <div className={cn("flex justify-between mb-1", isMobile ? "text-xs" : "text-sm text-muted-foreground")}>
+                            <div className={cn("flex justify-between mb-1", isMobile ? "text-sm" : "text-sm text-muted-foreground")}>
                                 <span>Nível {profile.nivel}</span>
                                 <span className="font-mono">{profile.xp} / {profile.xp_para_proximo_nivel} XP</span>
                             </div>
-                            <Progress value={xpPercentage} className={cn("bg-primary/20 [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary/80 shadow-inner", isMobile ? "h-2" : "h-4")} />
+                            <Progress value={xpPercentage} className={cn("bg-primary/20 [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary/80 shadow-inner", isMobile ? "h-3" : "h-4")} />
                         </div>
                          <div>
-                            <div className={cn("flex justify-between mb-1", isMobile ? "text-xs" : "text-sm text-muted-foreground")}>
-                                <span className="flex items-center gap-1.5"><Heart className={cn("text-red-500", isMobile ? "h-3 w-3" : "h-4 w-4")} /> Vida</span>
+                            <div className={cn("flex justify-between mb-1", isMobile ? "text-sm" : "text-sm text-muted-foreground")}>
+                                <span className="flex items-center gap-1.5"><Heart className={cn("text-red-500", isMobile ? "h-4 w-4" : "h-4 w-4")} /> Vida</span>
                                 <span className="font-mono">{profile.hp_atual || maxHP} / {maxHP} HP</span>
                             </div>
-                            <Progress value={hpPercentage} className={cn("bg-red-500/20 [&>div]:bg-gradient-to-r [&>div]:from-red-500 [&>div]:to-red-400 shadow-inner", isMobile ? "h-2" : "h-4")} />
+                            <Progress value={hpPercentage} className={cn("bg-red-500/20 [&>div]:bg-gradient-to-r [&>div]:from-red-500 [&>div]:to-red-400 shadow-inner", isMobile ? "h-3" : "h-4")} />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className={cn("gap-2", isMobile ? "grid grid-cols-1" : "grid grid-cols-2 lg:grid-cols-4 gap-4")}>
+            <div className={cn("gap-2", isMobile ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 lg:grid-cols-4 gap-2")}>
                 <StatItem label="Nome" value={`${profile.primeiro_nome} ${profile.apelido}`} isMobile={isMobile}/>
                 <StatItem label="Streak" value={`${profile.streak_atual || 0} Dias`} icon={Flame} isMobile={isMobile}/>
                 <StatItem label="Fragmentos" value={profile.fragmentos || 0} icon={Gem} isMobile={isMobile}/>
@@ -171,8 +171,8 @@ const DashboardViewComponent = () => {
 
             <hr className="border-border/50" />
             
-            <div className={cn("items-center", isMobile ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-6")}>
-                <div className={cn("w-full", isMobile ? "h-56" : "h-80")}>
+            <div className={cn("items-center", isMobile ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-4")}>
+                <div className={cn("w-full", isMobile ? "h-44" : "h-64")}>
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={statsData}>
                             <defs>
@@ -183,7 +183,7 @@ const DashboardViewComponent = () => {
                                 </radialGradient>
                             </defs>
                             <PolarGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: isMobile ? 10 : 14, fontWeight: 'bold' }} />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--foreground))', fontSize: isMobile ? 10 : 12, fontWeight: 'bold' }} />
                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                             <Radar name={profile.nome_utilizador} dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#radar-fill)" fillOpacity={0.8} />
                              <Tooltip 
@@ -200,7 +200,7 @@ const DashboardViewComponent = () => {
                     </ResponsiveContainer>
                 </div>
 
-                <div className={cn("gap-2", isMobile ? "grid grid-cols-1" : "grid grid-cols-1 sm:grid-cols-2 gap-4")}>
+                <div className={cn("gap-2", isMobile ? "grid grid-cols-2 gap-2" : "grid grid-cols-1 sm:grid-cols-2 gap-2")}>
                     {statsData.map((stat) => (
                         <StatItem key={stat.subject} label={stat.subject} value={stat.value} isMobile={isMobile} />
                     ))}
