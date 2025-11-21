@@ -8,9 +8,9 @@
  * - GenerateNextDailyMissionOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {generateMissionRewards} from './generate-mission-rewards';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { generateMissionRewards } from './generate-mission-rewards';
+import { z } from 'genkit';
 import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText } from '@/lib/ai-utils';
 
 const SubTaskSchema = z.object({
@@ -27,17 +27,19 @@ const GenerateNextDailyMissionInputSchema = z.object({
   goalDeadline: z.string().nullable().optional().describe("A data final para a meta (prazo), no formato YYYY-MM-DD."),
   history: z.string().describe("O histórico das últimas missões diárias concluídas para dar contexto."),
   userLevel: z.number().describe("O nível atual do utilizador para ajustar a dificuldade."),
+  userHP: z.number().optional().describe("O HP atual do utilizador (0-100). Se estiver baixo, a missão deve ser de recuperação."),
+  currentStreak: z.number().optional().describe("A sequência atual de dias (streak)."),
   feedback: z.string().optional().describe("Feedback do utilizador sobre a missão anterior (ex: 'muito fácil', 'muito difícil', ou um texto descritivo) para calibrar a próxima."),
 });
 export type GenerateNextDailyMissionInput = z.infer<typeof GenerateNextDailyMissionInputSchema>;
 
 const GenerateNextDailyMissionOutputSchema = z.object({
-    nextMissionName: z.string().describe("O nome da próxima pequena missão diária. Deve ser muito específico (ex: 'Treino de Força Fundamental', 'Sessão de Estudo Focada')."),
-    nextMissionDescription: z.string().describe("Uma breve descrição da missão diária, explicando o seu propósito em 1-2 frases."),
-    xp: z.number().describe("A quantidade de XP para a nova missão."),
-    fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
-    learningResources: z.array(z.string()).optional().describe("Uma lista de até 2 TÓPICOS DE PESQUISA ou termos para procurar (ex: 'Documentação oficial do React sobre hooks', 'Tutorial de flexbox CSS no YouTube') relevantes para a missão, se aplicável."),
-    subTasks: z.array(SubTaskSchema).describe("Uma lista de 1 a 5 sub-tarefas que compõem a missão diária. Estas devem ser as ações concretas que o utilizador irá realizar e acompanhar."),
+  nextMissionName: z.string().describe("O nome da próxima pequena missão diária. Deve ser muito específico (ex: 'Treino de Força Fundamental', 'Sessão de Estudo Focada')."),
+  nextMissionDescription: z.string().describe("Uma breve descrição da missão diária, explicando o seu propósito em 1-2 frases."),
+  xp: z.number().describe("A quantidade de XP para a nova missão."),
+  fragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a nova missão."),
+  learningResources: z.array(z.string()).optional().describe("Uma lista de até 2 TÓPICOS DE PESQUISA ou termos para procurar (ex: 'Documentação oficial do React sobre hooks', 'Tutorial de flexbox CSS no YouTube') relevantes para a missão, se aplicável."),
+  subTasks: z.array(SubTaskSchema).describe("Uma lista de 1 a 5 sub-tarefas que compõem a missão diária. Estas devem ser as ações concretas que o utilizador irá realizar e acompanhar."),
 });
 export type GenerateNextDailyMissionOutput = z.infer<typeof GenerateNextDailyMissionOutputSchema>;
 
@@ -59,59 +61,73 @@ const generateNextDailyMissionFlow = ai.defineFlow(
       : 'Esta é a primeira missão para este objetivo.';
 
     const feedbackPrompt = input.feedback
-        ? `DIRETIVA DE FEEDBACK (MAIS IMPORTANTE): O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isto em consideração como a principal diretriz para a dificuldade.
+      ? `DIRETIVA DE FEEDBACK (MAIS IMPORTANTE): O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isto em consideração como a principal diretriz para a dificuldade.
 - Se o feedback for 'muito fácil', aumente a complexidade ou a quantidade nas sub-tarefas significativamente. Considere criar uma tarefa que já contribua para a próxima Missão Épica, acelerando a progressão.
 - Se o feedback for 'muito difícil', reduza drasticamente a complexidade. Crie uma missão mais simples ou quebre a tarefa anterior num passo ainda menor.
 - Se o feedback for 'perfeito' ou descritivo, mantenha uma progressão natural e lógica.`
-        : 'Nenhum feedback foi dado. Prossiga com uma progressão natural.';
+      : 'Nenhum feedback foi dado. Prossiga com uma progressão natural.';
 
     let deadlinePrompt = '';
     if (input.goalDeadline) {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const deadline = new Date(input.goalDeadline);
-        const diffTime = deadline.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays >= 0) {
-            deadlinePrompt = `DIRETIVA DE PRAZO: A data de hoje é ${today.toLocaleDateString()}. A meta final tem um prazo. Faltam ${diffDays} dias. Se o tempo for curto (menos de 14 dias), sugira uma missão um pouco mais ambiciosa ou impactante para garantir que o objetivo seja alcançado a tempo. Se o prazo estiver confortável (mais de 30 dias), mantenha um ritmo sustentável.`;
-        }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadline = new Date(input.goalDeadline);
+      const diffTime = deadline.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 0) {
+        deadlinePrompt = `DIRETIVA DE PRAZO: A data de hoje é ${today.toLocaleDateString()}. A meta final tem um prazo. Faltam ${diffDays} dias. Se o tempo for curto (menos de 14 dias), sugira uma missão um pouco mais ambiciosa ou impactante para garantir que o objetivo seja alcançado a tempo. Se o prazo estiver confortável (mais de 30 dias), mantenha um ritmo sustentável.`;
+      }
     }
 
+    const hpPrompt = input.userHP !== undefined && input.userHP < 50
+      ? `ALERTA DE SAÚDE CRÍTICA: O utilizador está com ${input.userHP}% de HP. A missão deve ser focada em RECUPERAÇÃO ou tarefas de baixo esforço mental/físico para evitar burnout.`
+      : '';
 
-    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real. O utilizador (Nível ${input.userLevel}) está na missão épica "${input.rankedMissionName}", para a meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
+    const streakPrompt = input.currentStreak && input.currentStreak > 5
+      ? `MOMENTUM: O utilizador está numa sequência de ${input.currentStreak} dias! Encoraje-o a manter o ritmo com um desafio digno.`
+      : '';
+
+    const finalPrompt = `Você é o 'Sistema' de um RPG da vida real. O utilizador (Nível ${input.userLevel}) está na missão épica "${input.rankedMissionName}", para a meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt} ${hpPrompt} ${streakPrompt}
 Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de objetivos claros e mensuráveis.
 
-**DIRETIVA DE DIFICULDADE (MUITO IMPORTANTE):** A dificuldade da missão DEVE escalar com o nível do utilizador. Um Caçador de nível ${input.userLevel} precisa de um desafio maior do que um de nível 1. Ajuste a complexidade e a quantidade (target) das sub-tarefas para serem apropriadas para este nível.
+**DIRETIVA DE LINGUAGEM (GAMIFICAÇÃO - OBRIGATÓRIO):**
+- O Título e a Descrição DEVEM soar como uma missão de RPG/Sci-Fi ou Militar.
+- Use termos como "Operação", "Protocolo", "Sincronização", "Deploy", "Farmar", "Grind".
+- Exemplo: Em vez de "Estudar React", use "Protocolo de Assimilação: React Core".
+- Exemplo: Em vez de "Correr 5km", use "Operação Resistência: Setor 5".
+
+**DIRETIVA DE DIFICULDADE (ESCALA POR NÍVEL):**
+- **Nível 1-5 (Iniciante):** Tarefas rápidas (15-30 min). Foco em consistência. Targets baixos.
+- **Nível 6-15 (Intermediário):** Tarefas médias (45-60 min). Aumente a complexidade.
+- **Nível 16+ (Avançado):** Tarefas desafiadoras (1h+). Foco em maestria e deep work.
+- *Ajuste os valores de 'target' nas sub-tarefas de acordo com esta escala.*
 
 **REGRAS GERAIS:**
-1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária.
-2.  **Descrição da Missão:** Escreva uma breve descrição (1-2 frases) que explique o propósito da missão diária.
-3.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas. ESTAS são as ações que o utilizador irá realizar.
-    *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste").
-    *   Defina um **'target'** numérico claro para cada sub-tarefa.
-    *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-4.  **Recursos de Aprendizagem (Opcional e IMPORTANTE):** Se a missão envolver conhecimento técnico, forneça até 2 **TÓPICOS DE PESQUISA**, não URLs diretas. Estes devem ser termos que o utilizador possa pesquisar.
-    *   **EXEMPLO BOM:** "Pesquisar: Documentação oficial de React Hooks"
-    *   **EXEMPLO BOM:** "Vídeo sugerido: Pesquisar 'CSS Flexbox tutorial para iniciantes' no YouTube"
-    *   **EXEMPLO MAU:** "https://some-random-blog.com/react-hooks" (NÃO FAÇA ISTO)
+1.  **Nome da Missão:** Criativo, gamificado e inspirador.
+2.  **Descrição da Missão:** Breve (1-2 frases), explicando o "porquê" no contexto do jogo.
+3.  **Sub-tarefas (AÇÃO):** 1 a 5 passos concretos.
+    *   **NOME:** Ação clara.
+    *   **TARGET:** Valor numérico desafiador mas possível para o nível ${input.userLevel}.
+    *   **UNIT:** Unidade clara (min, pág, rep).
+4.  **Recursos:** Se técnico, sugira termos de pesquisa precisos.
 
 Gere uma missão que seja o próximo passo lógico e atómico. Não repita missões do histórico.
 `;
 
     const MissionSchema = z.object({
-        nextMissionName: z.string(),
-        nextMissionDescription: z.string(),
-        learningResources: z.array(z.string()).optional(),
-        subTasks: z.array(SubTaskSchema),
+      nextMissionName: z.string(),
+      nextMissionDescription: z.string(),
+      learningResources: z.array(z.string()).optional(),
+      subTasks: z.array(SubTaskSchema),
     });
 
     try {
-      const {output} = await retryWithBackoff(
+      const { output } = await retryWithBackoff(
         async () => await ai.generate({
           prompt: finalPrompt,
           model: 'googleai/gemini-2.5-flash',
-          output: {schema: MissionSchema},
+          output: { schema: MissionSchema },
         }),
         3,
         1000,
@@ -120,7 +136,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
 
       // Validate output
       validateAIOutput(output, ['nextMissionName', 'nextMissionDescription', 'subTasks'], 'Next Daily Mission');
-      
+
       if (!output!.subTasks || output!.subTasks.length === 0) {
         throw new Error('AI generated mission with no subtasks');
       }
@@ -135,11 +151,11 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
         missionText: missionTextForRewards,
         userLevel: input.userLevel,
       });
-      
+
       const finalXp = rewards.xp;
       const finalFragments = rewards.fragments;
 
-      const subTasksWithProgress = output!.subTasks.map(st => ({...st, current: 0 }));
+      const subTasksWithProgress = output!.subTasks.map(st => ({ ...st, current: 0 }));
 
       return {
         nextMissionName: sanitizedName,
@@ -151,7 +167,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
       };
     } catch (error) {
       console.error('Failed to generate next daily mission, using fallback:', error);
-      
+
       // Fallback: Generate a simple continuation mission
       const fallbackName = `Continuar: ${input.rankedMissionName}`;
       const fallbackDescription = `Continue progredindo na sua meta "${input.metaName}" com esta tarefa.`;
@@ -161,7 +177,7 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
         unit: 'sessão',
         current: 0
       }];
-      
+
       const rewards = await generateMissionRewards({
         missionText: `${fallbackName}: ${fallbackSubTasks[0].name}`,
         userLevel: input.userLevel,

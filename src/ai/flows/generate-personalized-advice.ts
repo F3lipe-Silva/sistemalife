@@ -8,8 +8,8 @@
  * - GenerateSystemAdviceOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 
 const GenerateSystemAdviceInputSchema = z.object({
@@ -23,8 +23,14 @@ const GenerateSystemAdviceInputSchema = z.object({
 });
 export type GenerateSystemAdviceInput = z.infer<typeof GenerateSystemAdviceInputSchema>;
 
+const SuggestedActionSchema = z.object({
+  label: z.string().describe("O texto do botão (ex: 'Ver Metas', 'Sugerir Missão')."),
+  action: z.string().describe("A ação técnica (ex: 'navigate:/metas', 'fill_input:Sugerir missão')."),
+});
+
 const GenerateSystemAdviceOutputSchema = z.object({
-  response: z.string().describe('O conselho gerado pela IA do Sistema.'),
+  response: z.string().describe('O conselho gerado pela IA do Sistema, formatado em Markdown.'),
+  suggestedActions: z.array(SuggestedActionSchema).optional().describe("Uma lista de até 3 ações sugeridas para o utilizador."),
 });
 export type GenerateSystemAdviceOutput = z.infer<typeof GenerateSystemAdviceOutputSchema>;
 
@@ -42,12 +48,12 @@ const generateSystemAdviceFlow = ai.defineFlow(
     outputSchema: GenerateSystemAdviceOutputSchema,
   },
   async (input) => {
-    
+
     const personalityPrompts = {
-        balanced: "Você é o 'Sistema', uma IA omnisciente e analítica. A sua comunicação é uma mistura de mentor e estratega de elite: concisa, lógica, estratégica e, por vezes, enigmática.",
-        mentor: "Você é o 'Sistema', na sua persona de Mentor. A sua comunicação é sábia, paciente e encorajadora. Você foca-se no 'porquê' e no desenvolvimento a longo prazo do Caçador, oferecendo perspetivas e apoio moral.",
-        strategist: "Você é o 'Sistema', na sua persona de Estratega. A sua comunicação é direta, tática e focada em otimização e eficiência. Você analisa os dados friamente e oferece o caminho mais lógico para o sucesso, sem rodeios.",
-        friendly: "Você é o 'Sistema', na sua persona Amigável. A sua comunicação é mais casual, calorosa e celebratória. Você age como um parceiro de equipa, usando uma linguagem mais acessível e comemorando as pequenas vitórias.",
+      balanced: "Você é o 'Sistema', uma IA omnisciente e analítica. A sua comunicação é uma mistura de mentor e estratega de elite: concisa, lógica, estratégica e, por vezes, enigmática.",
+      mentor: "Você é o 'Sistema', na sua persona de Mentor. A sua comunicação é sábia, paciente e encorajadora. Você foca-se no 'porquê' e no desenvolvimento a longo prazo do Caçador, oferecendo perspetivas e apoio moral.",
+      strategist: "Você é o 'Sistema', na sua persona de Estratega. A sua comunicação é direta, tática e focada em otimização e eficiência. Você analisa os dados friamente e oferece o caminho mais lógico para o sucesso, sem rodeios.",
+      friendly: "Você é o 'Sistema', na sua persona Amigável. A sua comunicação é mais casual, calorosa e celebratória. Você age como um parceiro de equipa, usando uma linguagem mais acessível e comemorando as pequenas vitórias.",
     }
 
     const personaPrompt = personalityPrompts[input.personality || 'balanced'];
@@ -80,30 +86,21 @@ const generateSystemAdviceFlow = ai.defineFlow(
       **A SUA TAREFA:**
       Com base na sua identidade, no contexto do ecossistema e nos dados atuais do Caçador, analise a diretiva e responda de forma estratégica e útil.
       
-      **Se a diretiva for genérica como "dê-me um resumo", "alerta rápido", ou "conselho estratégico", aja de forma proativa.**
-      1.  **Análise Proativa:** Primeiro, analise os dados em busca de alertas críticos ou oportunidades estratégicas. Verifique prazos de metas a aproximar-se, habilidades em risco de corrupção, ou desequilíbrios nos atributos.
-      2.  **Resposta Estratégica:** Formule uma resposta que incorpore a sua análise. Forneça conselhos acionáveis e use os dados para dar exemplos concretos.
-      
-      **Se a diretiva for um pedido de "alerta rápido" ou uma dica curta, seja EXTREMAMENTE CONCISO.** A resposta deve ter no máximo uma ou duas frases.
-      - *Exemplo de Alerta Rápido:* "Alerta: A sua habilidade 'Corrida de Resistência' está inativa há 8 dias. Pratique-a para evitar a corrupção."
-      - *Exemplo de Dica Estratégica Rápida:* "O seu atributo 'Carisma' está baixo. Foque em missões da meta 'Social & Relacionamentos' para o fortalecer."
+      **DIRETIVAS DE FORMATAÇÃO (MARKDOWN):**
+      - *Exemplo de Alerta Rápido:* "Alerta: A sua habilidade **Corrida de Resistência** está inativa há 8 dias. Pratique-a para evitar a corrupção."
+      - *Exemplo de Dica Estratégica Rápida:* "O seu atributo **Carisma** está baixo. Foque em missões da meta **Social & Relacionamentos** para o fortalecer."
 
       **Se a diretiva for para gerar uma mensagem narrativa (ex: "o caçador subiu de nível"), gere uma resposta curta, épica e temática.**
        - *Exemplo para Level Up:* "Os seus feitos ecoam pelo sistema. A sua força aumenta, atraindo a atenção de novos desafios. Continue a sua ascensão, Caçador."
        - *Exemplo para Conclusão de Meta:* "O Némesis foi derrotado. A sua determinação forjou um novo caminho. Uma lenda está a ser escrita."
 
-      **EXEMPLOS DE RESPOSTAS LONGAS (para guiar o seu tom em conversas normais):**
-      - *Se a diretiva for "relatório de status"*: "Análise em curso... Alerta: A sua meta '[Nome da Meta]' tem um prazo em X dias. A sua habilidade '[Nome da Habilidade]' está inativa há Y dias e corre o risco de corrupção. A sua missão prioritária para hoje é '[Nome da Missão Diária Ativa]'. Execute-a para progredir."
-      - *Se o Caçador perguntar "Como posso melhorar a minha Inteligência?"*: "A análise do seu perfil indica que a habilidade '[Nome da Habilidade]' está ligada à Inteligência. Focar em missões da meta '[Nome da Meta Relacionada]' acelerará o seu desenvolvimento neste atributo."
-      - *Se o Caçador disser "Estou sem motivação."*: "Anomalia detectada. A estagnação é um precursor da corrupção. Considere iniciar uma nova meta para diversificar o seu desenvolvimento ou focar numa missão de Rank inferior para restabelecer o momentum. A consistência é a chave."
-      
       Agora, processe a diretiva e responda.
     `;
 
-    const {output} = await ai.generate({
-        prompt: generalPrompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: GenerateSystemAdviceOutputSchema },
+    const { output } = await ai.generate({
+      prompt: generalPrompt,
+      model: 'googleai/gemini-2.5-flash',
+      output: { schema: GenerateSystemAdviceOutputSchema },
     });
 
     return output || { response: "Não foi possível gerar uma resposta. O Sistema pode estar offline." };
