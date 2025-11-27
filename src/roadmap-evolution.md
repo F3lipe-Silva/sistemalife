@@ -17,7 +17,6 @@ O Sistema Life já possui elementos fundamentais de um RPG gamificado com missõ
 
 *   **A Ideia:** Expandir a funcionalidade do "Arquiteto" para que ele se torne um verdadeiro Mentor que aprende consigo.
 *   **Análise de Padrões:** A IA poderia analisar os seus horários de maior produtividade e sugerir os melhores momentos para focar. Se detetar que você está a falhar consistentemente em missões de um certo tipo, ela poderia sugerir a criação de uma meta de suporte para fortalecer a habilidade base necessária.
-*   **Narrativa Adaptativa:** Com base nas suas ações, a IA poderia gerar pequenas histórias ou "lore" personalizado. Por exemplo: "A sua dedicação implacável à habilidade 'Corrida' atraiu a atenção de um lendário espírito da resistência. Ele deixou para si um novo desafio na Torre..."
 *   **Porquê é interessante?** Transforma a IA de uma ferramenta reativa para um coach proativo e um narrador, tornando a sua jornada única e profundamente pessoal. A sua experiência no sistema seria diferente da de qualquer outro Caçador.
 
 ### 2.3 Masmorras de Habilidade (Foco Profundo)

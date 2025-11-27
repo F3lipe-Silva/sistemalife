@@ -40,7 +40,6 @@ export const Sidebar = ({ inSheet = false, onNavigate }: SidebarProps) => {
                 <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" />
                 <NavItem icon={BookOpen} label="Metas" page="metas" />
                 <NavItem icon={Target} label="Missões" page="missions" />
-                <NavItem icon={ScrollText} label="História" page="story" />
 
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4 px-4">Aventura</div>
                 <NavItem icon={TowerControl} label="Torre" page="tower" />

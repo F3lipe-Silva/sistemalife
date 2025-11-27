@@ -97,7 +97,7 @@ export const metas = [
     prazo: null,
     concluida: false,
     detalhes_smart: {
-        specific: "Ler um livro de não-ficção por mês, cobrindo tópicos como ciência, história, psicologia e produtividade.",
+        specific: "Ler um livro de não-ficção por mês, cobrindo tópicos como ciência, psicologia e produtividade.",
         measurable: "Acompanhar o progresso no Goodreads e escrever um breve resumo ou os 3 principais insights de cada livro lido.",
         achievable: "Ler durante 30 minutos sem distrações todas as noites antes de dormir.",
         relevant: "Expandir o meu conhecimento em diferentes áreas, melhorar o meu pensamento crítico e desenvolver o hábito da leitura.",

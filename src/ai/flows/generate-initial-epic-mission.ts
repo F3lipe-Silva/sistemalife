@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {generateMissionRewards} from './generate-mission-rewards';
 import {z} from 'genkit';
-import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText } from '@/lib/ai-utils';
+import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText, withTimeout, validateSubTasks } from '@/lib/ai-utils';
 
 const EpicMissionSchema = z.object({
     epicMissionName: z.string().describe("O nome temático e inspirador para a Missão Épica (ex: 'A Senda do Maratonista')."),
@@ -31,7 +31,7 @@ const FirstDailyMissionSchema = z.object({
     firstDailyMissionName: z.string().describe("O nome da primeira missão diária. Deve ser um primeiro passo lógico e específico para a primeira missão épica da lista."),
     firstDailyMissionDescription: z.string().describe("Uma breve descrição da primeira missão diária."),
     firstDailyMissionSubTasks: z.array(SubTaskSchema).describe("A lista de 1 a 3 sub-tarefas para a primeira missão diária."),
-    firstDailyMissionLearningResources: z.array(z.string().url()).optional().describe("Recursos de aprendizagem para a primeira missão diária."),
+    firstDailyMissionLearningResources: z.array(z.string()).optional().describe("Recursos de aprendizagem para a primeira missão diária (textos descritivos ou URLs)."),
 });
 
 const GenerateInitialEpicMissionInputSchema = z.object({
@@ -48,7 +48,7 @@ const GenerateInitialEpicMissionOutputSchema = z.object({
     firstDailyMissionXp: z.number().describe("A quantidade de XP para a primeira missão."),
     firstDailyMissionFragments: z.number().describe("A quantidade de fragmentos (moeda do jogo) para a primeira missão."),
     firstDailyMissionSubTasks: z.array(SubTaskSchema).describe("A lista de sub-tarefas para a primeira missão diária."),
-    firstDailyMissionLearningResources: z.array(z.string().url()).optional().describe("Recursos de aprendizagem para a primeira missão diária."),
+    firstDailyMissionLearningResources: z.array(z.string()).optional().describe("Recursos de aprendizagem para a primeira missão diária (textos descritivos ou URLs)."),
     fallback: z.boolean().optional().describe("Indica se a resposta foi gerada usando um plano de fallback devido a um erro de IA."),
 });
 export type GenerateInitialEpicMissionOutput = z.infer<typeof GenerateInitialEpicMissionOutputSchema>;
@@ -89,15 +89,19 @@ A sua tarefa é:
             firstDailyMission: FirstDailyMissionSchema,
         })
 
-        const {output} = await retryWithBackoff(
-          async () => await ai.generate({
-            prompt: finalPrompt,
-            model: 'googleai/gemini-2.5-flash',
-            output: { schema: MissionSchema },
-          }),
-          3,
-          1000,
-          'Generate Initial Epic Mission'
+        const {output} = await withTimeout(
+          retryWithBackoff(
+            async () => await ai.generate({
+              prompt: finalPrompt,
+              model: 'googleai/gemini-2.5-flash',
+              output: { schema: MissionSchema },
+            }),
+            3,
+            1000,
+            'Generate Initial Epic Mission'
+          ),
+          30000,
+          'Geração de missão inicial excedeu 30 segundos'
         );
 
         // Validate output
@@ -107,9 +111,8 @@ A sua tarefa é:
             throw new Error('AI generated empty progression');
         }
         
-        if (!output.firstDailyMission || !output.firstDailyMission.firstDailyMissionSubTasks || 
-            output.firstDailyMission.firstDailyMissionSubTasks.length === 0) {
-            throw new Error('AI generated first mission without subtasks');
+        if (!output.firstDailyMission || !validateSubTasks(output.firstDailyMission.firstDailyMissionSubTasks)) {
+            throw new Error('AI generated first mission with invalid subtasks');
         }
 
         // Sanitize outputs

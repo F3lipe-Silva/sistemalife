@@ -736,16 +736,31 @@ const MissionsView = () => {
 
             const result = await response.json();
             
+            // Validate the result structure
+            if (!result.nextMissionName || !result.nextMissionDescription || !result.subTasks || result.subTasks.length === 0) {
+                throw new Error('Resposta da API incompleta. Tente novamente.');
+            }
+            
+            // Validate subtasks
+            const validSubTasks = result.subTasks.filter((st: SubTask) => 
+                st.name && st.name.trim().length > 0 && 
+                st.target && st.target > 0
+            );
+            
+            if (validSubTasks.length === 0) {
+                throw new Error('Missão gerada sem sub-tarefas válidas. Tente novamente.');
+            }
+            
             const newDailyMission = {
                 id: Date.now(),
                 nome: result.nextMissionName,
                 descricao: result.nextMissionDescription,
-                xp_conclusao: result.xp,
-                fragmentos_conclusao: result.fragments,
+                xp_conclusao: result.xp || 15,
+                fragmentos_conclusao: result.fragments || 2,
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map((st: SubTask) => ({...st, current: 0, unit: st.unit || ''})),
+                subTasks: validSubTasks.map((st: SubTask) => ({...st, current: 0, unit: st.unit || ''})),
             };
             
             addDailyMission({ rankedMissionId: mission.id, newDailyMission });

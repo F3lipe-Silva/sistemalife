@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {generateMissionRewards} from './generate-mission-rewards';
 import {z} from 'genkit';
-import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText } from '@/lib/ai-utils';
+import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText, withTimeout, validateSubTasks } from '@/lib/ai-utils';
 
 const SubTaskSchema = z.object({
   name: z.string().describe("O nome da sub-tarefa específica e acionável (ex: 'Ler um capítulo', 'Fazer 20 flexões')."),
@@ -109,22 +109,26 @@ Gere uma missão que seja o próximo passo lógico e atómico. Não repita miss�
     });
 
     try {
-      const {output} = await retryWithBackoff(
-        async () => await ai.generate({
-          prompt: finalPrompt,
-          model: 'googleai/gemini-2.5-flash',
-          output: {schema: MissionSchema},
-        }),
-        3,
-        1000,
-        'Generate Next Daily Mission'
+      const {output} = await withTimeout(
+        retryWithBackoff(
+          async () => await ai.generate({
+            prompt: finalPrompt,
+            model: 'googleai/gemini-2.5-flash',
+            output: {schema: MissionSchema},
+          }),
+          3,
+          1000,
+          'Generate Next Daily Mission'
+        ),
+        30000,
+        'Geração de missão excedeu 30 segundos'
       );
 
       // Validate output
       validateAIOutput(output, ['nextMissionName', 'nextMissionDescription', 'subTasks'], 'Next Daily Mission');
       
-      if (!output!.subTasks || output!.subTasks.length === 0) {
-        throw new Error('AI generated mission with no subtasks');
+      if (!validateSubTasks(output!.subTasks)) {
+        throw new Error('AI generated mission with invalid subtasks structure');
       }
 
       // Sanitize the output

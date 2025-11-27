@@ -135,7 +135,56 @@ export function getErrorMessage(error: any, defaultMessage: string = 'Ocorreu um
     return 'Configuração de API inválida. Verifique as credenciais.';
   }
   
+  if (error?.message?.includes('timeout') || error?.message?.includes('TIMEOUT')) {
+    return 'A geração demorou muito tempo. Tente novamente.';
+  }
+  
   return defaultMessage;
+}
+
+/**
+ * Execute operation with timeout
+ */
+export async function withTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number = 30000,
+  errorMessage: string = 'Operation timed out'
+): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(`TIMEOUT: ${errorMessage}`));
+    }, timeoutMs);
+  });
+  
+  try {
+    const result = await Promise.race([operation, timeoutPromise]);
+    clearTimeout(timeoutHandle!);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutHandle!);
+    throw error;
+  }
+}
+
+/**
+ * Validate subtasks structure
+ */
+export function validateSubTasks(subTasks: any[]): boolean {
+  if (!Array.isArray(subTasks) || subTasks.length === 0) {
+    return false;
+  }
+  
+  return subTasks.every(st => 
+    st &&
+    typeof st.name === 'string' &&
+    st.name.trim().length > 0 &&
+    typeof st.target === 'number' &&
+    st.target > 0 &&
+    st.target <= 10000 && // Reasonable max target
+    (!st.unit || typeof st.unit === 'string')
+  );
 }
 
 /**

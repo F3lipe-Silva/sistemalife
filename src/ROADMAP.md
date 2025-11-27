@@ -55,8 +55,6 @@ Este documento delineia as futuras melhorias e novas funcionalidades planeadas p
     - **[x]** Implementar a lógica para a IA analisar dados e gerar insights textuais (`generate-analytics-insights`).
     - **[x]** O "Arquiteto" analisará os seus horários de produtividade e sugerirá os melhores momentos para focar.
     - **[x]** Deteção de sinais de burnout com sugestão de missões mais leves ou pausas.
-- **[x] Narrativa Adaptativa:**
-    - **[x]** Gerar pequenas histórias ou "eventos" com base nas suas ações (ex: "A sua dedicação à habilidade 'Corrida' atraiu a atenção de um lendário maratonista...").
 
 ### Fase 5: Expansão de Conteúdo (Concluída)
 **Objetivo:** Integrar o Sistema Life com outras ferramentas e expandir o conteúdo disponível.

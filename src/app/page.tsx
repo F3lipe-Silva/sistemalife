@@ -25,7 +25,6 @@ import TowerView from '@/components/views/gamification/TowerView';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
 import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
 import DungeonLobbyView from '@/components/views/gamification/DungeonLobbyView';
-import { StoryView } from '@/components/views/core/StoryView';
 import { TopHeader } from '@/components/layout/TopHeader';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
@@ -109,7 +108,6 @@ export default function App() {
       'dashboard': 'Dashboard',
       'metas': 'Metas',
       'missions': 'Missões',
-      'story': 'História',
       'tower': 'Torre do Destino',
       'dungeon': 'Masmorra',
       'skills': 'Habilidades',
@@ -133,7 +131,6 @@ export default function App() {
       'dashboard': <DashboardView />,
       'metas': <MetasView />,
       'missions': <MissionsView />,
-      'story': <StoryView />,
       'skills': <SkillsView onEnterDungeon={handleEnterDungeon} />,
       'class': <ClassView />,
       'routine': <RoutineView />,
