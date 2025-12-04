@@ -837,7 +837,7 @@ const MetasViewComponent = () => {
     const sortedMetas = [...metas].sort((a: any, b: any) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
 
     return (
-        <div className={cn("h-full overflow-y-auto", cardPadding)}>
+        <div className={cn("h-full overflow-y-auto pb-24", cardPadding)}>
             <div className={cn("items-start gap-4 mb-4", isMobile ? "flex flex-col" : "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6")}>
                 <div className="flex flex-col gap-2">
                     <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Metas</h1>

@@ -216,7 +216,7 @@ export default function App() {
         <main
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
-            isMobile && "pb-40" // Extra padding for bottom nav (increased to avoid overlap)
+            isMobile && "pb-safe mb-[80px]" // Use mb for bottom nav clearance + safe area
           )}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}

@@ -990,7 +990,7 @@ const MissionsView = () => {
     };
 
     return (
-        <div className={cn("h-full flex flex-col w-full overflow-x-hidden", isMobile ? "p-2" : "p-2 md:p-6", accordionSpacing)}>
+        <div className={cn("flex flex-col w-full overflow-x-hidden", isMobile ? "p-2 pb-20" : "p-2 md:p-6", accordionSpacing)}>
             <div className={cn("flex-shrink-0 mb-4 overflow-x-hidden", isMobile ? "px-1 mb-3" : "")}>
                 <div className={cn("flex flex-col gap-4", isMobile ? "gap-2 md:flex-row md:items-center" : "md:flex-row md:items-center")}>
                     <h1 className={cn("font-bold text-primary font-cinzel tracking-wider text-center overflow-x-hidden", isMobile ? "text-xl" : "text-2xl md:text-3xl")}>Diário de Missões</h1>
@@ -1114,11 +1114,11 @@ const MissionsView = () => {
                 </Collapsible>
             </div>
             
-            <div className={cn("flex-grow overflow-y-auto overflow-x-hidden w-full", isMobile ? "px-0" : "px-0")}>
+            <div className={cn("w-full overflow-x-hidden", isMobile ? "px-0" : "px-0")}>
                 <Accordion 
                     type="single" 
                     collapsible 
-                    className={cn("w-full overflow-x-hidden", isMobile ? "space-y-1" : accordionSpacing)}
+                    className={cn("w-full overflow-x-hidden", isMobile ? "space-y-3" : accordionSpacing)}
                     value={activeAccordionItem || undefined}
                     onValueChange={(value: string) => {
                          if (missionViewStyle === 'inline') {
@@ -1153,7 +1153,7 @@ const MissionsView = () => {
                         };
                         
                         return (
-                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border rounded-lg data-[state=open]:border-primary/50 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] relative group", isMobile ? "p-1 mx-0" : "mx-0", priorityMissions.has(mission.id) && "border-yellow-500/50 shadow-yellow-500/30 shadow-lg")}>
+                            <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border rounded-xl data-[state=open]:border-primary/50 transition-all duration-300 hover:shadow-xl relative group", isMobile ? "mx-0 active:scale-[0.99] touch-manipulation" : "mx-0 hover:scale-[1.01]", priorityMissions.has(mission.id) && "border-yellow-500/50 shadow-yellow-500/30 shadow-lg")}>
                                 {priorityMissions.has(mission.id) && (
                                     <div className="absolute -top-2 -right-2 z-10">
                                         <div className="bg-yellow-500 rounded-full p-1 shadow-lg">
@@ -1161,9 +1161,9 @@ const MissionsView = () => {
                                         </div>
                                     </div>
                                 )}
-                                <div className={cn("transition-all duration-300 overflow-x-hidden", generatingMission === mission.id ? 'opacity-50' : '', isMobile ? "p-1" : "p-2 md:p-4")}>
+                                <div className={cn("transition-all duration-300 overflow-x-hidden", generatingMission === mission.id ? 'opacity-50' : '', isMobile ? "p-2" : "p-2 md:p-4")}>
                                     <div className={cn("flex flex-col gap-2", isMobile ? "p-1" : "p-2 md:p-4")}>
-                                        <div className={cn("flex items-center gap-2", isMobile ? "gap-2 flex-wrap" : "gap-4")}>
+                                        <div className={cn("flex items-center gap-2", isMobile ? "gap-3 flex-wrap" : "gap-4")}>
                                             <TriggerWrapper>
                                                 <div className="flex-1 text-left min-w-0 flex items-center gap-2 md:gap-4 overflow-x-hidden">
                                                     <div className={cn("flex-shrink-0 flex items-center justify-center font-cinzel font-bold rounded-lg bg-gradient-to-br from-secondary to-secondary/50 shadow-inner", getRankColor(mission.rank), isMobile ? "w-12 h-12 text-3xl" : "w-16 h-16 text-4xl")}>

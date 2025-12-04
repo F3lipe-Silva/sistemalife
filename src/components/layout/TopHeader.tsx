@@ -27,7 +27,7 @@ export const TopHeader = ({ title, profile, isMobile }: TopHeaderProps) => {
 
     return (
         <header className={cn(
-            "border-b border-border/30 bg-card/80 backdrop-blur-xl flex items-center justify-between sticky top-0 z-30",
+            "border-b border-border/30 bg-card/80 backdrop-blur-xl flex items-center justify-between sticky top-0 z-30 pt-safe",
             "shadow-lg shadow-black/5",
             isMobile ? "h-14 px-4" : "h-16 px-6"
         )}>

@@ -153,8 +153,22 @@ export default {
   plugins: [
     require('tailwindcss-animate'),
     radialGradientPlugin,
-    plugin(function ({ addVariant }: { addVariant: any }) {
+    plugin(function ({ addVariant, addUtilities }: { addVariant: any, addUtilities: any }) {
         addVariant('reduce-motion', '.reduce-motion &')
+        addUtilities({
+          '.pb-safe': {
+            'padding-bottom': 'env(safe-area-inset-bottom)',
+          },
+          '.pt-safe': {
+            'padding-top': 'env(safe-area-inset-top)',
+          },
+          '.mb-safe': {
+            'margin-bottom': 'env(safe-area-inset-bottom)',
+          },
+          '.mt-safe': {
+            'margin-top': 'env(safe-area-inset-top)',
+          },
+        })
     })
   ],
 } satisfies Config;

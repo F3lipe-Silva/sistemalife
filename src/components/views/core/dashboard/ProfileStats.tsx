@@ -43,7 +43,7 @@ export const ProfileStats = ({ profile, isMobile = false }: ProfileStatsProps) =
             {/* Radar Chart Container */}
             <div className={cn(
                 "relative rounded-2xl bg-gradient-to-br from-card/40 to-card/20 backdrop-blur-sm border border-border/30 p-8",
-                isMobile ? "h-64" : "h-96"
+                isMobile ? "h-72" : "h-96"
             )}>
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-5">

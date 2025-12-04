@@ -63,7 +63,7 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
     const { roomLevel, challenge } = dungeonSession;
 
     return (
-        <div className="p-4 md:p-6 h-full flex flex-col">
+        <div className="p-4 md:p-6 flex flex-col min-h-full pb-24">
             <div className="flex-shrink-0">
                 <Button onClick={() => clearDungeonSession(true)} variant="ghost" className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
