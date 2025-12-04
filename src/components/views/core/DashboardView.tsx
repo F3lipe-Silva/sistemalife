@@ -42,20 +42,20 @@ const DashboardHeader = ({ profile, isMobile }: { profile: any; isMobile: boolea
             </div>
 
             {/* Métricas Principais - Grid Compacto */}
-            <div className="grid grid-cols-4 gap-2">
-                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center">
+            <div className={cn("grid gap-2", isMobile ? "grid-cols-2" : "grid-cols-4")}>
+                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center transition-transform active:scale-95 duration-200">
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">Nv</div>
                     <div className="text-sm font-bold text-primary">{profile?.nivel || 1}</div>
                 </div>
-                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center">
+                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center transition-transform active:scale-95 duration-200">
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">XP</div>
                     <div className="text-sm font-bold text-green-400">{profile?.xp?.toLocaleString() || 0}</div>
                 </div>
-                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center">
+                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center transition-transform active:scale-95 duration-200">
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">HP</div>
                     <div className="text-sm font-bold text-red-400">{profile?.hp_atual || 100}</div>
                 </div>
-                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center">
+                <div className="px-3 py-2 rounded-lg bg-card/40 border border-border/30 backdrop-blur-sm text-center transition-transform active:scale-95 duration-200">
                     <div className="text-xs text-muted-foreground uppercase tracking-wide">Stk</div>
                     <div className="text-sm font-bold text-blue-400">{profile?.streak_atual || 0}</div>
                 </div>
@@ -159,11 +159,9 @@ const DashboardViewComponent = () => {
 
             {/* Main Content Grid - Refatorado */}
             <div className={cn(
-                "grid gap-6 auto-rows-min",
+                "grid auto-rows-min",
                 // Mobile: 1 coluna empilhada
-                "grid-cols-1",
-                // Desktop: Layout otimizado com 4 colunas
-                "lg:grid-cols-12"
+                isMobile ? "grid-cols-1 gap-4" : "gap-6 lg:grid-cols-12"
             )}>
                 {/* Perfil e Estatísticas - Área Principal */}
                 <div className="lg:col-span-8 space-y-6">

@@ -70,8 +70,8 @@ export const MobileNavigation = ({ onNavigate, isSheetOpen, onSheetOpenChange }:
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/30 pb-safe pt-1.5 px-2 z-40 md:hidden shadow-[0_-8px_30px_-5px_rgba(0,0,0,0.4)]">
-            <div className="flex justify-around items-center max-w-md mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/30 pb-safe pt-2 px-2 z-40 md:hidden shadow-[0_-8px_30px_-5px_rgba(0,0,0,0.4)]">
+            <div className="flex justify-around items-center max-w-md mx-auto h-[60px] pb-1">
                 <NavButton icon={LayoutDashboard} label="Início" page="dashboard" isActive={currentPage === 'dashboard'} />
                 <NavButton icon={Target} label="Missões" page="missions" isActive={currentPage === 'missions'} />
                 <NavButton icon={BookOpen} label="Metas" page="metas" isActive={currentPage === 'metas'} />
