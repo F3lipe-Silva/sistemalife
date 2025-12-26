@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone, Skull } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone, Skull, Target, ChevronRight } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
 import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { statCategoryMapping } from '@/lib/mappings';
@@ -31,6 +32,16 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// Icons mapping
+const statIcons: any = {
+    forca: <Swords className="h-3 w-3 sm:h-4 sm:w-4 text-red-400" />,
+    inteligencia: <Brain className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400" />,
+    destreza: <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400" />,
+    constituicao: <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />,
+    sabedoria: <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-purple-400" />,
+    carisma: <Star className="h-3 w-3 sm:h-4 sm:w-4 text-pink-400" />,
+};
 
 interface SmartGoalWizardProps {
     onClose: () => void;
@@ -443,7 +454,7 @@ const MetasViewComponent = () => {
     
     const layout = profile?.user_settings?.layout_density || 'default';
     const cardPadding = isMobile ? 'p-2' : layout === 'compact' ? 'p-3' : layout === 'comfortable' ? 'p-8' : 'p-6';
-    const gapSize = isMobile ? 'gap-2' : layout === 'compact' ? 'gap-4' : layout === 'comfortable' ? 'gap-8' : 'gap-6';
+    const gapSize = isMobile ? 'gap-3' : layout === 'compact' ? 'gap-4' : layout === 'comfortable' ? 'gap-8' : 'gap-6';
 
     const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
@@ -719,6 +730,7 @@ const MetasViewComponent = () => {
         }
     };
 
+    // ... (rest of the renderWizardContent function)
     const renderWizardContent = () => {
         switch (wizardMode) {
             case 'selection':
@@ -837,22 +849,24 @@ const MetasViewComponent = () => {
     const sortedMetas = [...metas].sort((a: any, b: any) => (a.concluida ? 1 : -1) - (b.concluida ? 1 : -1) || a.nome.localeCompare(b.nome));
 
     return (
-        <div className={cn("h-full overflow-y-auto pb-24", cardPadding)}>
+        <div className={cn("h-full w-full overflow-y-auto pb-24", cardPadding)}>
             <div className={cn("items-start gap-4 mb-4", isMobile ? "flex flex-col" : "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6")}>
                 <div className="flex flex-col gap-2">
                     <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Metas</h1>
                     <p className={cn("text-muted-foreground max-w-2xl", isMobile ? "text-sm" : "")}>Suas grandes conquistas aguardam. Cada meta gera uma árvore de missões épicas para guiá-lo.</p>
                 </div>
-                <div className={cn("flex flex-col gap-2 w-full", isMobile ? "sm:w-full" : "sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto")}>
-                     <Button onClick={handleGetSuggestions} variant="outline" className={cn("text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 transition-all duration-200 hover:scale-105", isMobile ? "w-full text-sm h-8" : "w-full sm:w-auto")}>
-                        <Wand2 className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                        {isMobile ? "Sugerir" : "Sugerir Novas Metas"}
-                    </Button>
-                    <Button onClick={() => handleOpenWizard()} className={cn("bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl", isMobile ? "w-full text-sm h-8" : "w-full sm:w-auto")}>
-                        <PlusCircle className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                        {isMobile ? "Adicionar" : "Adicionar Meta"}
-                    </Button>
-                </div>
+                {!isMobile && (
+                    <div className={cn("flex flex-col gap-2 w-full", isMobile ? "sm:w-full" : "sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto")}>
+                         <Button onClick={handleGetSuggestions} variant="outline" className={cn("text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 transition-all duration-200 hover:scale-105", isMobile ? "w-full text-sm h-8" : "w-full sm:w-auto")}>
+                            <Wand2 className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                            {isMobile ? "Sugerir" : "Sugerir Novas Metas"}
+                        </Button>
+                        <Button onClick={() => handleOpenWizard()} className={cn("bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl", isMobile ? "w-full text-sm h-8" : "w-full sm:w-auto")}>
+                            <PlusCircle className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                            {isMobile ? "Adicionar" : "Adicionar Meta"}
+                        </Button>
+                    </div>
+                )}
             </div>
             
             <div className={cn("grid grid-cols-1", gapSize, isMobile ? "sm:grid-cols-1" : "lg:grid-cols-2 xl:grid-cols-3")}>
@@ -866,23 +880,24 @@ const MetasViewComponent = () => {
                     const progress = totalMissionsCount > 0 ? (completedMissionsCount / totalMissionsCount) * 100 : (meta.concluida ? 100 : 0);
                     
                     return (
-                        <Card key={meta.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border/80 flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.02] relative group overflow-hidden", meta.concluida && "bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30 shadow-green-500/20", isMobile ? "text-sm" : "")}>
+                        <Card key={meta.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border/80 flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-[1.02] relative group overflow-hidden", meta.concluida && "bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30 shadow-green-500/20", isMobile ? "rounded-3xl border-0 shadow-md bg-card/60" : "")}>
                             {meta.concluida && (
                                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
                             )}
-                            <CardHeader className={cn("relative z-10", isMobile ? "p-3" : "")}>
+                            <CardHeader className={cn("relative z-10", isMobile ? "p-4" : "")}>
                                 <div className={cn("items-start gap-4", isMobile ? "flex justify-between" : "flex justify-between items-start gap-4")}>
                                     <div className="flex-1">
-                                         <CardTitle className={cn("text-foreground flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                                         <CardTitle className={cn("text-foreground flex items-center gap-2", isMobile ? "text-base font-bold leading-tight" : "text-lg")}>
                                             {meta.concluida && <CheckCircle className={cn("text-green-500 flex-shrink-0 animate-in fade-in-50 duration-500", isMobile ? "h-4 w-4" : "h-5 w-5")} />}
-                                            <span className={cn(meta.concluida && "line-through text-muted-foreground")}>{meta.nome}</span>
+                                            <span className={cn(meta.concluida && "line-through text-muted-foreground", isMobile && "truncate")}>{meta.nome}</span>
                                         </CardTitle>
                                         <CardDescription className={cn("mt-1", isMobile ? "mt-1" : "mt-1")}>
-                                            <Badge variant={meta.concluida ? "secondary" : "default"} className={cn("transition-all duration-300", !meta.concluida && "bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30 hover:from-primary/30 hover:to-primary/20", isMobile ? "text-xs" : "")}>
+                                            <Badge variant={meta.concluida ? "secondary" : "default"} className={cn("transition-all duration-300", !meta.concluida && "bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30 hover:from-primary/30 hover:to-primary/20", isMobile ? "text-[10px] px-2 h-5" : "")}>
                                                 {meta.categoria}
                                             </Badge>
                                         </CardDescription>
                                     </div>
+                                    {!isMobile && (
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                         <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full transition-all duration-200", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label={`Editar meta ${meta.nome}`}>
                                             <Edit className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
@@ -907,19 +922,43 @@ const MetasViewComponent = () => {
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </div>
+                                    )}
+                                    {isMobile && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleOpenEditDialog(meta)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Editar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setDetailedMeta(meta)}>
+                                                    <Info className="mr-2 h-4 w-4" /> Detalhes
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleGetRoadmap(meta)}>
+                                                    <MapIcon className="mr-2 h-4 w-4" /> Estratégia
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={() => handleDelete(meta.id)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </div>
                             </CardHeader>
-                            <CardContent className={cn("flex-grow space-y-4 relative z-10", isMobile ? "p-3 space-y-2" : "")}>
+                            <CardContent className={cn("flex-grow space-y-4 relative z-10", isMobile ? "p-4 pt-0 space-y-3" : "")}>
                                  <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger className="w-full">
                                             <div className="relative">
-                                                <Progress value={progress} className={cn("bg-secondary/50 shadow-inner", isMobile ? "h-2" : "h-3")} />
+                                                <Progress value={progress} className={cn("bg-secondary/50 shadow-inner", isMobile ? "h-1.5" : "h-3")} />
                                                 {progress > 0 && (
                                                     <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/40 rounded-full" style={{ width: `${progress}%` }} />
                                                 )}
-                                                {progress > 5 && (
-                                                    <span className={cn("absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-primary-foreground mix-blend-difference", isMobile ? "text-[10px]" : "text-xs")}>
+                                                {!isMobile && progress > 5 && (
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-primary-foreground mix-blend-difference">
                                                         {Math.round(progress)}%
                                                     </span>
                                                 )}
@@ -931,31 +970,33 @@ const MetasViewComponent = () => {
                                     </Tooltip>
                                 </TooltipProvider>
                                 {meta.prazo && (
-                                    <div className={cn("flex items-center gap-2 text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
-                                        <CalendarIcon className={cn("text-primary/70", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                    <div className={cn("flex items-center gap-2 text-muted-foreground", isMobile ? "text-xs font-medium" : "text-sm")}>
+                                        <CalendarIcon className={cn("text-primary/70", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
                                         <span>Prazo: {format(new Date(meta.prazo), "dd/MM/yyyy")}</span>
                                     </div>
                                 )}
                             </CardContent>
-                             <CardFooter className={cn("flex-col items-start gap-4 relative z-10", isMobile ? "p-3 gap-2" : "")}>
-                                <div className={cn("flex gap-2 w-full", isMobile ? "flex-col" : "flex-wrap")}>
-                                    <Button variant="outline" size="sm" onClick={() => setDetailedMeta(meta)} className={cn("flex-1 transition-all duration-200 hover:bg-primary/10 hover:border-primary/50", isMobile ? "text-xs py-1 h-8" : "")}>
-                                        <Info className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                        {isMobile ? "Detalhes" : "Detalhes"}
+                             <CardFooter className={cn("flex-col items-start gap-4 relative z-10", isMobile ? "p-4 pt-0 gap-3" : "")}>
+                                {!isMobile && (
+                                <div className="flex gap-2 w-full flex-wrap">
+                                    <Button variant="outline" size="sm" onClick={() => setDetailedMeta(meta)} className="flex-1 transition-all duration-200 hover:bg-primary/10 hover:border-primary/50">
+                                        <Info className="mr-1 h-4 w-4" />
+                                        Detalhes
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={() => handleGetRoadmap(meta)} className={cn("flex-1 transition-all duration-200 hover:bg-accent/10 hover:border-accent/50", isMobile ? "text-xs py-1 h-8" : "")}>
-                                        <MapIcon className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                        {isMobile ? "Estratégia" : "Estratégia"}
+                                    <Button variant="outline" size="sm" onClick={() => handleGetRoadmap(meta)} className="flex-1 transition-all duration-200 hover:bg-accent/10 hover:border-accent/50">
+                                        <MapIcon className="mr-1 h-4 w-4" />
+                                        Estratégia
                                     </Button>
                                 </div>
+                                )}
                                  {stats && stats.length > 0 && (
-                                    <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2 w-full pt-4 border-t border-border/50", isMobile ? "pt-2" : "")}>
-                                        <strong className={cn("text-muted-foreground shrink-0", isMobile ? "text-xs" : "text-sm")}>Atributos:</strong>
+                                    <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2 w-full pt-4 border-t border-border/50", isMobile ? "pt-2 border-border/30" : "")}>
+                                        {!isMobile && <strong className="text-muted-foreground shrink-0 text-sm">Atributos:</strong>}
                                         <div className="flex flex-wrap items-center gap-3">
                                         {stats.map((stat: any) => (
-                                            <div key={stat} className={cn("flex items-center gap-1.5 text-card-foreground bg-secondary/30 px-2 py-1 rounded-full transition-all duration-200 hover:bg-secondary/50", isMobile ? "gap-1 px-1.5 py-0.5" : "")}>
+                                            <div key={stat} className={cn("flex items-center gap-1.5 text-card-foreground bg-secondary/30 px-2 py-1 rounded-full transition-all duration-200 hover:bg-secondary/50", isMobile ? "gap-1 px-2 py-0.5 bg-secondary/20" : "")}>
                                                 {statIcons[stat]}
-                                                <span className={cn("capitalize", isMobile ? "text-xs" : "text-xs")}>{stat}</span>
+                                                <span className={cn("capitalize", isMobile ? "text-[10px] font-medium" : "text-xs")}>{stat}</span>
                                             </div>
                                         ))}
                                         </div>
@@ -963,29 +1004,32 @@ const MetasViewComponent = () => {
                                 )}
                             </CardFooter>
                         </Card>
-                    )})}
+                    )
+                })}
             </div>
             
             {sortedMetas.length === 0 && (
-                <div className={cn("flex flex-col items-center justify-center text-center py-16 px-4 rounded-lg border-2 border-dashed border-border/50 bg-gradient-to-br from-secondary/20 to-secondary/10", isMobile ? "py-8" : "")}>
+                <div className={cn("flex flex-col items-center justify-center text-center py-16 px-4 rounded-lg border-2 border-dashed border-border/50 bg-gradient-to-br from-secondary/20 to-secondary/10", isMobile ? "py-12 border-0 bg-transparent" : "")}>
                     <div className="relative mb-6">
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-xl" />
                         <div className="relative bg-gradient-to-br from-card to-card/80 p-6 rounded-full border border-border/50">
-                            <Star className={cn("text-primary animate-pulse", isMobile ? "h-12 w-12" : "h-16 w-16")} />
+                            <Target className={cn("text-primary animate-pulse", isMobile ? "h-12 w-12" : "h-16 w-16")} />
                         </div>
                     </div>
                     <h3 className={cn("font-bold text-foreground mb-2 font-cinzel", isMobile ? "text-xl" : "text-2xl")}>Sua Jornada Começa Aqui</h3>
                     <p className={cn("text-muted-foreground mb-6 max-w-md", isMobile ? "text-sm" : "")}>Defina suas primeiras metas e veja o Sistema criar uma árvore completa de missões épicas para guiá-lo rumo à vitória.</p>
-                    <div className={cn("flex gap-3", isMobile ? "flex-col w-full max-w-xs" : "")}>
-                        <Button onClick={() => handleOpenWizard()} className={cn("bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl", isMobile ? "w-full" : "")}>
-                            <PlusCircle className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                            Criar Primeira Meta
-                        </Button>
-                        <Button onClick={handleGetSuggestions} variant="outline" className={cn("border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 transition-all duration-200 hover:scale-105", isMobile ? "w-full" : "")}>
-                            <Wand2 className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                            Ver Sugestões
-                        </Button>
-                    </div>
+                    {!isMobile && (
+                        <div className="flex gap-3">
+                            <Button onClick={() => handleOpenWizard()} className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                                <PlusCircle className="mr-2 h-5 w-5" />
+                                Criar Primeira Meta
+                            </Button>
+                            <Button onClick={handleGetSuggestions} variant="outline" className="border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 transition-all duration-200 hover:scale-105">
+                                <Wand2 className="mr-2 h-5 w-5" />
+                                Ver Sugestões
+                            </Button>
+                        </div>
+                    )}
                 </div>
             )}
             
@@ -1077,7 +1121,7 @@ const MetasViewComponent = () => {
                             <p className="break-words"><strong className="text-primary">Temporal:</strong> {detailedMeta.detalhes_smart.timeBound}</p>
                         </div>
                          <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-                            <Button variant="outline" onClick={() => setDetailedMeta(null)} className={isMobile ? "h-8 text-sm" : ""}>Fechar</Button>
+                            <Button variant="outline" onClick={() => setDetailedMeta(null)} className={isMobile ? "h-8 text-sm" : ""}> Fechar</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -1185,17 +1229,26 @@ const MetasViewComponent = () => {
                 </DialogContent>
             </Dialog>
 
+            {isMobile && (
+                <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-50">
+                    <Button 
+                        size="icon" 
+                        onClick={handleGetSuggestions} 
+                        className="h-12 w-12 rounded-full bg-secondary/80 backdrop-blur border border-border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <Wand2 className="h-5 w-5" />
+                    </Button>
+                    <Button 
+                        size="icon" 
+                        onClick={() => handleOpenWizard()} 
+                        className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                    >
+                        <PlusCircle className="h-6 w-6" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };
 
 export const MetasView = memo(MetasViewComponent);
-
-const statIcons: any = {
-    forca: <Swords className="h-4 w-4 text-red-400" />,
-    inteligencia: <Brain className="h-4 w-4 text-blue-400" />,
-    destreza: <Zap className="h-4 w-4 text-yellow-400" />,
-    constituicao: <ShieldCheck className="h-4 w-4 text-green-400" />,
-    sabedoria: <BookOpen className="h-4 w-4 text-purple-400" />,
-    carisma: <Star className="h-4 w-4 text-pink-400" />,
-};

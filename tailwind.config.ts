@@ -107,6 +107,12 @@ export default {
       },
       boxShadow: {
         // MD3 Elevation Shadows
+        'elevation-1': '0 1px 2px 0 rgba(0, 0, 0, 0.30), 0 1px 3px 1px rgba(0, 0, 0, 0.15)',
+        'elevation-2': '0 1px 3px 0 rgba(0, 0, 0, 0.30), 0 4px 8px 3px rgba(0, 0, 0, 0.15)',
+        'elevation-3': '0 1px 3px 0 rgba(0, 0, 0, 0.30), 0 4px 8px 3px rgba(0, 0, 0, 0.15)',
+        'elevation-4': '0 2px 6px 2px rgba(0, 0, 0, 0.30), 0 8px 24px 4px rgba(0, 0, 0, 0.15)',
+        'elevation-5': '0 4px 8px 3px rgba(0, 0, 0, 0.30), 0 16px 48px 4px rgba(0, 0, 0, 0.15)',
+        // Legacy shadows for backward compatibility
         'md3-1': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         'md3-2': '0 1px 3px 1px rgba(0, 0, 0, 0.06)',
         'md3-3': '0 2px 6px 2px rgba(0, 0, 0, 0.08)',
@@ -116,6 +122,24 @@ export default {
       fontFamily: {
         sans: ['var(--font-inter)'],
         cinzel: ['var(--font-cinzel)'],
+      },
+      fontSize: {
+        // MD3 Typography Scale
+        'display-large': ['3.5rem', { lineHeight: '4rem', fontWeight: '400' }],
+        'display-medium': ['2.8125rem', { lineHeight: '3.25rem', fontWeight: '400' }],
+        'display-small': ['2.25rem', { lineHeight: '2.75rem', fontWeight: '400' }],
+        'headline-large': ['2rem', { lineHeight: '2.5rem', fontWeight: '400' }],
+        'headline-medium': ['1.75rem', { lineHeight: '2.25rem', fontWeight: '400' }],
+        'headline-small': ['1.5rem', { lineHeight: '2rem', fontWeight: '400' }],
+        'title-large': ['1.375rem', { lineHeight: '1.75rem', fontWeight: '400' }],
+        'title-medium': ['1rem', { lineHeight: '1.5rem', fontWeight: '500' }],
+        'title-small': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '500' }],
+        'label-large': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '500' }],
+        'label-medium': ['0.75rem', { lineHeight: '1rem', fontWeight: '500' }],
+        'label-small': ['0.6875rem', { lineHeight: '0.875rem', fontWeight: '500' }],
+        'body-large': ['1rem', { lineHeight: '1.5rem', fontWeight: '400' }],
+        'body-medium': ['0.875rem', { lineHeight: '1.25rem', fontWeight: '400' }],
+        'body-small': ['0.75rem', { lineHeight: '1rem', fontWeight: '400' }],
       },
       keyframes: {
         'accordion-down': {
