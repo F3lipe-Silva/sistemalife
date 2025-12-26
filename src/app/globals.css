@@ -43,6 +43,11 @@
     --glow-accent: 0 0 30px hsl(var(--accent) / 0.3);
     --glass-bg: hsl(var(--card) / 0.7);
     --glass-border: hsl(var(--border) / 0.5);
+
+    /* MD3 Colors */
+    --surface-container: 220 40% 12%; 
+    --surface-variant: 217 33% 20%;
+    --on-surface-variant: 215 20% 80%;
   }
 
   .dark {
@@ -74,6 +79,11 @@
     --glow-accent: 0 0 30px hsl(var(--accent) / 0.3);
     --glass-bg: hsl(var(--card) / 0.7);
     --glass-border: hsl(var(--border) / 0.5);
+    
+    /* MD3 Colors for Dark Mode */
+    --surface-container: 220 40% 12%;
+    --surface-variant: 217 33% 20%;
+    --on-surface-variant: 215 20% 80%;
   }
 }
 

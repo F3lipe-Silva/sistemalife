@@ -110,9 +110,7 @@ export default function App() {
       'missions': 'Missões',
       'tower': 'Torre do Destino',
       'dungeon': 'Masmorra',
-      'skills': 'Habilidades',
       'class': 'Classe',
-      'routine': 'Rotina',
       'achievements': 'Conquistas',
       'shop': 'Loja',
       'inventory': 'Inventário',
@@ -131,9 +129,7 @@ export default function App() {
       'dashboard': <DashboardView />,
       'metas': <MetasView />,
       'missions': <MissionsView />,
-      'skills': <SkillsView onEnterDungeon={handleEnterDungeon} />,
       'class': <ClassView />,
-      'routine': <RoutineView />,
       'achievements': <AchievementsView />,
       'shop': <ShopView />,
       'inventory': <InventoryView />,
@@ -144,7 +140,13 @@ export default function App() {
     };
 
     return (
-      <div key={currentPage} className="animate-in fade-in-50 duration-500 h-full p-4 md:p-6">
+      <div 
+        key={currentPage} 
+        className={cn(
+          "animate-in fade-in-50 duration-500 h-full",
+          isMobile ? "p-3" : "p-4 md:p-6"
+        )}
+      >
         {views[currentPage] || <DashboardView />}
       </div>
     )
@@ -201,12 +203,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-foreground flex font-sans overflow-hidden">
       {!isMobile && (
-        <aside className="w-72 bg-card border-r border-border/50 flex flex-col shadow-xl z-20">
+        <aside className="w-72 bg-surface-container-low border-r border-border/40 flex flex-col shadow-md3-2 z-20">
           <Sidebar />
         </aside>
       )}
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-surface">
         <TopHeader
           title={getPageTitle(currentPage)}
           profile={profile}
@@ -216,8 +218,10 @@ export default function App() {
         <main
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
-            isMobile && "pb-safe mb-[80px]" // Use mb for bottom nav clearance + safe area
+            "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
+            isMobile && "pb-safe" // Safe area for notched devices
           )}
+          style={isMobile ? { paddingBottom: 'max(env(safe-area-inset-bottom), 80px)' } : undefined}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={() => onTouchEnd(false)}

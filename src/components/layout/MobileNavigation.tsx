@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, ScrollText, Target, BookOpen, TowerControl, KeySquare, Menu as MenuIcon } from 'lucide-react';
+import React from 'react';
+import { LayoutDashboard, Target, BookOpen, KeySquare, Menu as MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
@@ -28,108 +28,132 @@ export const MobileNavigation = ({ onNavigate, isSheetOpen, onSheetOpenChange }:
         return (
             <button
                 onClick={() => handleNavigate(page)}
-                className={cn(
-                    'relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-300 flex-1 group',
-                    isActive
-                        ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground'
-                )}
+                className="relative flex flex-col items-center justify-center min-w-[64px] h-full gap-1 group transition-all duration-200 active:scale-95"
+                aria-label={label}
+                aria-current={isActive ? 'page' : undefined}
             >
-                {/* Background glow for active state */}
-                {isActive && (
-                    <div className="absolute inset-0 bg-primary/15 rounded-xl blur-sm" />
-                )}
-                
-                {/* Icon container */}
+                {/* MD3 Navigation Bar Item with State Layer */}
                 <div className={cn(
-                    "relative z-10 p-2 rounded-lg transition-all duration-300",
+                    "relative flex items-center justify-center w-16 h-8 rounded-full transition-all duration-300",
+                    "before:absolute before:inset-0 before:rounded-full before:transition-all before:duration-300",
                     isActive 
-                        ? "bg-primary/20 scale-110" 
-                        : "group-hover:bg-secondary/50 group-hover:scale-105"
+                        ? "bg-primary/15 before:bg-primary/10" 
+                        : "before:bg-transparent group-hover:before:bg-surface-variant/40 group-active:before:bg-surface-variant/60"
                 )}>
                     <Icon className={cn(
-                        "h-5 w-5 transition-all duration-300",
-                        isActive && "drop-shadow-[0_0_8px_hsl(var(--primary))]"
+                        "h-6 w-6 transition-all duration-300 relative z-10",
+                        isActive 
+                            ? "text-primary scale-110" 
+                            : "text-on-surface-variant group-hover:text-foreground group-hover:scale-105"
                     )} />
                 </div>
-                
-                {/* Label */}
+
+                {/* MD3 Label with proper typography */}
                 <span className={cn(
-                    "text-[10px] font-medium mt-1 transition-all duration-300",
-                    isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"
+                    "text-xs font-medium tracking-wide transition-all duration-300",
+                    isActive 
+                        ? "text-primary font-semibold" 
+                        : "text-on-surface-variant/80 group-hover:text-foreground"
                 )}>
                     {label}
                 </span>
-                
-                {/* Active indicator dot */}
+
+                {/* MD3 Active Indicator */}
                 {isActive && (
-                    <div className="absolute -bottom-0.5 w-1 h-1 bg-primary rounded-full animate-pulse" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full animate-scale-in" />
                 )}
             </button>
         );
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/30 pb-safe pt-2 px-2 z-40 md:hidden shadow-[0_-8px_30px_-5px_rgba(0,0,0,0.4)]">
-            <div className="flex justify-around items-center max-w-md mx-auto h-[60px] pb-1">
-                <NavButton icon={LayoutDashboard} label="Início" page="dashboard" isActive={currentPage === 'dashboard'} />
-                <NavButton icon={Target} label="Missões" page="missions" isActive={currentPage === 'missions'} />
-                <NavButton icon={BookOpen} label="Metas" page="metas" isActive={currentPage === 'metas'} />
-                <NavButton icon={TowerControl} label="Torre" page="tower" isActive={currentPage === 'tower'} />
-                <NavButton icon={KeySquare} label="Masmorra" page="dungeon" isActive={currentPage === 'dungeon'} />
+        <nav 
+            className="fixed bottom-0 left-0 right-0 bg-surface-container/98 backdrop-blur-xl border-t border-border/10 pb-safe z-40 md:hidden shadow-[0_-2px_16px_rgba(0,0,0,0.08)]"
+            aria-label="Main navigation"
+        >
+            <div className="flex justify-around items-center h-20 px-2 w-full max-w-screen-sm mx-auto">
+                <NavButton 
+                    icon={LayoutDashboard} 
+                    label="Início" 
+                    page="dashboard" 
+                    isActive={currentPage === 'dashboard'} 
+                />
+                <NavButton 
+                    icon={Target} 
+                    label="Missões" 
+                    page="missions" 
+                    isActive={currentPage === 'missions'} 
+                />
+                <NavButton 
+                    icon={BookOpen} 
+                    label="Metas" 
+                    page="metas" 
+                    isActive={currentPage === 'metas'} 
+                />
+                <NavButton 
+                    icon={KeySquare} 
+                    label="Masmorra" 
+                    page="dungeon" 
+                    isActive={currentPage === 'dungeon'} 
+                />
 
-                {/* More Menu */}
+                {/* More Menu - MD3 Navigation Drawer trigger */}
                 <Sheet open={isSheetOpen} onOpenChange={onSheetOpenChange}>
                     <SheetTrigger asChild>
                         <button
-                            className={cn(
-                                'relative flex flex-col items-center justify-center p-2.5 rounded-xl transition-all duration-300 group',
-                                isSheetOpen
-                                    ? 'text-primary'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            )}
+                            className="relative flex flex-col items-center justify-center min-w-[64px] h-full gap-1 group transition-all duration-200 active:scale-95"
+                            aria-label="Open menu"
                         >
-                            {isSheetOpen && (
-                                <div className="absolute inset-0 bg-primary/15 rounded-xl blur-sm" />
-                            )}
                             <div className={cn(
-                                "relative z-10 p-2 rounded-lg transition-all duration-300",
+                                "relative flex items-center justify-center w-16 h-8 rounded-full transition-all duration-300",
+                                "before:absolute before:inset-0 before:rounded-full before:transition-all before:duration-300",
                                 isSheetOpen 
-                                    ? "bg-primary/20 scale-110" 
-                                    : "group-hover:bg-secondary/50 group-hover:scale-105"
+                                    ? "bg-primary/15 before:bg-primary/10" 
+                                    : "before:bg-transparent group-hover:before:bg-surface-variant/40 group-active:before:bg-surface-variant/60"
                             )}>
                                 <MenuIcon className={cn(
-                                    "h-5 w-5 transition-all duration-300",
-                                    isSheetOpen && "drop-shadow-[0_0_8px_hsl(var(--primary))]"
+                                    "h-6 w-6 transition-all duration-300 relative z-10",
+                                    isSheetOpen 
+                                        ? "text-primary scale-110" 
+                                        : "text-on-surface-variant group-hover:text-foreground group-hover:scale-105"
                                 )} />
                             </div>
                             <span className={cn(
-                                "text-[10px] font-medium mt-1 transition-all duration-300",
-                                isSheetOpen ? "opacity-100" : "opacity-70 group-hover:opacity-100"
+                                "text-xs font-medium tracking-wide transition-all duration-300",
+                                isSheetOpen 
+                                    ? "text-primary font-semibold" 
+                                    : "text-on-surface-variant/80 group-hover:text-foreground"
                             )}>
                                 Menu
                             </span>
                             {isSheetOpen && (
-                                <div className="absolute -bottom-0.5 w-1 h-1 bg-primary rounded-full animate-pulse" />
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full animate-scale-in" />
                             )}
                         </button>
                     </SheetTrigger>
-                    <SheetContent side="bottom" className="md:h-[85vh] h-[92vh] rounded-t-[24px] px-0 bg-card/95 backdrop-blur-xl border-t-2 border-primary/20">
-                        <SheetHeader className="px-6 mb-4 text-left">
+                    
+                    {/* MD3 Bottom Sheet with proper elevation */}
+                    <SheetContent 
+                        side="bottom" 
+                        className="h-[92vh] rounded-t-3xl px-0 bg-surface-container border-t-0 shadow-[0_-4px_24px_rgba(0,0,0,0.12)]"
+                    >
+                        <SheetHeader className="px-6 pb-4 pt-6 text-left border-b border-border/10">
                             <SheetTitle className="font-cinzel text-2xl text-gradient tracking-wider flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                    <MenuIcon className="h-4 w-4 text-primary" />
+                                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                    <MenuIcon className="h-5 w-5 text-primary" />
                                 </div>
                                 MENU DO SISTEMA
                             </SheetTitle>
-                            <SheetDescription className="text-muted-foreground/80">Acesse todas as funcionalidades do sistema.</SheetDescription>
+                            <SheetDescription className="text-muted-foreground/70 text-sm mt-2">
+                                Acesse todas as funcionalidades do sistema
+                            </SheetDescription>
                         </SheetHeader>
-                        <div className="h-full overflow-y-auto pb-20">
+                        <div className="h-full overflow-y-auto pb-24 pt-2">
                             <Sidebar inSheet={true} onNavigate={(page) => handleNavigate(page)} />
                         </div>
                     </SheetContent>
                 </Sheet>
             </div>
-        </div>
+        </nav>
     );
 };

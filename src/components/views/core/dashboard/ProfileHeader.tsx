@@ -22,44 +22,30 @@ const getProfileRank = (level: number) => {
 };
 
 export const ProfileHeader = ({ profile, isMobile = false }: ProfileHeaderProps) => {
-    const xpPercentage = (profile.xp / profile.xp_para_proximo_nivel) * 100;
-    const maxHP = Math.floor(profile.estatisticas.constituicao / 5) * 100;
-    const hpPercentage = ((profile.hp_atual || maxHP) / maxHP) * 100;
     const profileRank = getProfileRank(profile.nivel);
 
     return (
         <div className={cn(
-            "flex gap-4 p-4 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/30",
-            isMobile ? "flex-row items-start" : "flex-row items-center gap-6 p-6"
+            "flex items-center gap-4 p-4 rounded-3xl bg-gradient-to-r from-card/60 to-secondary/20 backdrop-blur-md border border-border/30 shadow-xl",
+            isMobile ? "p-3" : "p-6 gap-8"
         )}>
             {/* Avatar Section */}
             <div className="relative flex-shrink-0">
                 <div className={cn(
-                    "relative rounded-xl overflow-hidden shadow-2xl",
-                    "border-2 border-primary/30",
-                    "bg-gradient-to-br from-primary/20 via-transparent to-accent/20",
-                    isMobile ? "w-24 h-28" : "w-32 h-40"
+                    "relative rounded-2xl overflow-hidden shadow-2xl ring-2 ring-primary/20",
+                    isMobile ? "w-20 h-20" : "w-28 h-28"
                 )}>
                     <Avatar className="w-full h-full rounded-none">
                         <AvatarImage src={profile.avatar_url} alt={profile.nome_utilizador} className="object-cover" />
-                        <AvatarFallback className="text-2xl rounded-none">{profile.nome_utilizador?.[0]}</AvatarFallback>
+                        <AvatarFallback className="text-xl rounded-none">{profile.nome_utilizador?.[0]}</AvatarFallback>
                     </Avatar>
-                    
-                    {/* Rank Badge Overlay */}
-                    <div className={cn(
-                        "absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-t-lg",
-                        "font-bold text-sm shadow-lg backdrop-blur-sm",
-                        profileRank.bg, profileRank.color, profileRank.border, "border"
-                    )}>
-                        <span className="drop-shadow-lg">{profileRank.rank}</span>
-                    </div>
                 </div>
                 
                 {/* Level Badge */}
                 <div className={cn(
                     "absolute -top-2 -right-2 flex items-center justify-center",
-                    "w-8 h-8 rounded-full bg-primary shadow-lg shadow-primary/30",
-                    "text-xs font-bold text-primary-foreground",
+                    "w-7 h-7 rounded-full bg-primary shadow-lg shadow-primary/30",
+                    "text-[10px] font-bold text-primary-foreground",
                     "border-2 border-background"
                 )}>
                     {profile.nivel}
@@ -67,78 +53,36 @@ export const ProfileHeader = ({ profile, isMobile = false }: ProfileHeaderProps)
             </div>
 
             {/* Info Section */}
-            <div className="flex-1 min-w-0 space-y-3">
-                {/* Name and Title */}
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className={cn(
-                            "font-bold text-foreground truncate",
-                            isMobile ? "text-lg" : "text-2xl"
-                        )}>
-                            {profile.nome_utilizador}
-                        </h2>
-                        <Crown className={cn("h-4 w-4", profileRank.color)} />
-                    </div>
-                    <p className={cn(
-                        "font-medium flex items-center gap-1.5",
-                        profileRank.color,
-                        isMobile ? "text-sm" : "text-base"
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                    <h2 className={cn(
+                        "font-bold text-foreground truncate font-cinzel tracking-wider",
+                        isMobile ? "text-base" : "text-xl"
                     )}>
-                        <Shield className="h-3.5 w-3.5" />
-                        {profileRank.title}
-                    </p>
-                </div>
-
-                {/* Stats Bars */}
-                <div className="space-y-3">
-                    {/* XP Bar */}
-                    <div className="space-y-1.5">
-                        <div className="flex justify-between items-center">
-                            <span className={cn(
-                                "flex items-center gap-1.5 font-medium text-muted-foreground",
-                                isMobile ? "text-xs" : "text-sm"
-                            )}>
-                                <Zap className={cn("text-primary", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
-                                Experiência
-                            </span>
-                            <span className={cn(
-                                "font-mono font-medium text-foreground",
-                                isMobile ? "text-xs" : "text-sm"
-                            )}>
-                                {profile.xp.toLocaleString()} / {profile.xp_para_proximo_nivel.toLocaleString()}
-                            </span>
-                        </div>
-                        <Progress 
-                            value={xpPercentage} 
-                            variant="gradient"
-                            className={cn("bg-primary/10", isMobile ? "h-2.5" : "h-3")} 
-                        />
+                        {profile.nome_utilizador}
+                    </h2>
+                    <div className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tighter border",
+                        profileRank.bg, profileRank.color, profileRank.border
+                    )}>
+                        {profileRank.rank}-RANK
                     </div>
+                </div>
+                
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-3 uppercase tracking-widest font-medium">
+                    <Shield className={cn("h-3 w-3", profileRank.color)} />
+                    {profileRank.title}
+                </p>
 
-                    {/* HP Bar */}
-                    <div className="space-y-1.5">
-                        <div className="flex justify-between items-center">
-                            <span className={cn(
-                                "flex items-center gap-1.5 font-medium text-muted-foreground",
-                                isMobile ? "text-xs" : "text-sm"
-                            )}>
-                                <Heart className={cn("text-red-500", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
-                                Vida
-                            </span>
-                            <span className={cn(
-                                "font-mono font-medium text-foreground",
-                                isMobile ? "text-xs" : "text-sm"
-                            )}>
-                                {profile.hp_atual || maxHP} / {maxHP}
-                            </span>
-                        </div>
-                        <Progress 
-                            value={hpPercentage} 
-                            className={cn(
-                                "bg-red-500/10 [&>div>div]:bg-gradient-to-r [&>div>div]:from-red-500 [&>div>div]:to-red-400",
-                                isMobile ? "h-2.5" : "h-3"
-                            )} 
-                        />
+                <div className="flex gap-4">
+                    <div className="flex flex-col">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Fragmentos</span>
+                        <span className="text-sm font-bold text-amber-400 font-mono">{profile.fragmentos?.toLocaleString() || 0}</span>
+                    </div>
+                    <div className="w-px h-8 bg-border/50" />
+                    <div className="flex flex-col">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Concluídas</span>
+                        <span className="text-sm font-bold text-primary font-mono">{profile.missoes_concluidas_total || 0}</span>
                     </div>
                 </div>
             </div>
