@@ -13,7 +13,9 @@ import {z} from 'genkit';
 import { retryWithBackoff } from '@/lib/ai-utils';
 
 const GenerateMissionRewardsInputSchema = z.object({
-  missionText: z.string().describe("O texto completo da missão (nome e descrição)."),
+  missionText: z.string().describe("O nome da missão."),
+  missionDescription: z.string().optional().describe("A descrição da missão."),
+  subTasks: z.array(z.any()).optional().describe("A lista de sub-tarefas para avaliar volume de trabalho."),
   userLevel: z.number().describe("O nível atual do utilizador."),
 });
 export type GenerateMissionRewardsInput = z.infer<typeof GenerateMissionRewardsInputSchema>;
@@ -36,28 +38,25 @@ const generateMissionRewardsFlow = ai.defineFlow(
     inputSchema: GenerateMissionRewardsInputSchema,
     outputSchema: GenerateMissionRewardsOutputSchema,
   },
-  async ({missionText, userLevel}) => {
-    // Fatores de cálculo para atingir ~10950 XP por ano (30XP/dia)
-    const baseXP = 15; // XP mínimo para uma tarefa muito simples
-    const difficultyMultiplier = 1.2; // Aumenta o XP com base na dificuldade percebida
-    const levelMultiplier = 0.2; // Aumenta ligeiramente o XP para jogadores de nível mais alto
+  async ({missionText, missionDescription, subTasks, userLevel}) => {
+    // Fatores de cálculo
+    const baseXP = 15;
+    const difficultyMultiplier = 1.5; // Aumentado
+    const levelMultiplier = 0.3; 
+    const subTaskWeight = 5; // Cada sub-tarefa adiciona peso ao XP
     
-    // Fatores de cálculo para fragmentos
     const baseFragments = 2;
-    const fragmentDifficultyMultiplier = 0.5;
-    const fragmentLevelMultiplier = 0.1;
+    const fragmentDifficultyMultiplier = 0.8;
 
     const prompt = `
-        Analise a seguinte missão e avalie a sua complexidade, esforço e tempo necessários numa escala de 1 a 10.
-        - 1-2: Tarefa trivial (ex: 'abrir um ficheiro').
-        - 3-4: Tarefa simples (ex: 'escrever 10 linhas de código', 'fazer um aquecimento de 5 minutos').
-        - 5-6: Tarefa de esforço moderado (ex: 'implementar uma função pequena', 'correr 1km').
-        - 7-8: Tarefa desafiadora (ex: 'depurar um bug complexo', 'completar um treino de 45 minutos').
-        - 9-10: Tarefa muito difícil ou demorada (ex: 'construir um pequeno componente de UI', 'ler um capítulo de um livro técnico').
+        Analise a seguinte missão e avalie a sua complexidade geral numa escala de 1 a 10.
+        Considere o volume de trabalho: ${subTasks?.length || 1} sub-tarefa(s).
         
-        Missão: "${missionText}"
+        Nome: "${missionText}"
+        Descrição: "${missionDescription || ''}"
+        Sub-tarefas: ${JSON.stringify(subTasks || [])}
         
-        Responda APENAS com um número de 1 a 10 para a dificuldade.
+        Responda APENAS com um número de 1 a 10.
     `;
 
     try {
@@ -71,15 +70,14 @@ const generateMissionRewardsFlow = ai.defineFlow(
         'Generate Mission Rewards'
       );
 
-      const difficultyScore = parseInt(difficultyScoreText, 10) || 4; // Padrão para 4 se a análise falhar
+      const difficultyScore = parseInt(difficultyScoreText, 10) || 4;
 
-      // Fórmula para calcular o XP
-      const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + (userLevel * levelMultiplier);
-      const finalXP = Math.round(Math.max(10, Math.min(100, calculatedXP)));
+      // Fórmula melhorada: Base + (Dificuldade * Mult) + (Qtd Subtarefas * Peso) + (Level * Mult)
+      const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + ((subTasks?.length || 1) * subTaskWeight) + (userLevel * levelMultiplier);
+      const finalXP = Math.round(Math.max(10, Math.min(150, calculatedXP)));
       
-      // Fórmula para calcular os fragmentos
-      const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier);
-      const finalFragments = Math.round(Math.max(1, Math.min(20, calculatedFragments)));
+      const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + ((subTasks?.length || 1) * 0.5);
+      const finalFragments = Math.round(Math.max(1, Math.min(30, calculatedFragments)));
 
       return {
         xp: finalXP,

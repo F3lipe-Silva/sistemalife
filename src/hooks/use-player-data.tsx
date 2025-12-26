@@ -952,7 +952,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 goalDeadline: deadline,
                 history: history || `O utilizador acabou de completar: "${tempDailyMission.nome}".`,
                 userLevel: updatedProfile.nivel,
-                feedback: feedbackForNextMission ?? ''
+                feedback: feedbackForNextMission ?? '',
+                userAttributes: updatedProfile.estatisticas,
+                skillCategory: meta?.categoria
             });
 
             newDailyMission = {
@@ -1060,7 +1062,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 goalDeadline: meta?.prazo,
                 history: history || `O utilizador está a ajustar a missão: "${dailyMission.nome}".`,
                 userLevel: state.profile.nivel,
-                feedback: `O utilizador considerou a missão anterior ${feedback === 'too_easy' ? 'muito fácil' : 'muito difícil'}. ${difficultyAdjustment}`
+                feedback: `O utilizador considerou a missão anterior ${feedback === 'too_easy' ? 'muito fácil' : 'muito difícil'}. ${difficultyAdjustment}`,
+                userAttributes: state.profile.estatisticas,
+                skillCategory: meta?.categoria
             });
 
             newDailyMission = {
@@ -1152,7 +1156,9 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     goalDeadline: meta?.prazo,
                     history: history || `O utilizador completou missões anteriores.`,
                     userLevel: state.profile?.nivel || 1,
-                    feedback: feedbackForAI ?? ''
+                    feedback: feedbackForAI ?? '',
+                    userAttributes: state.profile?.estatisticas,
+                    skillCategory: meta?.categoria
                 });
 
                 const newDailyMission = {

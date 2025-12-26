@@ -43,6 +43,20 @@
     --glow-accent: 0 0 30px hsl(var(--accent) / 0.3);
     --glass-bg: hsl(var(--card) / 0.7);
     --glass-border: hsl(var(--border) / 0.5);
+
+    /* MD3 Colors */
+    --surface: 224 71% 4%;
+    --surface-dim: 220 40% 8%;
+    --surface-bright: 220 40% 12%;
+    --surface-container: 220 40% 12%;
+    --surface-container-low: 220 40% 10%;
+    --surface-container-high: 220 40% 14%;
+    --surface-container-highest: 220 40% 16%;
+    --surface-variant: 217 33% 20%;
+    --on-surface: 210 40% 98%;
+    --on-surface-variant: 215 20% 80%;
+    --outline-variant: 217 33% 25%;
+    --tertiary: 120 60% 50%; /* Green for status indicators */
   }
 
   .dark {
@@ -74,6 +88,20 @@
     --glow-accent: 0 0 30px hsl(var(--accent) / 0.3);
     --glass-bg: hsl(var(--card) / 0.7);
     --glass-border: hsl(var(--border) / 0.5);
+    
+    /* MD3 Colors for Dark Mode */
+    --surface: 224 71% 4%;
+    --surface-dim: 220 40% 8%;
+    --surface-bright: 220 40% 12%;
+    --surface-container: 220 40% 12%;
+    --surface-container-low: 220 40% 10%;
+    --surface-container-high: 220 40% 14%;
+    --surface-container-highest: 220 40% 16%;
+    --surface-variant: 217 33% 20%;
+    --on-surface: 210 40% 98%;
+    --on-surface-variant: 215 20% 80%;
+    --outline-variant: 217 33% 25%;
+    --tertiary: 120 60% 50%; /* Green for status indicators */
   }
 }
 

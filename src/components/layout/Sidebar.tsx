@@ -88,9 +88,7 @@ export const Sidebar = ({ inSheet = false, onNavigate }: SidebarProps) => {
                 <NavItem icon={KeySquare} label="Masmorra" page="dungeon" />
 
                 <SectionTitle>Personagem</SectionTitle>
-                <NavItem icon={BarChart3} label="Habilidades" page="skills" />
                 <NavItem icon={UserSquare} label="Classe" page="class" />
-                <NavItem icon={Clock} label="Rotina" page="routine" />
                 <NavItem icon={Award} label="Conquistas" page="achievements" />
 
                 <SectionTitle>Economia</SectionTitle>

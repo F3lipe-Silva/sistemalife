@@ -12,7 +12,6 @@ import { generateTowerChallenge } from '@/ai/flows/generate-tower-challenge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const challengeTypes = {
@@ -121,8 +120,8 @@ const TowerView = () => {
     const canGenerateChallenge = activeChallenges.length === 0;
 
     return (
-        <div className="p-4 md:p-6 h-full flex flex-col bg-background relative overflow-hidden">
-             <div className="absolute inset-x-0 top-0 h-[400px] bg-gradient-to-b from-primary/10 to-transparent -z-0"></div>
+        <div className="p-4 md:p-6 flex flex-col bg-background relative pb-24 min-h-[calc(100vh-80px)]">
+             <div className="absolute inset-x-0 top-0 h-[400px] bg-gradient-to-b from-primary/10 to-transparent -z-0 pointer-events-none"></div>
             {/* Header */}
             <div className="flex-shrink-0 z-10">
                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -153,7 +152,7 @@ const TowerView = () => {
             </div>
 
             {/* Main Content */}
-            <ScrollArea className="mt-6 flex-grow z-10 -mx-4 px-4">
+            <div className="mt-6 flex-grow z-10">
                 <div className="relative flex flex-col items-center">
                     
                     {/* Future floor */}
@@ -257,7 +256,7 @@ const TowerView = () => {
                         </div>
                     ))}
                 </div>
-            </ScrollArea>
+            </div>
         </div>
     );
 };
