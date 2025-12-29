@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { LoaderCircle, Terminal, Sparkles, Shield, Zap } from 'lucide-react';
 
 export default function LoginPage() {
@@ -51,7 +51,9 @@ export default function LoginPage() {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            toast.success("Login bem-sucedido! A redirecionar...");
+            toast.success("Login bem-sucedido!", {
+                description: "A redirecionar para o dashboard..."
+            });
             router.push('/');
         } catch (err: any) {
             let friendlyMessage = "Ocorreu um erro ao fazer login. Verifique as suas credenciais.";

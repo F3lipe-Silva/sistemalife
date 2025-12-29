@@ -28,6 +28,7 @@ import DungeonLobbyView from '@/components/views/gamification/DungeonLobbyView';
 import { TopHeader } from '@/components/layout/TopHeader';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileNavigation } from '@/components/layout/MobileNavigation';
+import { CommandPalette } from '@/components/layout/CommandPalette';
 
 const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNotificationPrompt').then(mod => mod.PushNotificationPrompt), { ssr: false });
 
@@ -46,6 +47,21 @@ export default function App() {
   const isMobile = useIsMobile();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Command Palette Keyboard Shortcut (Ctrl+K)
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   // Redirecionamento para login se não autenticado
   useEffect(() => {
@@ -144,7 +160,10 @@ export default function App() {
     };
 
     return (
-      <div key={currentPage} className="animate-in fade-in-50 duration-500 h-full p-4 md:p-6">
+      <div 
+        key={currentPage} 
+        className="animate-fade-in-scale h-full p-4 md:p-6"
+      >
         {views[currentPage] || <DashboardView />}
       </div>
     )
@@ -199,18 +218,28 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans overflow-hidden">
-      {!isMobile && (
-        <aside className="w-72 bg-card border-r border-border/50 flex flex-col shadow-xl z-20">
-          <Sidebar />
-        </aside>
-      )}
+    <>
+      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      
+      <div className="h-screen bg-background text-foreground flex font-sans overflow-hidden">
+        {!isMobile && (
+          <aside className={cn(
+            "bg-card border-r border-border/50 flex flex-col shadow-xl z-20 transition-all duration-300 ease-in-out",
+            isSidebarCollapsed ? "w-20" : "w-72"
+          )}>
+            <Sidebar 
+              collapsed={isSidebarCollapsed} 
+              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+            />
+          </aside>
+        )}
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopHeader
           title={getPageTitle(currentPage)}
           profile={profile}
           isMobile={isMobile}
+          onOpenCommand={() => setCommandOpen(true)}
         />
 
         <main
@@ -234,6 +263,7 @@ export default function App() {
           />
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

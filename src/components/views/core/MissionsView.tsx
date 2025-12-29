@@ -4,6 +4,8 @@ import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2, Star, Zap, TrendingUp as TrendingUpIcon, Filter, SortAsc, CalendarClock, Target as TargetIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,135 +29,135 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 // Type definitions
 interface SubTask {
-  name: string;
-  target: number;
-  unit: string;
-  current: number;
+    name: string;
+    target: number;
+    unit: string;
+    current: number;
 }
 
 // Add the Mission interface that matches the one in MissionDetailsDialog
 interface Mission {
-  id?: string | number;
-  nome: string;
-  descricao: string;
-  xp_conclusao: number;
-  fragmentos_conclusao: number;
-  concluido?: boolean;
-  tipo?: string;
-  subTasks: SubTask[];
-  learningResources?: string[];
-  isManual?: boolean;
+    id?: string | number;
+    nome: string;
+    descricao: string;
+    xp_conclusao: number;
+    fragmentos_conclusao: number;
+    concluido?: boolean;
+    tipo?: string;
+    subTasks: SubTask[];
+    learningResources?: string[];
+    isManual?: boolean;
 }
 
 interface DailyMission {
-  id: string | number;
-  nome: string;
-  descricao: string;
-  xp_conclusao: number;
-  fragmentos_conclusao: number;
-  concluido: boolean;
-  tipo: string;
-  subTasks: SubTask[];
-  learningResources?: string[];
-  completed_at?: string;
+    id: string | number;
+    nome: string;
+    descricao: string;
+    xp_conclusao: number;
+    fragmentos_conclusao: number;
+    concluido: boolean;
+    tipo: string;
+    subTasks: SubTask[];
+    learningResources?: string[];
+    completed_at?: string;
 }
 
 interface RankedMission {
-  id: string | number;
-  nome: string;
-  descricao: string;
-  concluido: boolean;
-  rank: string;
-  level_requirement: number;
-  meta_associada: string;
-  total_missoes_diarias: number;
-  ultima_missao_concluida_em: string | null;
-  missoes_diarias: DailyMission[];
-  isManual?: boolean;
-  subTasks?: SubTask[];
+    id: string | number;
+    nome: string;
+    descricao: string;
+    concluido: boolean;
+    rank: string;
+    level_requirement: number;
+    meta_associada: string;
+    total_missoes_diarias: number;
+    ultima_missao_concluida_em: string | null;
+    missoes_diarias: DailyMission[];
+    isManual?: boolean;
+    subTasks?: SubTask[];
 }
 
 interface Meta {
-  id: string | number;
-  nome: string;
-  prazo?: string;
-  concluida: boolean;
+    id: string | number;
+    nome: string;
+    prazo?: string;
+    concluida: boolean;
 }
 
 interface Profile {
-  nivel: number;
-  xp: number;
-  xp_para_proximo_nivel: number;
-  user_settings: {
-    layout_density: string;
-    mission_view_style: string;
-  };
-  manual_missions: RankedMission[];
+    nivel: number;
+    xp: number;
+    xp_para_proximo_nivel: number;
+    user_settings: {
+        layout_density: string;
+        mission_view_style: string;
+    };
+    manual_missions: RankedMission[];
 }
 
 type FeedbackType = 'hint' | 'too_hard' | 'too_easy';
 type DifficultyType = 'too_easy' | 'perfect' | 'too_hard';
 
 interface FeedbackModalState {
-  open: boolean;
-  mission: DailyMission | null;
-  type: FeedbackType | null;
+    open: boolean;
+    mission: DailyMission | null;
+    type: FeedbackType | null;
 }
 
 interface ContributionModalState {
-  open: boolean;
-  subTask: SubTask | null;
-  mission: DailyMission | null;
+    open: boolean;
+    subTask: SubTask | null;
+    mission: DailyMission | null;
 }
 
 interface MissionCompletionFeedbackState {
-  open: boolean;
-  missionName: string;
-  rankedMissionId: string | number | null;
-  dailyMissionId?: string | number | null;
-  subTask?: SubTask | null;
-  amount?: number | null;
+    open: boolean;
+    missionName: string;
+    rankedMissionId: string | number | null;
+    dailyMissionId?: string | number | null;
+    subTask?: SubTask | null;
+    amount?: number | null;
 }
 
 interface AnimationState {
-  showAnimation: boolean;
-  missionName: string;
-  xpGained: number;
-  fragmentsGained: number;
-  levelUp: boolean;
-  newLevel: number;
+    showAnimation: boolean;
+    missionName: string;
+    xpGained: number;
+    fragmentsGained: number;
+    levelUp: boolean;
+    newLevel: number;
 }
 
 interface DialogState {
-  open: boolean;
-  mission: DailyMission | RankedMission | null;
-  isManual: boolean;
+    open: boolean;
+    mission: DailyMission | RankedMission | null;
+    isManual: boolean;
 }
 
 interface MissionFeedbackDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (feedbackType: FeedbackType, userText: string) => void;
-  mission: DailyMission;
-  feedbackType: FeedbackType;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit: (feedbackType: FeedbackType, userText: string) => void;
+    mission: DailyMission;
+    feedbackType: FeedbackType;
 }
 
 interface ContributionDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  subTask: SubTask;
-  onContribute: (amount: number) => void;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    subTask: SubTask;
+    onContribute: (amount: number) => void;
 }
 
 interface MissionCompletionFeedbackDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmitFeedback: (feedbackData: { difficulty: DifficultyType; comment?: string }) => void;
-  missionName: string;
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmitFeedback: (feedbackData: { difficulty: DifficultyType; comment?: string }) => void;
+    missionName: string;
 }
 
 interface TriggerWrapperProps {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }
 
 // Helper Dialog for getting user feedback
@@ -183,11 +185,11 @@ const MissionFeedbackDialog: React.FC<MissionFeedbackDialogProps> = ({ open, onO
         onOpenChange(false);
         setFeedbackText('');
     };
-    
+
     if (!mission || !feedbackType) return null;
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => { if(!isOpen) setFeedbackText(''); onOpenChange(isOpen);}}>
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) setFeedbackText(''); onOpenChange(isOpen); }}>
             <DialogContent className={isMobile ? "max-w-[95vw]" : ""}>
                 <DialogHeader>
                     <DialogTitle className={isMobile ? "text-lg" : ""}>{dialogTitles[feedbackType]}</DialogTitle>
@@ -218,7 +220,7 @@ const MissionFeedbackDialog: React.FC<MissionFeedbackDialogProps> = ({ open, onO
 const ContributionDialog: React.FC<ContributionDialogProps> = ({ open, onOpenChange, subTask, onContribute }) => {
     const [amount, setAmount] = useState('');
     const isMobile = useIsMobile();
-    
+
     if (!subTask) return null;
 
     const remaining = subTask.target - (subTask.current || 0);
@@ -271,129 +273,129 @@ const ContributionDialog: React.FC<ContributionDialogProps> = ({ open, onOpenCha
 };
 
 const MissionCompletionFeedbackDialog: React.FC<MissionCompletionFeedbackDialogProps> = ({ isOpen, onClose, onSubmitFeedback, missionName }) => {
-  const [difficulty, setDifficulty] = useState<DifficultyType | ''>('');
-  const [comment, setComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const isMobile = useIsMobile();
+    const [difficulty, setDifficulty] = useState<DifficultyType | ''>('');
+    const [comment, setComment] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const isMobile = useIsMobile();
 
-  const handleSubmit = async () => {
-    if (!difficulty) return;
-    
-    setIsSubmitting(true);
-    
-    const feedbackData = {
-      difficulty: difficulty as DifficultyType,
-      comment: comment.trim() || undefined,
+    const handleSubmit = async () => {
+        if (!difficulty) return;
+
+        setIsSubmitting(true);
+
+        const feedbackData = {
+            difficulty: difficulty as DifficultyType,
+            comment: comment.trim() || undefined,
+        };
+
+        // Reset form and close dialog immediately
+        setDifficulty('');
+        setComment('');
+        setIsSubmitting(false);
+        onClose();
+
+        // Send feedback in background
+        onSubmitFeedback(feedbackData);
     };
-    
-    // Reset form and close dialog immediately
-    setDifficulty('');
-    setComment('');
-    setIsSubmitting(false);
-    onClose();
-    
-    // Send feedback in background
-    onSubmitFeedback(feedbackData);
-  };
 
-  const handleClose = () => {
-    setDifficulty('');
-    setComment('');
-    onClose();
-  };
+    const handleClose = () => {
+        setDifficulty('');
+        setComment('');
+        onClose();
+    };
 
-  const difficultyOptions = [
-    {
-      value: 'too_easy',
-      label: 'Muito Fácil',
-      description: 'A missão foi simples demais, preciso de mais desafio (+1,5% de dificuldade)',
-      icon: <TrendingDown className={cn("h-4 w-4 text-green-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
-      color: 'border-green-200 hover:border-green-400',
-    },
-    {
-      value: 'perfect',
-      label: 'Perfeita',
-      description: 'A dificuldade estava ideal para o meu nível (+1% de dificuldade)',
-      icon: <CheckCircle2 className={cn("h-4 w-4 text-blue-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
-      color: 'border-blue-200 hover:border-blue-400',
-    },
-    {
-      value: 'too_hard',
-      label: 'Muito Difícil',
-      description: 'A missão foi desafiadora demais, preciso de passos menores (-0,5% de dificuldade)',
-      icon: <TrendingUp className={cn("h-4 w-4 text-red-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
-      color: 'border-red-200 hover:border-red-400',
-    },
-  ];
+    const difficultyOptions = [
+        {
+            value: 'too_easy',
+            label: 'Muito Fácil',
+            description: 'A missão foi simples demais, preciso de mais desafio (+1,5% de dificuldade)',
+            icon: <TrendingDown className={cn("h-4 w-4 text-green-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
+            color: 'border-green-200 hover:border-green-400',
+        },
+        {
+            value: 'perfect',
+            label: 'Perfeita',
+            description: 'A dificuldade estava ideal para o meu nível (+1% de dificuldade)',
+            icon: <CheckCircle2 className={cn("h-4 w-4 text-blue-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
+            color: 'border-blue-200 hover:border-blue-400',
+        },
+        {
+            value: 'too_hard',
+            label: 'Muito Difícil',
+            description: 'A missão foi desafiadora demais, preciso de passos menores (-0,5% de dificuldade)',
+            icon: <TrendingUp className={cn("h-4 w-4 text-red-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />,
+            color: 'border-red-200 hover:border-red-400',
+        },
+    ];
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={cn("max-w-md", isMobile ? "max-w-[95vw]" : "")}>
-        <DialogHeader className="text-center">
-          <DialogTitle className={cn("flex items-center justify-center gap-2", isMobile ? "text-lg" : "")}>
-            <MessageSquare className={cn("text-primary", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-            Feedback da Missão
-          </DialogTitle>
-          <DialogDescription className={isMobile ? "text-sm" : ""}>
-            Como foi completar "<span className="font-semibold text-foreground">{missionName}</span>"?
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className={cn("py-4 space-y-4", isMobile ? "py-2 space-y-2" : "")}>
-          <div>
-            <Label className={cn("font-medium", isMobile ? "text-sm" : "text-sm")}>Dificuldade da Missão</Label>
-            <RadioGroup value={difficulty as string} onValueChange={(value) => setDifficulty(value as DifficultyType | '')} className={cn("mt-2", isMobile ? "mt-1" : "")}>
-              {difficultyOptions.map((option) => (
-                <div 
-                  key={option.value} 
-                  className={cn(`flex items-start space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${option.color} ${difficulty === option.value ? 'bg-secondary/50' : 'hover:bg-secondary/20'}`, isMobile ? "p-2 space-x-2" : "p-3 space-x-3")}
-                  onClick={() => setDifficulty(option.value as DifficultyType | '')}
-                >
-                  <RadioGroupItem value={option.value} id={option.value} className="mt-0.5 pointer-events-none" />
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      {option.icon}
-                      <Label htmlFor={option.value} className={cn("font-normal cursor-pointer", isMobile ? "text-sm" : "")}>
-                        {option.label}
-                      </Label>
+    return (
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent className={cn("max-w-md", isMobile ? "max-w-[95vw]" : "")}>
+                <DialogHeader className="text-center">
+                    <DialogTitle className={cn("flex items-center justify-center gap-2", isMobile ? "text-lg" : "")}>
+                        <MessageSquare className={cn("text-primary", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                        Feedback da Missão
+                    </DialogTitle>
+                    <DialogDescription className={isMobile ? "text-sm" : ""}>
+                        Como foi completar "<span className="font-semibold text-foreground">{missionName}</span>"?
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className={cn("py-4 space-y-4", isMobile ? "py-2 space-y-2" : "")}>
+                    <div>
+                        <Label className={cn("font-medium", isMobile ? "text-sm" : "text-sm")}>Dificuldade da Missão</Label>
+                        <RadioGroup value={difficulty as string} onValueChange={(value) => setDifficulty(value as DifficultyType | '')} className={cn("mt-2", isMobile ? "mt-1" : "")}>
+                            {difficultyOptions.map((option) => (
+                                <div
+                                    key={option.value}
+                                    className={cn(`flex items-start space-x-3 border rounded-lg p-3 cursor-pointer transition-colors ${option.color} ${difficulty === option.value ? 'bg-secondary/50' : 'hover:bg-secondary/20'}`, isMobile ? "p-2 space-x-2" : "p-3 space-x-3")}
+                                    onClick={() => setDifficulty(option.value as DifficultyType | '')}
+                                >
+                                    <RadioGroupItem value={option.value} id={option.value} className="mt-0.5 pointer-events-none" />
+                                    <div className="flex-1 space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            {option.icon}
+                                            <Label htmlFor={option.value} className={cn("font-normal cursor-pointer", isMobile ? "text-sm" : "")}>
+                                                {option.label}
+                                            </Label>
+                                        </div>
+                                        <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>{option.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </RadioGroup>
                     </div>
-                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>{option.description}</p>
-                  </div>
+
+                    {difficulty && (
+                        <div className="space-y-2">
+                            <Label htmlFor="comment" className={cn("font-medium", isMobile ? "text-sm" : "text-sm")}>
+                                Comentário Adicional (Opcional)
+                            </Label>
+                            <Textarea
+                                id="comment"
+                                placeholder={`Descreva o que ${difficulty === 'too_easy' ? 'foi muito simples' : difficulty === 'too_hard' ? 'foi muito desafiador' : 'funcionou bem'} nesta missão...`}
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                rows={3}
+                                disabled={isSubmitting}
+                                className={isMobile ? "text-sm" : ""}
+                            />
+                        </div>
+                    )}
                 </div>
-              ))}
-            </RadioGroup>
-          </div>
 
-          {difficulty && (
-            <div className="space-y-2">
-              <Label htmlFor="comment" className={cn("font-medium", isMobile ? "text-sm" : "text-sm")}>
-                Comentário Adicional (Opcional)
-              </Label>
-              <Textarea
-                id="comment"
-                placeholder={`Descreva o que ${difficulty === 'too_easy' ? 'foi muito simples' : difficulty === 'too_hard' ? 'foi muito desafiador' : 'funcionou bem'} nesta missão...`}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={3}
-                disabled={isSubmitting}
-                className={isMobile ? "text-sm" : ""}
-              />
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-          <Button 
-            onClick={handleSubmit}
-            disabled={!difficulty || isSubmitting}
-            className={cn("w-full", isMobile ? "h-8 text-sm" : "")}
-          >
-            {isSubmitting ? 'Enviando...' : 'Enviar Feedback'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+                <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={!difficulty || isSubmitting}
+                        className={cn("w-full", isMobile ? "h-8 text-sm" : "")}
+                    >
+                        {isSubmitting ? 'Enviando...' : 'Enviar Feedback'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 };
 
 const MissionsView = () => {
@@ -415,10 +417,10 @@ const MissionsView = () => {
     const [selectedGoalMissions, setSelectedGoalMissions] = useState<RankedMission[]>([]);
     const [feedbackModalState, setFeedbackModalState] = useState<FeedbackModalState>({ open: false, mission: null, type: null });
     const [contributionModalState, setContributionModalState] = useState<ContributionModalState>({ open: false, subTask: null, mission: null });
-    const [missionCompletionFeedbackState, setMissionCompletionFeedbackState] = useState<MissionCompletionFeedbackState>({ 
-        open: false, 
-        missionName: '', 
-        rankedMissionId: null 
+    const [missionCompletionFeedbackState, setMissionCompletionFeedbackState] = useState<MissionCompletionFeedbackState>({
+        open: false,
+        missionName: '',
+        rankedMissionId: null
     });
     const [animationState, setAnimationState] = useState<AnimationState>({
         showAnimation: false,
@@ -445,13 +447,13 @@ const MissionsView = () => {
     const isMobile = useIsMobile();
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-    
+
     const { toast } = useToast();
     const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
 
     const layout = profile?.user_settings?.layout_density || 'default';
     const accordionSpacing = layout === 'compact' ? 'space-y-2' : layout === 'comfortable' ? 'space-y-6' : 'space-y-4';
-    
+
     // Toggle priority for missions
     const togglePriority = (missionId: string | number) => {
         setPriorityMissions(prev => {
@@ -464,12 +466,12 @@ const MissionsView = () => {
             return newSet;
         });
     };
-    
-     useEffect(() => {
+
+    useEffect(() => {
         const calculateTimeUntilMidnight = () => {
             const now = new Date();
             const midnight = endOfDay(now); // Use date-fns for robust end of day calculation
-            
+
             const diff = midnight.getTime() - now.getTime();
 
             if (diff <= 0) {
@@ -484,7 +486,7 @@ const MissionsView = () => {
             const hours = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
             const minutes = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
             const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
-            
+
             setTimeUntilMidnight(`${hours}:${minutes}:${seconds}`);
         };
 
@@ -494,7 +496,7 @@ const MissionsView = () => {
         return () => clearInterval(timerId);
     }, [generatePendingDailyMissions, generatingMission]);
 
-     useEffect(() => {
+    useEffect(() => {
         // This effect ensures the dialog state is updated when the global state changes.
         if (dialogState.open && dialogState.mission) {
             let latestMissionData: RankedMission | DailyMission | undefined;
@@ -504,9 +506,9 @@ const MissionsView = () => {
                 const rankedMission = missions.find(rm => rm.missoes_diarias.some(dm => dm.id === dialogState.mission?.id));
                 latestMissionData = rankedMission?.missoes_diarias.find(dm => dm.id === dialogState.mission?.id);
             }
-            
+
             if (latestMissionData) {
-                setDialogState(prev => ({...prev, mission: latestMissionData as DailyMission | RankedMission}));
+                setDialogState(prev => ({ ...prev, mission: latestMissionData as DailyMission | RankedMission }));
             }
         }
     }, [missions, profile.manual_missions, dialogState.open]);
@@ -515,30 +517,30 @@ const MissionsView = () => {
     const handleToastError = (error: any, customMessage = 'Não foi possível continuar. O Sistema pode estar sobrecarregado.') => {
         console.error("Erro de IA:", error);
         if (error instanceof Error && (error.message.includes('429') || error.message.includes('Quota'))) {
-             toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
+            toast({ variant: 'destructive', title: 'Quota de IA Excedida', description: 'Você atingiu o limite de pedidos. Tente novamente mais tarde.' });
         } else {
-             toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
+            toast({ variant: 'destructive', title: 'Erro de IA', description: customMessage });
         }
     };
-    
+
     const handleMissionFeedback = async (mission: DailyMission, feedbackType: 'too_hard' | 'too_easy') => {
         if (!mission) return;
-    
+
         const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === mission.id));
         if (!rankedMission) return;
-    
+
         await adjustDailyMission(rankedMission.id, mission.id, feedbackType);
     };
-    
+
     const handleMissionCompletionFeedback = async (feedbackData: { difficulty: DifficultyType; comment?: string }) => {
         const { rankedMissionId, dailyMissionId, subTask, amount } = missionCompletionFeedbackState;
-        
+
         if (profile?.user_settings?.mission_view_style === 'popup') {
             setDialogState({ open: false, mission: null, isManual: false });
         }
-        
+
         let feedbackText = null;
-        
+
         if (feedbackData.difficulty !== 'perfect') {
             const difficultyText: Record<DifficultyType, string> = {
                 'too_easy': 'muito fácil',
@@ -558,15 +560,15 @@ const MissionsView = () => {
                 feedbackText += ` Comentário adicional: "${feedbackData.comment}"`;
             }
         }
-        
+
         const missionToComplete = missions.find((rm: RankedMission) => rm.id === rankedMissionId)?.missoes_diarias?.find((dm: DailyMission) => dm.id === dailyMissionId);
         const currentLevel = profile.nivel;
-        
+
         if (missionToComplete) {
             const currentXP = profile.xp || 0;
             const xpForNextLevel = profile.xp_para_proximo_nivel || 100;
             const willLevelUp = (currentXP + missionToComplete.xp_conclusao) >= xpForNextLevel;
-            
+
             setAnimationState({
                 showAnimation: true,
                 missionName: missionToComplete.nome,
@@ -576,39 +578,39 @@ const MissionsView = () => {
                 newLevel: willLevelUp ? currentLevel + 1 : currentLevel
             });
         }
-        
+
         setTimeout(async () => {
             if (rankedMissionId !== null && dailyMissionId !== null && subTask !== null && amount !== null) {
-                await completeMission({ 
-                    rankedMissionId: rankedMissionId as string | number, 
-                    dailyMissionId: dailyMissionId as string | number, 
-                    subTask: subTask as SubTask, 
-                    amount: amount as number, 
-                    feedback: feedbackText 
+                await completeMission({
+                    rankedMissionId: rankedMissionId as string | number,
+                    dailyMissionId: dailyMissionId as string | number,
+                    subTask: subTask as SubTask,
+                    amount: amount as number,
+                    feedback: feedbackText
                 });
             }
         }, 500);
-        
+
         setTimeout(() => {
             if (feedbackData.difficulty === 'perfect') {
-                toast({ 
-                    title: "Missão Concluída!", 
-                    description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar com um ajuste de +1%." 
+                toast({
+                    title: "Missão Concluída!",
+                    description: "Obrigado pelo feedback! A próxima missão manterá a dificuldade similar com um ajuste de +1%."
                 });
             } else {
-                const adjustmentText = feedbackData.difficulty === 'too_easy' 
-                    ? 'mais desafiadora com um aumento de +1,5% de dificuldade' 
+                const adjustmentText = feedbackData.difficulty === 'too_easy'
+                    ? 'mais desafiadora com um aumento de +1,5% de dificuldade'
                     : 'mais acessível com uma redução de -0,5% de dificuldade';
-                toast({ 
-                    title: "Missão Concluída!", 
-                    description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.` 
+                toast({
+                    title: "Missão Concluída!",
+                    description: `Obrigado pelo feedback! A próxima missão será ${adjustmentText}.`
                 });
             }
         }, 4000);
-        
+
         setMissionCompletionFeedbackState({ open: false, missionName: '', rankedMissionId: null });
     };
-    
+
     const handleShowProgression = (clickedMission: RankedMission) => {
         const goalMissions = missions
             .filter((m: RankedMission) => m.meta_associada === clickedMission.meta_associada)
@@ -636,23 +638,23 @@ const MissionsView = () => {
     const onContributeToQuest = (subTask: SubTask, amount: number, missionToUpdate: DailyMission | RankedMission) => {
         const isManual = 'isManual' in missionToUpdate && missionToUpdate.isManual;
         if (isManual) {
-            const updatedManualMissions = (profile.manual_missions || []).map((m: RankedMission) => 
-                m.id === missionToUpdate.id 
-                ? {
-                    ...m,
-                    subTasks: m.subTasks?.map((st: SubTask) => 
-                        st.name === subTask.name 
-                        ? {...st, current: Math.min(st.target, (st.current || 0) + amount) } 
-                        : st
-                    ) || []
-                }
-                : m
+            const updatedManualMissions = (profile.manual_missions || []).map((m: RankedMission) =>
+                m.id === missionToUpdate.id
+                    ? {
+                        ...m,
+                        subTasks: m.subTasks?.map((st: SubTask) =>
+                            st.name === subTask.name
+                                ? { ...st, current: Math.min(st.target, (st.current || 0) + amount) }
+                                : st
+                        ) || []
+                    }
+                    : m
             );
             persistData('profile', { ...profile, manual_missions: updatedManualMissions });
         } else {
             const dailyMission = missionToUpdate as DailyMission;
             const rankedMission = missions.find((rm: RankedMission) => rm.missoes_diarias.some((dm: DailyMission) => dm.id === dailyMission.id));
-            if(rankedMission) {
+            if (rankedMission) {
                 const tempCurrent = (subTask.current || 0) + amount;
                 const willCompleteMission = dailyMission.subTasks?.every((st: SubTask) => {
                     if (st.name === subTask.name) {
@@ -660,7 +662,7 @@ const MissionsView = () => {
                     }
                     return (st.current || 0) >= st.target;
                 });
-                
+
                 if (willCompleteMission) {
                     setMissionCompletionFeedbackState({
                         open: true,
@@ -695,7 +697,7 @@ const MissionsView = () => {
         const updatedMissions = (profile.manual_missions || []).filter((m: RankedMission) => m.id !== missionId);
         persistData('profile', { ...profile, manual_missions: updatedMissions });
         setDialogState({ open: false, mission: null, isManual: false });
-        toast({ title: 'Missão Manual Removida', description: 'A sua missão personalizada foi excluída com sucesso.'});
+        toast({ title: 'Missão Manual Removida', description: 'A sua missão personalizada foi excluída com sucesso.' });
     }
 
     const handleUnlockMission = async (mission: RankedMission) => {
@@ -704,53 +706,53 @@ const MissionsView = () => {
         try {
             const meta = metas.find(m => m.nome === mission.meta_associada);
             const history = mission.missoes_diarias.filter((d: DailyMission) => d.concluido).map((d: DailyMission) => `- ${d.nome}`).join('\n');
-            
+
             let feedbackForAI = missionFeedback[mission.id];
             if (!feedbackForAI) {
-               if (mission.concluido) {
-                   feedbackForAI = `A missão anterior "${mission.nome}" foi concluída, mas a geração da próxima falhou. Gere uma nova missão diária que continue a progressão do Caçador.`;
-               } else {
-                   feedbackForAI = `Esta é uma missão de qualificação para um rank superior. Gere uma missão diária desafiadora, mas alcançável, para provar que o Caçador está pronto para este novo nível de dificuldade.`;
-               }
+                if (mission.concluido) {
+                    feedbackForAI = `A missão anterior "${mission.nome}" foi concluída, mas a geração da próxima falhou. Gere uma nova missão diária que continue a progressão do Caçador.`;
+                } else {
+                    feedbackForAI = `Esta é uma missão de qualificação para um rank superior. Gere uma missão diária desafiadora, mas alcançável, para provar que o Caçador está pronto para este novo nível de dificuldade.`;
+                }
             }
 
             const response = await fetch('/api/generate-mission', {
-               method: 'POST',
-               headers: {
-                   'Content-Type': 'application/json',
-               },
-               body: JSON.stringify({
-                   rankedMissionName: mission.nome,
-                   metaName: meta?.nome || "Objetivo geral",
-                   goalDeadline: meta?.prazo,
-                   history: history || `O utilizador está a tentar uma missão de rank superior.`,
-                   userLevel: profile.nivel,
-                   feedback: feedbackForAI,
-               }),
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rankedMissionName: mission.nome,
+                    metaName: meta?.nome || "Objetivo geral",
+                    goalDeadline: meta?.prazo,
+                    history: history || `O utilizador está a tentar uma missão de rank superior.`,
+                    userLevel: profile.nivel,
+                    feedback: feedbackForAI,
+                }),
             });
 
             if (!response.ok) {
-               const errorData = await response.json();
-               throw new Error(errorData.error || 'Failed to fetch from API');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch from API');
             }
 
             const result = await response.json();
-            
+
             // Validate the result structure
             if (!result.nextMissionName || !result.nextMissionDescription || !result.subTasks || result.subTasks.length === 0) {
                 throw new Error('Resposta da API incompleta. Tente novamente.');
             }
-            
+
             // Validate subtasks
-            const validSubTasks = result.subTasks.filter((st: SubTask) => 
-                st.name && st.name.trim().length > 0 && 
+            const validSubTasks = result.subTasks.filter((st: SubTask) =>
+                st.name && st.name.trim().length > 0 &&
                 st.target && st.target > 0
             );
-            
+
             if (validSubTasks.length === 0) {
                 throw new Error('Missão gerada sem sub-tarefas válidas. Tente novamente.');
             }
-            
+
             const newDailyMission = {
                 id: Date.now(),
                 nome: result.nextMissionName,
@@ -760,9 +762,9 @@ const MissionsView = () => {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: validSubTasks.map((st: SubTask) => ({...st, current: 0, unit: st.unit || ''})),
+                subTasks: validSubTasks.map((st: SubTask) => ({ ...st, current: 0, unit: st.unit || '' })),
             };
-            
+
             addDailyMission({ rankedMissionId: mission.id, newDailyMission });
             toast({ title: "Desafio Aceite!", description: `A sua missão de qualificação "${newDailyMission.nome}" está pronta.` });
         } catch (error) {
@@ -771,24 +773,24 @@ const MissionsView = () => {
             setGeneratingMission(null);
         }
     };
-    
+
     const visibleMissions = useMemo(() => {
         const activeEpicMissions = new Map<string, RankedMission>();
 
         for (const mission of missions) {
             if (mission.concluido) continue;
-            
+
             const existingMissionForGoal = activeEpicMissions.get(mission.meta_associada);
             const currentRankIndex = existingMissionForGoal ? rankOrder.indexOf(existingMissionForGoal.rank) : -1;
             const newRankIndex = rankOrder.indexOf(mission.rank);
-            
+
             if (!existingMissionForGoal || newRankIndex < currentRankIndex) {
-                 activeEpicMissions.set(mission.meta_associada, mission);
+                activeEpicMissions.set(mission.meta_associada, mission);
             }
         }
-        
+
         const completedEpicMissions = missions.filter((m: RankedMission) => m.concluido);
-        const manualMissions = (profile.manual_missions || []).map((m: RankedMission) => ({...m, isManual: true, rank: 'M'}));
+        const manualMissions = (profile.manual_missions || []).map((m: RankedMission) => ({ ...m, isManual: true, rank: 'M' }));
 
         let missionsToDisplay = [];
         if (statusFilter === 'active') {
@@ -807,7 +809,7 @@ const MissionsView = () => {
                 missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.rank === rankFilter);
             }
         }
-        
+
         if (searchTerm) {
             missionsToDisplay = missionsToDisplay.filter((m: RankedMission) => m.nome.toLowerCase().includes(searchTerm.toLowerCase()));
         }
@@ -820,23 +822,23 @@ const MissionsView = () => {
             if (aPriority !== bPriority) {
                 return aPriority ? -1 : 1;
             }
-            
+
             // Then by completion status
             if (a.concluido !== b.concluido) {
                 return a.concluido ? 1 : -1;
             }
-            
+
             // Then by selected sort option
             if (sortBy === 'progress') {
-                const aProgress = a.isManual ? 
+                const aProgress = a.isManual ?
                     (a.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0) / (a.subTasks?.length || 1) :
                     (a.missoes_diarias?.filter((d: DailyMission) => d.concluido).length || 0) / (a.total_missoes_diarias || 1);
-                const bProgress = b.isManual ? 
+                const bProgress = b.isManual ?
                     (b.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0) / (b.subTasks?.length || 1) :
                     (b.missoes_diarias?.filter((d: DailyMission) => d.concluido).length || 0) / (b.total_missoes_diarias || 1);
                 return bProgress - aProgress;
             }
-            
+
             // Default: by rank
             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
         });
@@ -846,146 +848,154 @@ const MissionsView = () => {
     }, [missions, statusFilter, rankFilter, searchTerm, rankOrder, profile.manual_missions, sortBy, priorityMissions]);
 
     const missionViewStyle = profile?.user_settings?.mission_view_style || 'inline';
-    
+
     const renderActiveMissionContent = (mission: RankedMission) => {
         const activeDailyMission = mission.isManual ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
         const sortedDailyMissions = mission.isManual ? null : [...mission.missoes_diarias].sort((a, b) => (a.concluido ? 1 : -1) - (b.concluido ? 1 : -1) || 0);
-        
+
         if (generatingMission === mission.id) {
             return (
-                <div className={cn("bg-secondary/30 border-2 border-dashed border-primary/50 rounded-lg flex flex-col items-center justify-center text-center animate-in fade-in duration-300", isMobile ? "p-3 h-32" : "p-4 h-48")}>
-                    <Sparkles className={cn("text-primary animate-pulse-slow mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")}/>
-                    <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>A gerar nova missão...</p>
-                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>O Sistema está a preparar o seu próximo desafio.</p>
-                </div>
+                <Card className={cn("bg-secondary/30 border-2 border-dashed border-primary/50 flex flex-col items-center justify-center text-center animate-in fade-in duration-300", isMobile ? "p-3 h-32" : "p-4 h-48")}>
+                    <CardContent className="flex flex-col items-center justify-center h-full p-0">
+                        <Sparkles className={cn("text-primary animate-pulse-slow mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")} />
+                        <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>A gerar nova missão...</p>
+                        <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>O Sistema está a preparar o seu próximo desafio.</p>
+                    </CardContent>
+                </Card>
             );
         }
-        
+
         if (activeDailyMission) {
             return (
-                <div className={cn("rounded-lg animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-gradient-to-br from-secondary/60 to-secondary/20 border-l-4 border-primary overflow-x-hidden shadow-md hover:shadow-xl transition-all hover:scale-[1.01]", isMobile ? "p-2" : "p-2 md:p-4")}>
-                    <div className={cn("flex flex-col gap-2", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
-                        <div className="flex-grow min-w-0">
-                            <div className="flex items-start gap-2">
-                                <Zap className={cn("text-primary flex-shrink-0 mt-1", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                                <div className="flex-1 min-w-0">
-                                    <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>{activeDailyMission.nome}</p>
-                                    <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{activeDailyMission.descricao}</p>
+                <Card className={cn("animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-gradient-to-br from-secondary/60 to-secondary/20 border-l-4 border-l-primary border-y border-r overflow-x-hidden shadow-md hover:shadow-xl transition-all hover:scale-[1.01]", isMobile ? "p-2" : "p-4")}>
+                    <CardContent className="p-0">
+                        <div className={cn("flex flex-col gap-2", isMobile ? "md:flex-row md:items-center" : "md:flex-row md:items-center")}>
+                            <div className="flex-grow min-w-0">
+                                <div className="flex items-start gap-2">
+                                    <Badge variant="outline" className="p-1 h-auto mt-1 border-primary/20 bg-primary/10">
+                                        <Zap className={cn("text-primary", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                    </Badge>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>{activeDailyMission.nome}</p>
+                                        <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{activeDailyMission.descricao}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className={cn("text-right ml-0 flex-shrink-0 flex items-center gap-2", isMobile ? "md:ml-2" : "md:ml-4")}>
-                            <div className="flex flex-col items-end bg-background/40 rounded-lg px-2 py-1">
-                                {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
-                                <p className={cn("font-semibold text-primary flex items-center gap-1", isMobile ? "text-xs" : "text-sm")}>
-                                    <Star className={isMobile ? "w-3 h-3" : "w-4 h-4"} />
-                                    {activeDailyMission.xp_conclusao} XP
-                                </p>
-                            )}
-                            {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
-                                <p className={cn("font-semibold text-amber-500 flex items-center", isMobile ? "text-xs" : "text-sm")}>
-                                    <Gem className={cn("mr-1", isMobile ? "w-3 h-3" : "w-4 h-4")} />
-                                    {activeDailyMission.fragmentos_conclusao || 0}
-                                </p>
-                            )}
+                            <div className={cn("text-right ml-0 flex-shrink-0 flex items-center gap-2", isMobile ? "md:ml-2" : "md:ml-4")}>
+                                <div className="flex flex-col items-end bg-background/40 rounded-lg px-2 py-1 border border-border/50">
+                                    {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
+                                        <p className={cn("font-semibold text-primary flex items-center gap-1", isMobile ? "text-xs" : "text-sm")}>
+                                            <Star className={isMobile ? "w-3 h-3" : "w-4 h-4"} />
+                                            {activeDailyMission.xp_conclusao} XP
+                                        </p>
+                                    )}
+                                    {activeDailyMission && 'fragmentos_conclusao' in activeDailyMission && (
+                                        <p className={cn("font-semibold text-amber-500 flex items-center", isMobile ? "text-xs" : "text-sm")}>
+                                            <Gem className={cn("mr-1", isMobile ? "w-3 h-3" : "w-4 h-4")} />
+                                            {activeDailyMission.fragmentos_conclusao || 0}
+                                        </p>
+                                    )}
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label="Opções da missão">
+                                            <Wand2 className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Missão muito difícil</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Missão muito fácil</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label="Opções da missão">
-                                        <Wand2 className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
+                        </div>
+                        <div className={cn("mt-2 pt-2 border-t border-border/50 space-y-2", isMobile ? "mt-2 pt-2" : "mt-4 pt-4")}>
+                            {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
+                                const isCompleted = (st.current || 0) >= st.target;
+                                const progress = ((st.current || 0) / st.target) * 100;
+                                return (
+                                    <div key={index} className={cn("bg-background/40 rounded-lg transition-all duration-300 border border-border/50", isCompleted && "bg-green-500/10 border-green-500/30", isMobile ? "p-2" : "p-3")}>
+                                        <div className={cn("flex justify-between items-center gap-2", isMobile ? "text-xs mb-1 flex-wrap" : "text-sm mb-2")}>
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                {isCompleted && <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />}
+                                                <p className={cn("font-semibold text-foreground flex-1 min-w-0", isCompleted && "line-through text-muted-foreground")}>
+                                                    <span className="truncate block">{st.name}</span>
+                                                </p>
+                                            </div>
+                                            <div className={cn("flex items-center gap-1 flex-shrink-0", isMobile ? "gap-1" : "gap-2")}>
+                                                <Badge variant="secondary" className={cn("font-mono text-muted-foreground", isMobile ? "text-[10px] px-1.5" : "text-xs")}>{st.current || 0}/{st.target} {st.unit}</Badge>
+                                                <Button
+                                                    size="icon"
+                                                    variant="outline"
+                                                    className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0 rounded-full border-primary/30", isMobile ? "h-6 w-6" : "h-7 w-7")}
+                                                    onClick={() => setContributionModalState({ open: true, subTask: st, mission: activeDailyMission as DailyMission })}
+                                                    disabled={isCompleted}
+                                                    aria-label={`Adicionar progresso para ${st.name}`}
+                                                >
+                                                    <Plus className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <Progress value={progress} className={cn("h-2 bg-secondary", isMobile ? "h-1.5" : "h-2")} />
+                                            {progress > 0 && progress < 100 && (
+                                                <span className={cn("absolute right-0 top-1/2 -translate-y-1/2 mr-2 text-xs font-bold text-primary-foreground mix-blend-difference", isMobile ? "text-[10px]" : "text-xs")}>
+                                                    {Math.round(progress)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                        {sortedDailyMissions && sortedDailyMissions.length > 1 && (
+                            <Collapsible className={cn("mt-2", isMobile ? "mt-2" : "mt-4")}>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className={cn("text-muted-foreground w-full hover:bg-secondary/50", isMobile ? "text-xs h-8" : "text-xs h-9")}>
+                                        <History className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})
                                     </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_hard')}>Missão muito difícil</DropdownMenuItem>
-                                     <DropdownMenuItem onSelect={() => handleMissionFeedback(activeDailyMission as DailyMission, 'too_easy')}>Missão muito fácil</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                    <div className={cn("mt-2 pt-2 border-t border-border/50 space-y-2", isMobile ? "mt-2 pt-2" : "mt-4 pt-4")}>
-                        {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
-                            const isCompleted = (st.current || 0) >= st.target;
-                            const progress = ((st.current || 0) / st.target) * 100;
-                            return(
-                                <div key={index} className={cn("bg-background/40 rounded-lg transition-all duration-300 border border-border/50", isCompleted && "bg-green-500/10 border-green-500/30", isMobile ? "p-2" : "p-3")}>
-                                    <div className={cn("flex justify-between items-center gap-2", isMobile ? "text-xs mb-1 flex-wrap" : "text-sm mb-2")}>
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            {isCompleted && <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />}
-                                            <p className={cn("font-semibold text-foreground flex-1 min-w-0", isCompleted && "line-through text-muted-foreground")}>
-                                                <span className="truncate block">{st.name}</span>
-                                            </p>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className={cn("space-y-2 mt-2", isMobile ? "space-y-1 mt-1" : "")}>
+                                    {sortedDailyMissions.filter(dm => dm.concluido).map((dm: DailyMission) => (
+                                        <div key={dm.id} className={cn("bg-secondary/30 rounded-md flex items-center gap-2 min-w-0 border border-border/30", isMobile ? "p-1 text-xs" : "p-2 text-sm")}>
+                                            <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                            <span className="line-through truncate">{dm.nome}</span>
                                         </div>
-                                        <div className={cn("flex items-center gap-1 flex-shrink-0", isMobile ? "gap-1" : "gap-2")}>
-                                            <span className={cn("font-mono text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded", isMobile ? "text-xs" : "text-xs")}>{st.current || 0}/{st.target} {st.unit}</span>
-                                            <Button 
-                                                size="icon" 
-                                                variant="outline" 
-                                                className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0 rounded-full border-primary/30", isMobile ? "h-6 w-6" : "h-7 w-7")} 
-                                                onClick={() => setContributionModalState({open: true, subTask: st, mission: activeDailyMission as DailyMission})} 
-                                                disabled={isCompleted} 
-                                                aria-label={`Adicionar progresso para ${st.name}`}
-                                            >
-                                                <Plus className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div className="relative">
-                                        <Progress value={progress} className={cn("h-2 bg-secondary", isMobile ? "h-1.5" : "h-2")}/>
-                                        {progress > 0 && progress < 100 && (
-                                            <span className={cn("absolute right-0 top-1/2 -translate-y-1/2 mr-2 text-xs font-bold text-primary-foreground mix-blend-difference", isMobile ? "text-[10px]" : "text-xs")}>
-                                                {Math.round(progress)}%
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                    {sortedDailyMissions && sortedDailyMissions.length > 1 && (
-                         <Collapsible className={cn("mt-2", isMobile ? "mt-2" : "mt-4")}>
-                            <CollapsibleTrigger asChild>
-                                <Button variant="ghost" className={cn("text-muted-foreground w-full hover:bg-secondary/50", isMobile ? "text-xs h-8" : "text-xs h-9")}>
-                                    <History className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                    Ver missões diárias concluídas ({sortedDailyMissions.filter(dm => dm.concluido).length})
-                                </Button>
-                            </CollapsibleTrigger>
-                             <CollapsibleContent className={cn("space-y-2 mt-2", isMobile ? "space-y-1 mt-1" : "")}>
-                                 {sortedDailyMissions.filter(dm => dm.concluido).map((dm: DailyMission) => (
-                                    <div key={dm.id} className={cn("bg-secondary/30 rounded-md flex items-center gap-2 min-w-0 border border-border/30", isMobile ? "p-1 text-xs" : "p-2 text-sm")}>
-                                        <CheckCircle className={cn("text-green-500 flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                        <span className="line-through truncate">{dm.nome}</span>
-                                    </div>
-                                 ))}
-                            </CollapsibleContent>
-                        </Collapsible>
-                    )}
-                    {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
-                        <div className={cn("mt-2 space-y-1", isMobile ? "mt-2" : "mt-3")}>
-                            <p className={cn("text-muted-foreground font-semibold flex items-center gap-1", isMobile ? "text-xs" : "text-sm")}>
-                                <Link className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
-                                Recursos de Aprendizado:
-                            </p>
-                            {activeDailyMission.learningResources.map((topic: string, index: number) => (
-                                <div key={index} className={cn("flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 p-2 rounded-md hover:bg-blue-500/20 transition-colors cursor-pointer", isMobile ? "text-xs p-1" : "text-sm p-2")}>
-                                    <TargetIcon className={cn("flex-shrink-0 text-blue-500", isMobile ? "h-3 w-3" : "h-4 w-4")}/>
-                                    <span className="truncate">{topic}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                    ))}
+                                </CollapsibleContent>
+                            </Collapsible>
+                        )}
+                        {activeDailyMission && 'learningResources' in activeDailyMission && activeDailyMission.learningResources && activeDailyMission.learningResources.length > 0 && (
+                            <div className={cn("mt-2 space-y-1", isMobile ? "mt-2" : "mt-3")}>
+                                <p className={cn("text-muted-foreground font-semibold flex items-center gap-1", isMobile ? "text-xs" : "text-sm")}>
+                                    <Link className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                                    Recursos de Aprendizado:
+                                </p>
+                                {activeDailyMission.learningResources.map((topic: string, index: number) => (
+                                    <Badge key={index} variant="secondary" className="mr-1 mb-1 cursor-pointer hover:bg-secondary/80">
+                                        <TargetIcon className={cn("mr-1 text-blue-500", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        {topic}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             );
         }
 
         return (
-            <div className={cn("bg-secondary/30 border-2 border-dashed border-yellow-500/50 rounded-lg flex flex-col items-center justify-center text-center animate-in fade-in duration-300 overflow-x-hidden", isMobile ? "p-3 h-32" : "p-4 h-48")}>
-                <Lock className={cn("text-yellow-500 mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")}/>
-                <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Missão Bloqueada</p>
-                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>O seu nível de Caçador (Nível {profile.nivel}) é muito baixo para esta missão de Rank {mission.rank} (Requer Nível {mission.level_requirement}).</p>
-                <Button variant="secondary" className={cn("mt-2", isMobile ? "text-xs h-8" : "mt-4")} onClick={() => handleUnlockMission(mission)} disabled={generatingMission === mission.id}>
-                    {generatingMission === mission.id ? <LoaderCircle className="animate-spin" /> : "Tentar a Sorte (Missão de Qualificação)"}
-                </Button>
-            </div>
+            <Card className={cn("bg-secondary/30 border-2 border-dashed border-yellow-500/50 flex flex-col items-center justify-center text-center animate-in fade-in duration-300 overflow-x-hidden", isMobile ? "p-3 h-32" : "p-4 h-48")}>
+                <CardContent className="flex flex-col items-center justify-center h-full p-0">
+                    <Lock className={cn("text-yellow-500 mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")} />
+                    <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Missão Bloqueada</p>
+                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>O seu nível de Caçador (Nível {profile.nivel}) é muito baixo para esta missão de Rank {mission.rank} (Requer Nível {mission.level_requirement}).</p>
+                    <Button variant="secondary" className={cn("mt-2", isMobile ? "text-xs h-8" : "mt-4")} onClick={() => handleUnlockMission(mission)} disabled={generatingMission === mission.id}>
+                        {generatingMission === mission.id ? <LoaderCircle className="animate-spin" /> : "Tentar a Sorte (Missão de Qualificação)"}
+                    </Button>
+                </CardContent>
+            </Card>
         );
     };
 
@@ -1020,20 +1030,20 @@ const MissionsView = () => {
                             {isPanelVisible ? 'Ocultar' : 'Stats'}
                         </Button>
                         {generatePendingDailyMissions && (
-                            <Button 
+                            <Button
                                 onClick={() => {
                                     if (!generatingMission) {
                                         generatePendingDailyMissions();
                                     } else {
-                                        toast({ 
-                                            variant: 'destructive', 
-                                            title: 'Geração em Andamento', 
-                                            description: 'Aguarde a conclusão da geração atual.' 
+                                        toast({
+                                            variant: 'destructive',
+                                            title: 'Geração em Andamento',
+                                            description: 'Aguarde a conclusão da geração atual.'
                                         });
                                     }
-                                }} 
-                                variant="outline" 
-                                className="flex-shrink-0 text-xs h-8 px-3 text-yellow-400 border-yellow-400/50" 
+                                }}
+                                variant="outline"
+                                className="flex-shrink-0 text-xs h-8 px-3 text-yellow-400 border-yellow-400/50"
                                 disabled={!!generatingMission}
                             >
                                 <RefreshCw className={cn("mr-1 h-3 w-3", generatingMission ? "animate-spin" : "")} />
@@ -1050,7 +1060,7 @@ const MissionsView = () => {
                             <div className={cn("flex-grow overflow-x-hidden", isMobile ? "min-w-full" : "min-w-[200px]")}>
                                 <div className="relative">
                                     <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                    <Input 
+                                    <Input
                                         placeholder="Procurar missão..."
                                         value={searchTerm}
                                         onChange={e => setSearchTerm(e.target.value)}
@@ -1093,15 +1103,15 @@ const MissionsView = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                             {generatePendingDailyMissions && !isMobile && (
+                            {generatePendingDailyMissions && !isMobile && (
                                 <Button onClick={() => {
                                     if (!generatingMission) {
                                         generatePendingDailyMissions();
                                     } else {
-                                        toast({ 
-                                            variant: 'destructive', 
-                                            title: 'Geração em Andamento', 
-                                            description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
+                                        toast({
+                                            variant: 'destructive',
+                                            title: 'Geração em Andamento',
+                                            description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.'
                                         });
                                     }
                                 }} variant="outline" className="text-yellow-400 border-yellow-400/50 hover:bg-yellow-400/10 hover:text-yellow-300" disabled={!!generatingMission}>
@@ -1113,36 +1123,36 @@ const MissionsView = () => {
                     </CollapsibleContent>
                 </Collapsible>
             </div>
-            
+
             <div className={cn("flex-grow overflow-y-auto overflow-x-hidden w-full", isMobile ? "px-0" : "px-0")}>
-                <Accordion 
-                    type="single" 
-                    collapsible 
+                <Accordion
+                    type="single"
+                    collapsible
                     className={cn("w-full overflow-x-hidden", isMobile ? "space-y-1" : accordionSpacing)}
                     value={activeAccordionItem || undefined}
                     onValueChange={(value: string) => {
-                         if (missionViewStyle === 'inline') {
+                        if (missionViewStyle === 'inline') {
                             setActiveAccordionItem(value || null);
-                         }
+                        }
                     }}
                 >
                     {visibleMissions.map(mission => {
                         const wasCompletedToday = mission.ultima_missao_concluida_em && isToday(parseISO(mission.ultima_missao_concluida_em));
                         const isManualMission = mission.isManual;
                         const completedDailyMissions = isManualMission ? [] : (mission.missoes_diarias || []).filter((d: DailyMission) => d.concluido);
-                        
+
                         let missionProgress;
                         if (isManualMission) {
-                             const totalSubs = mission.subTasks?.length || 0;
-                             const completedSubs = mission.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0;
-                             missionProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : (mission.concluido ? 100 : 0);
+                            const totalSubs = mission.subTasks?.length || 0;
+                            const completedSubs = mission.subTasks?.filter((st: SubTask) => (st.current || 0) >= st.target).length || 0;
+                            missionProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : (mission.concluido ? 100 : 0);
                         } else {
                             missionProgress = (completedDailyMissions.length / (mission.total_missoes_diarias || 10)) * 100;
                         }
-                        
+
                         const associatedMeta = !isManualMission ? metas.find((m: Meta) => m.nome === mission.meta_associada) : null;
                         const daysRemaining = associatedMeta && associatedMeta.prazo ? differenceInDays(parseISO(associatedMeta.prazo), new Date()) : null;
-                        
+
                         const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
 
                         const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
@@ -1151,7 +1161,7 @@ const MissionsView = () => {
                             }
                             return <div className="flex-1 text-left w-full cursor-pointer" onClick={() => setDialogState({ open: true, mission: (activeDailyMission || mission), isManual: !!isManualMission })}>{children}</div>;
                         };
-                        
+
                         return (
                             <AccordionItem value={`item-${mission.id}`} key={mission.id} className={cn("bg-gradient-to-br from-card/80 to-card/40 border border-border rounded-lg data-[state=open]:border-primary/50 transition-all duration-300 hover:shadow-xl hover:scale-[1.01] relative group", isMobile ? "p-1 mx-0" : "mx-0", priorityMissions.has(mission.id) && "border-yellow-500/50 shadow-yellow-500/30 shadow-lg")}>
                                 {priorityMissions.has(mission.id) && (
@@ -1175,10 +1185,10 @@ const MissionsView = () => {
                                                                 {mission.nome}
                                                             </p>
                                                             {!isManualMission && daysRemaining !== null && (
-                                                                <span className={cn("text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1", 
-                                                                    daysRemaining < 7 ? "bg-red-500/20 text-red-400" : 
-                                                                    daysRemaining < 30 ? "bg-yellow-500/20 text-yellow-400" : 
-                                                                    "bg-green-500/20 text-green-400")}>
+                                                                <span className={cn("text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1",
+                                                                    daysRemaining < 7 ? "bg-red-500/20 text-red-400" :
+                                                                        daysRemaining < 30 ? "bg-yellow-500/20 text-yellow-400" :
+                                                                            "bg-green-500/20 text-green-400")}>
                                                                     <CalendarClock className="h-3 w-3" />
                                                                     {daysRemaining}d
                                                                 </span>
@@ -1190,7 +1200,7 @@ const MissionsView = () => {
                                                                 <span className="truncate">{associatedMeta.nome}</span>
                                                             </div>
                                                         )}
-                                                         <p className={cn("text-muted-foreground break-words", isMobile ? "text-xs mt-1" : "text-sm mt-1")}>{mission.descricao}</p>
+                                                        <p className={cn("text-muted-foreground break-words", isMobile ? "text-xs mt-1" : "text-sm mt-1")}>{mission.descricao}</p>
                                                     </div>
                                                 </div>
                                             </TriggerWrapper>
@@ -1198,13 +1208,13 @@ const MissionsView = () => {
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
-                                                                className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full", 
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full",
                                                                     priorityMissions.has(mission.id) && "text-yellow-400 bg-yellow-400/10",
                                                                     isMobile ? "h-6 w-6" : "h-8 w-8"
-                                                                )} 
+                                                                )}
                                                                 onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
                                                                 aria-label="Marcar como prioridade"
                                                             >
@@ -1216,30 +1226,30 @@ const MissionsView = () => {
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 </TooltipProvider>
-                                                {isManualMission && 
+                                                {isManualMission &&
                                                     <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); setDialogState({ open: true, mission, isManual: true }); }} aria-label="Editar missão manual">
                                                         <Edit className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                                     </Button>
                                                 }
                                                 {!isManualMission && activeDailyMission && (
-                                                   <TooltipProvider>
-                                                       <Tooltip>
-                                                           <TooltipTrigger asChild>
-                                                               <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleUnlockMission(mission); }} disabled={generatingMission === mission.id} aria-label="Gerar nova missão diária">
-                                                                   <RefreshCw className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", generatingMission === mission.id ? "animate-spin" : "")} />
-                                                               </Button>
-                                                           </TooltipTrigger>
-                                                           <TooltipContent>
-                                                               <p>Gerar nova missão diária</p>
-                                                           </TooltipContent>
-                                                       </Tooltip>
-                                                   </TooltipProvider>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-yellow-400 hover:bg-yellow-400/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleUnlockMission(mission); }} disabled={generatingMission === mission.id} aria-label="Gerar nova missão diária">
+                                                                    <RefreshCw className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", generatingMission === mission.id ? "animate-spin" : "")} />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Gerar nova missão diária</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 )}
                                                 {!isManualMission && (
                                                     <TooltipProvider>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission)}} aria-label="Ver árvore de progressão">
+                                                                <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full", isMobile ? "h-6 w-6" : "h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission) }} aria-label="Ver árvore de progressão">
                                                                     <GitMerge className={isMobile ? "h-4 w-4" : "h-5 w-5"} />
                                                                 </Button>
                                                             </TooltipTrigger>
@@ -1251,7 +1261,7 @@ const MissionsView = () => {
                                                 )}
                                             </div>
                                         </div>
-                                       {!isManualMission && (
+                                        {!isManualMission && (
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger className="w-full">
@@ -1269,7 +1279,7 @@ const MissionsView = () => {
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
-                                       )}
+                                        )}
                                     </div>
                                     <AccordionContent className={cn("space-y-2 overflow-x-hidden", isMobile ? "px-1 pb-1" : "px-2 pb-2 md:px-4 md:pb-4")}>
                                         {renderActiveMissionContent(mission)}
@@ -1277,12 +1287,12 @@ const MissionsView = () => {
                                 </div>
                                 {generatingMission === mission.id ? (
                                     <div className={cn("absolute inset-0 bg-secondary/50 rounded-lg flex flex-col items-center justify-center text-center animate-in fade-in duration-300", isMobile ? "p-2" : "p-4")}>
-                                        <Sparkles className={cn("text-primary animate-pulse mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")}/>
+                                        <Sparkles className={cn("text-primary animate-pulse mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")} />
                                         <p className={cn("font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>A gerar nova missão...</p>
                                     </div>
                                 ) : wasCompletedToday ? (
                                     <div className="absolute inset-0 bg-gradient-to-br from-background/95 to-secondary/95 rounded-lg flex flex-col items-center justify-center p-4">
-                                        <Timer className={cn("text-cyan-400 mx-auto animate-pulse", isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4")}/>
+                                        <Timer className={cn("text-cyan-400 mx-auto animate-pulse", isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4")} />
                                         <p className={cn("font-cinzel font-bold text-foreground", isMobile ? "text-base" : "text-lg")}>Nova Missão em</p>
                                         <p className={cn("font-cinzel text-cyan-400 font-bold tracking-wider", isMobile ? "text-2xl" : "text-4xl")}>{timeUntilMidnight}</p>
                                         <p className={cn("text-muted-foreground mt-2", isMobile ? "text-xs" : "text-xs")}>Missão concluída hoje!</p>
@@ -1291,25 +1301,25 @@ const MissionsView = () => {
                             </AccordionItem>
                         )
                     })}
-                     {visibleMissions.length === 0 && (
+                    {visibleMissions.length === 0 && (
                         <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg", isMobile ? "p-4" : "p-8")}>
                             <Search className={isMobile ? "h-12 w-12 mb-2" : "h-16 w-16 mb-4"} />
                             <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>Nenhuma Missão Encontrada</p>
                             <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Tente ajustar os seus filtros ou adicione novas metas para gerar missões.</p>
                             {generatePendingDailyMissions && (
-                                <Button 
+                                <Button
                                     onClick={() => {
                                         if (!generatingMission) {
                                             generatePendingDailyMissions();
                                         } else {
-                                            toast({ 
-                                                variant: 'destructive', 
-                                                title: 'Geração em Andamento', 
-                                                description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.' 
+                                            toast({
+                                                variant: 'destructive',
+                                                title: 'Geração em Andamento',
+                                                description: 'Aguarde a conclusão da geração atual antes de solicitar mais missões.'
                                             });
                                         }
-                                    }} 
-                                    variant="outline" 
+                                    }}
+                                    variant="outline"
                                     className={cn("mt-4 text-primary border-primary hover:bg-primary/10", isMobile ? "h-8 text-xs" : "h-10 text-sm")}
                                     disabled={!!generatingMission}
                                 >
@@ -1321,7 +1331,7 @@ const MissionsView = () => {
                     )}
                 </Accordion>
             </div>
-            
+
             <MissionCompletionAnimation
                 isOpen={animationState.showAnimation}
                 onClose={() => setAnimationState(prev => ({ ...prev, showAnimation: false }))}
@@ -1350,9 +1360,9 @@ const MissionsView = () => {
                 }}
             />
 
-            { dialogState.open &&
+            {dialogState.open &&
                 <MissionDetailsDialog
-                    isOpen={dialogState.open} 
+                    isOpen={dialogState.open}
                     onClose={() => setDialogState({ open: false, mission: null, isManual: false })}
                     mission={dialogState.mission as any}
                     isManual={dialogState.isManual}
@@ -1384,19 +1394,19 @@ const MissionsView = () => {
                     </DialogHeader>
                     <div className={cn("mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-4 overflow-x-hidden", isMobile ? "mt-2 space-y-2" : "")}>
                         {selectedGoalMissions.map((m: RankedMission, index: number) => (
-                             <div key={m.id} className={cn(`rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-secondary/50 opacity-70' : 'border-primary bg-secondary'} overflow-x-hidden`, isMobile ? "p-2" : "p-4")}>
+                            <div key={m.id} className={cn(`rounded-lg border-l-4 ${m.concluido ? 'border-green-500 bg-secondary/50 opacity-70' : 'border-primary bg-secondary'} overflow-x-hidden`, isMobile ? "p-2" : "p-4")}>
                                 <div className="flex justify-between items-center">
                                     <p className={cn(`${m.concluido ? 'text-muted-foreground line-through' : 'text-foreground'}`, isMobile ? "font-bold text-sm" : "font-bold")}>{m.nome}</p>
                                     <span className={cn(`text-xs font-bold px-2 py-1 rounded-full ${getRankColor(m.rank)}`, isMobile ? "text-xs px-1 py-0.5" : "")}>Rank {m.rank}</span>
                                 </div>
                                 <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>{m.descricao}</p>
                                 {m.concluido && (
-                                     <div className={cn("flex items-center text-green-400 mt-2", isMobile ? "text-xs" : "text-sm")}>
+                                    <div className={cn("flex items-center text-green-400 mt-2", isMobile ? "text-xs" : "text-sm")}>
                                         <CheckCircle className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
                                         <span>Concluída</span>
-                                     </div>
+                                    </div>
                                 )}
-                             </div>
+                            </div>
                         ))}
                     </div>
                 </DialogContent>

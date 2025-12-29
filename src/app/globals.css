@@ -175,6 +175,22 @@
   50% { border-color: hsl(var(--primary) / 0.6); }
 }
 
+@keyframes slide-in-bottom {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in-scale {
+  from { 
+    transform: scale(0.9); 
+    opacity: 0; 
+  }
+  to { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;
@@ -213,6 +229,14 @@
   
   .animate-border-glow {
     animation: border-glow 2s ease-in-out infinite;
+  }
+
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 0.4s ease-out;
+  }
+
+  .animate-fade-in-scale {
+    animation: fade-in-scale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .pb-safe {
