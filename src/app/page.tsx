@@ -7,8 +7,11 @@ import { LoaderCircle, ShieldBan, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DashboardView } from '@/components/views/core/DashboardView';
+import { DashboardMobile } from '@/components/views/core/DashboardMobile';
+import { MissionsMobile } from '@/components/views/core/MissionsMobile';
+import { default as MissionsView } from '@/components/views/core/MissionsView';
 import { MetasView } from '@/components/views/core/MetasView';
-import MissionsView from '@/components/views/core/MissionsView';
+import { MetasMobile } from '@/components/views/core/MetasMobile';
 import { SkillsView } from '@/components/views/core/SkillsView';
 import { RoutineView } from '@/components/views/core/RoutineView';
 import { AIChatView } from '@/components/views/ai/AIChatView';
@@ -27,8 +30,11 @@ import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
 import DungeonLobbyView from '@/components/views/gamification/DungeonLobbyView';
 import { TopHeader } from '@/components/layout/TopHeader';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { MobileNavigation } from '@/components/layout/MobileNavigation';
+// import { MobileNavigation } from '@/components/layout/MobileNavigation'; // We will remove this usage
+import { IonicMobileNavigation } from '@/components/layout/IonicMobileNavigation';
 import { CommandPalette } from '@/components/layout/CommandPalette';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Menu as MenuIcon } from 'lucide-react';
 
 const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNotificationPrompt').then(mod => mod.PushNotificationPrompt), { ssr: false });
 
@@ -144,9 +150,9 @@ export default function App() {
     }
 
     const views: Record<string, React.ReactNode> = {
-      'dashboard': <DashboardView />,
+      'dashboard': isMobile ? <DashboardMobile /> : <DashboardView />,
       'metas': <MetasView />,
-      'missions': <MissionsView />,
+      'missions': isMobile ? <MissionsMobile /> : <MissionsView />,
       'skills': <SkillsView onEnterDungeon={handleEnterDungeon} />,
       'class': <ClassView />,
       'routine': <RoutineView />,
@@ -159,10 +165,16 @@ export default function App() {
       'dungeon': profile?.dungeon_session ? <SkillDungeonView onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
     };
 
+    const isNativeView = isMobile && (currentPage === 'dashboard' || currentPage === 'missions');
+
     return (
       <div 
         key={currentPage} 
-        className="animate-fade-in-scale min-h-full p-4 md:p-6"
+        className={cn(
+          "animate-fade-in-scale min-h-full",
+          !isNativeView && "p-4 md:p-6",
+          isNativeView && "h-full"
+        )}
       >
         {views[currentPage] || <DashboardView />}
       </div>
@@ -235,17 +247,20 @@ export default function App() {
         )}
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <TopHeader
-          title={getPageTitle(currentPage)}
-          profile={profile}
-          isMobile={isMobile}
-          onOpenCommand={() => setCommandOpen(true)}
-        />
+        {!(isMobile && (currentPage === 'dashboard' || currentPage === 'missions')) && (
+          <TopHeader
+            title={getPageTitle(currentPage)}
+            profile={profile}
+            isMobile={isMobile}
+            onOpenCommand={() => setCommandOpen(true)}
+          />
+        )}
 
         <main
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
-            isMobile && "pb-40"
+            isMobile && !(currentPage === 'dashboard' || currentPage === 'missions') && "pb-40",
+            isMobile && (currentPage === 'dashboard' || currentPage === 'missions') && "pb-0 overflow-hidden"
           )}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
@@ -256,11 +271,29 @@ export default function App() {
 
         {/* Mobile Bottom Navigation - Modern App Style */}
         {isMobile && (
-          <MobileNavigation
-            onNavigate={handleNavigate}
-            isSheetOpen={isSheetOpen}
-            onSheetOpenChange={setIsSheetOpen}
-          />
+          <>
+            <IonicMobileNavigation 
+              onNavigate={handleNavigate} 
+              onMenuOpen={() => setIsSheetOpen(true)} 
+            />
+
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent side="bottom" className="md:h-[85vh] h-[92vh] rounded-t-[24px] px-0 bg-card/95 backdrop-blur-xl border-t-2 border-primary/20">
+                     <SheetHeader className="px-6 mb-4 text-left">
+                        <SheetTitle className="font-cinzel text-2xl text-gradient tracking-wider flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                                <MenuIcon className="h-4 w-4 text-primary" />
+                            </div>
+                            MENU DO SISTEMA
+                        </SheetTitle>
+                        <SheetDescription className="text-muted-foreground/80">Acesse todas as funcionalidades do sistema.</SheetDescription>
+                    </SheetHeader>
+                    <div className="h-full overflow-y-auto pb-20">
+                        <Sidebar inSheet={true} onNavigate={(page) => handleNavigate(page)} />
+                    </div>
+                </SheetContent>
+            </Sheet>
+          </>
         )}
       </div>
       </div>

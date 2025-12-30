@@ -1,5 +1,5 @@
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { PlayerDataProvider } from "@/hooks/use-player-data";
@@ -10,11 +10,20 @@ import { PushNotificationPrompt } from "@/components/custom/PushNotificationProm
 import { PlayerDataSync } from "@/hooks/use-player-data-sync";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { IonicProvider } from "@/components/providers/ionic-provider";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "SystemLife",
@@ -37,17 +46,19 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <SessionProvider>
-            <AuthProvider>
-              <PlayerDataProvider>
-                <PlayerDataSync />
-                {children}
-                <Toaster />
-                <Sonner richColors closeButton position="top-right" />
-                <PushNotificationPrompt />
-              </PlayerDataProvider>
-            </AuthProvider>
-          </SessionProvider>
+          <IonicProvider>
+            <SessionProvider>
+              <AuthProvider>
+                <PlayerDataProvider>
+                  <PlayerDataSync />
+                  {children}
+                  <Toaster />
+                  <Sonner richColors closeButton position="top-right" />
+                  <PushNotificationPrompt />
+                </PlayerDataProvider>
+              </AuthProvider>
+            </SessionProvider>
+          </IonicProvider>
         </ThemeProvider>
       </body>
     </html>

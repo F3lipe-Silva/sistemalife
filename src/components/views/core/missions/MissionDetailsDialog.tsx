@@ -12,6 +12,7 @@ import { Progress } from "../../../ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 // Type definitions
@@ -129,6 +130,7 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   const [editedMission, setEditedMission] = useState<Mission | null>(null);
   const [contributionState, setContributionState] = useState<ContributionState>({ open: false, subTask: null, amount: 1 });
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (mission) {
@@ -373,7 +375,12 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="bg-black/95 border-2 border-blue-500/50 text-white max-w-2xl w-full mx-4 p-0 shadow-[0_0_30px_rgba(37,99,235,0.3)] backdrop-blur-xl sm:rounded-none overflow-hidden"
+        className={cn(
+            "bg-black/95 border-2 border-blue-500/50 text-white p-0 shadow-[0_0_30px_rgba(37,99,235,0.3)] backdrop-blur-xl overflow-hidden",
+            isMobile 
+                ? "w-screen h-[100dvh] max-w-none rounded-none border-x-0 border-b-0 border-t-0" 
+                : "max-w-2xl w-full mx-4 sm:rounded-none"
+        )}
         hideCloseButton={true}
       >
         <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-blue-400 z-20" />
