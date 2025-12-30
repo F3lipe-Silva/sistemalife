@@ -132,72 +132,76 @@ const ClassViewComponent = () => {
     const Icon = userClass.icon;
 
     return (
-        <div className="p-4 md:p-6 h-full overflow-y-auto relative">
+        <div className="h-full flex flex-col relative">
              <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)] -z-10"></div>
 
-             <div className="mb-8 flex flex-col gap-2 border-b border-blue-900/30 pb-4">
-                <h1 className="text-3xl font-black text-white font-cinzel tracking-[0.1em] uppercase drop-shadow-md">CLASS ADVANCEMENT</h1>
-                <p className="text-blue-400/60 font-mono text-xs tracking-widest uppercase">
+             <div className="flex-shrink-0 px-3 py-2 md:px-4 md:py-3 border-b border-blue-900/30">
+                <h1 className="text-xl md:text-2xl font-black text-white font-cinzel tracking-wider uppercase">CLASS ADVANCEMENT</h1>
+                <p className="text-blue-400/60 font-mono text-[9px] tracking-widest uppercase">
                     CURRENT JOB ANALYSIS
                 </p>
             </div>
             
-             <Card className={cn("max-w-4xl mx-auto bg-black/80 backdrop-blur-md border-2 shadow-2xl relative overflow-hidden", userClass.borderColor)}>
-                 <div className={cn("absolute top-0 right-0 w-32 h-32 blur-3xl opacity-20", userClass.bgColor.replace('/20', ''))} />
-                 
-                 <CardHeader className="text-center items-center pt-8 pb-2 relative z-10">
-                    <div className={cn("w-28 h-28 rounded-full flex items-center justify-center mb-6 border-4 shadow-[0_0_20px_currentColor] bg-black", userClass.borderColor, userClass.color)}>
-                         <Icon className="w-14 h-14" />
-                    </div>
-                    <div className="space-y-1">
-                        <div className={cn("text-xs font-mono uppercase tracking-widest opacity-70", userClass.color)}>CURRENT CLASS</div>
-                        <CardTitle className={cn("text-5xl font-black font-cinzel tracking-widest uppercase drop-shadow-lg", userClass.color)}>
-                            {userClass.title}
-                        </CardTitle>
-                    </div>
-                    <CardDescription className="text-sm font-mono text-gray-400 max-w-lg mt-4 border-l-2 border-r-2 border-gray-800 px-4 py-2">
-                        {userClass.description}
-                    </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-8 p-8 relative z-10">
-                    <div className="p-4 bg-black/60 border border-gray-800 relative group">
-                        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-gray-600" />
-                        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-gray-600" />
-                        <h3 className={cn("text-xs font-bold font-mono uppercase tracking-widest mb-2", userClass.color)}>CLASS PASSIVE</h3>
-                        <p className="text-white font-mono text-sm">{userClass.bonus}</p>
-                    </div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                <div className="p-3 md:p-4">
+                    <Card className={cn("max-w-3xl mx-auto bg-black/80 backdrop-blur-md border-2 shadow-2xl relative overflow-hidden", userClass.borderColor)}>
+                        <div className={cn("absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 blur-3xl opacity-20", userClass.bgColor.replace('/20', ''))} />
+                        
+                        <CardHeader className="text-center items-center pt-4 md:pt-6 pb-2 relative z-10">
+                            <div className={cn("w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mb-3 md:mb-4 border-2 md:border-4 shadow-[0_0_15px_currentColor] bg-black", userClass.borderColor, userClass.color)}>
+                                <Icon className="w-8 h-8 md:w-10 md:h-10" />
+                            </div>
+                            <div className="space-y-0.5 md:space-y-1">
+                                <div className={cn("text-[10px] font-mono uppercase tracking-widest opacity-70", userClass.color)}>CURRENT CLASS</div>
+                                <CardTitle className={cn("text-3xl md:text-4xl font-black font-cinzel tracking-widest uppercase drop-shadow-lg", userClass.color)}>
+                                    {userClass.title}
+                                </CardTitle>
+                            </div>
+                            <CardDescription className="text-xs md:text-sm font-mono text-gray-400 max-w-lg mt-2 md:mt-3 border-l border-r border-gray-800 px-3 py-1.5">
+                                {userClass.description}
+                            </CardDescription>
+                        </CardHeader>
+                        
+                        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6 relative z-10">
+                            <div className="p-3 bg-black/60 border border-gray-800 relative group">
+                                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-gray-600" />
+                                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-gray-600" />
+                                <h3 className={cn("text-[10px] font-bold font-mono uppercase tracking-widest mb-1.5", userClass.color)}>CLASS PASSIVE</h3>
+                                <p className="text-white font-mono text-xs">{userClass.bonus}</p>
+                            </div>
 
-                    <div>
-                        <h3 className="text-xs font-bold text-gray-500 font-mono uppercase tracking-widest mb-4 border-b border-gray-800 pb-2">MASTERY PROGRESS</h3>
-                        <div className="space-y-4">
+                            <div>
+                                <h3 className="text-[10px] font-bold text-gray-500 font-mono uppercase tracking-widest mb-2 md:mb-3 border-b border-gray-800 pb-1.5">MASTERY PROGRESS</h3>
+                                <div className="space-y-2 md:space-y-3">
                            {Object.keys(statCategoryMapping).map(category => {
                                 const goalsInCategory = metas.filter((m: Meta) => m.categoria === category && !m.concluida).length;
                                 const totalGoals = metas.filter((m: Meta) => !m.concluida).length || 1;
                                 const progress = (goalsInCategory / totalGoals) * 100;
                                 
-                                if(goalsInCategory > 0) {
-                                    return (
-                                        <div key={category} className="group">
-                                            <div className="flex justify-between items-center text-xs mb-1 font-mono uppercase">
-                                                <span className="text-gray-400">{category}</span>
-                                                <span className={cn("font-bold", userClass.color)}>{goalsInCategory} TARGETS</span>
+                                    if(goalsInCategory > 0) {
+                                        return (
+                                            <div key={category} className="group">
+                                                <div className="flex justify-between items-center text-[10px] md:text-xs mb-0.5 font-mono uppercase">
+                                                    <span className="text-gray-400 truncate flex-1">{category}</span>
+                                                    <span className={cn("font-bold ml-2", userClass.color)}>{goalsInCategory}</span>
+                                                </div>
+                                                <div className="h-1 md:h-1.5 bg-gray-900 border border-gray-800 w-full">
+                                                    <div 
+                                                        className={cn("h-full transition-all duration-500 shadow-[0_0_5px_currentColor]", userClass.bgColor.replace('/20', ''))} 
+                                                        style={{ width: `${progress}%` }} 
+                                                    />
+                                                </div>
                                             </div>
-                                             <div className="h-1.5 bg-gray-900 border border-gray-800 w-full">
-                                                <div 
-                                                    className={cn("h-full transition-all duration-500 shadow-[0_0_5px_currentColor]", userClass.bgColor.replace('/20', ''))} 
-                                                    style={{ width: `${progress}%` }} 
-                                                />
-                                             </div>
-                                        </div>
-                                    )
-                                }
-                                return null;
-                           })}
+                                        )
+                                    }
+                                    return null;
+                               })}
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-             </Card>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 };

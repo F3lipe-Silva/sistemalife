@@ -63,61 +63,59 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
     const { roomLevel, challenge } = dungeonSession;
 
     return (
-        <div className="p-4 md:p-6 h-full flex flex-col">
-            <div className="flex-shrink-0">
-                <Button onClick={() => clearDungeonSession(true)} variant="ghost" className="mb-4">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Sair da Masmorra
+        <div className="w-full h-full flex flex-col">
+            <div className="flex-shrink-0 p-3 md:p-4 pb-2 border-b border-primary/10">
+                <Button onClick={() => clearDungeonSession(true)} variant="ghost" size="sm" className="mb-2 h-7 px-2 text-xs">
+                    <ArrowLeft className="mr-1.5 h-3 w-3" />
+                    Sair
                 </Button>
-                 <div className="text-center mb-4 md:mb-8">
-                    <div className="inline-block bg-primary/10 p-2 md:p-3 rounded-full border-2 border-primary/20 mb-2">
-                        <KeySquare className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                 <div className="text-center">
+                    <div className="inline-block bg-primary/10 p-1.5 md:p-2 rounded-full border border-primary/20 mb-1.5">
+                        <KeySquare className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-primary font-cinzel tracking-wider">Masmorra: {skill.nome}</h1>
-                    <p className="text-muted-foreground mt-1 text-sm md:text-base">
-                        Aprimore a sua habilidade com desafios práticos e focados.
+                    <h1 className="text-lg md:text-xl font-bold text-primary font-cinzel tracking-wider">Masmorra: {skill.nome}</h1>
+                    <p className="text-muted-foreground mt-0.5 text-[10px] md:text-xs">
+                        Desafios práticos e focados
                     </p>
                 </div>
             </div>
 
-            <div className="mt-4 md:mt-8 flex-grow flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center p-3 md:p-4 overflow-y-auto">
                 {isLoading ? (
                      <div className="text-center">
-                        <LoaderCircle className="h-12 md:h-16 w-12 md:w-16 text-primary animate-spin mx-auto mb-4"/>
-                        <h2 className="text-xl md:text-2xl font-bold">Processando...</h2>
+                        <LoaderCircle className="h-10 w-10 md:h-12 md:w-12 text-primary animate-spin mx-auto mb-2"/>
+                        <h2 className="text-base md:text-lg font-bold">Processando...</h2>
                     </div>
                 ) : challenge ? (
-                    <Card className="w-full max-w-3xl">
-                        <CardHeader className="text-center">
-                             <CardDescription className="text-sm md:text-base">Sala {roomLevel}</CardDescription>
-                            <div className="flex justify-center items-center gap-4">
-                                <CardTitle className="text-lg md:text-xl">{challenge.challengeName}</CardTitle>
-                            </div>
-                             <span className="text-primary font-bold text-sm">+{challenge.xpReward} XP de Habilidade</span>
+                    <Card className="w-full max-w-2xl">
+                        <CardHeader className="text-center p-3 md:p-4 pb-2">
+                             <CardDescription className="text-xs md:text-sm">Sala {roomLevel}</CardDescription>
+                            <CardTitle className="text-base md:text-lg">{challenge.challengeName}</CardTitle>
+                             <span className="text-primary font-bold text-xs">+{challenge.xpReward} XP</span>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="text-center text-muted-foreground text-sm md:text-base">{challenge.challengeDescription}</p>
-                             <div className="pt-4">
-                                <Label htmlFor="challenge-submission" className="font-semibold text-muted-foreground">Prova de Conclusão</Label>
+                        <CardContent className="space-y-3 p-3 md:p-4">
+                            <p className="text-center text-muted-foreground text-xs md:text-sm">{challenge.challengeDescription}</p>
+                             <div>
+                                <Label htmlFor="challenge-submission" className="font-semibold text-muted-foreground text-xs">Prova de Conclusão</Label>
                                 <Textarea
                                     id="challenge-submission"
                                     placeholder={challenge.successCriteria}
-                                    className="mt-2 min-h-[100px] md:min-h-[150px] font-mono text-sm"
+                                    className="mt-1.5 min-h-[80px] md:min-h-[100px] font-mono text-xs"
                                     value={submission}
                                     onChange={(e) => setSubmission(e.target.value)}
                                 />
                              </div>
                         </CardContent>
-                        <CardFooter className="flex-col sm:flex-row gap-2">
+                        <CardFooter className="flex-col sm:flex-row gap-2 p-3 md:p-4 pt-0">
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button variant="outline" className="w-full sm:w-auto">Desistir do Desafio</Button>
+                                     <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs h-8">Desistir</Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Desistir do Desafio?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Isto irá descartar o desafio atual e gerar um novo para esta sala. Tem a certeza?
+                                            Isto irá gerar um novo desafio para esta sala.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -126,17 +124,17 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                             <Button className="w-full sm:w-auto" onClick={handleCompleteChallenge} disabled={!submission.trim()}>Completar Desafio</Button>
+                             <Button size="sm" className="w-full sm:w-auto text-xs h-8" onClick={handleCompleteChallenge} disabled={!submission.trim()}>Completar</Button>
                         </CardFooter>
                     </Card>
                 ) : (
                     <div className="text-center">
-                        <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
-                        <h2 className="text-xl md:text-2xl font-bold">Sala {roomLevel -1} Concluída!</h2>
-                        <p className="text-muted-foreground mt-2 mb-6 text-sm md:text-base">Você está pronto para o próximo desafio.</p>
-                        <Button onClick={handleGenerateChallenge}>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Ir para a Sala {roomLevel}
+                        <Trophy className="h-10 w-10 md:h-12 md:w-12 text-yellow-400 mx-auto mb-2" />
+                        <h2 className="text-base md:text-lg font-bold">Sala {roomLevel -1} Concluída!</h2>
+                        <p className="text-muted-foreground mt-1 mb-3 text-xs md:text-sm">Pronto para o próximo desafio</p>
+                        <Button size="sm" onClick={handleGenerateChallenge} className="h-8 text-xs">
+                            <Sparkles className="mr-1.5 h-3 w-3" />
+                            Sala {roomLevel}
                         </Button>
                     </div>
                 )}

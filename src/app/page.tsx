@@ -162,7 +162,7 @@ export default function App() {
     return (
       <div 
         key={currentPage} 
-        className="animate-fade-in-scale h-full p-4 md:p-6"
+        className="animate-fade-in-scale min-h-full p-4 md:p-6"
       >
         {views[currentPage] || <DashboardView />}
       </div>
@@ -245,7 +245,7 @@ export default function App() {
         <main
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
-            isMobile && "pb-40" // Extra padding for bottom nav (increased to avoid overlap)
+            isMobile && "pb-40"
           )}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
