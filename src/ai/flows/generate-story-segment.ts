@@ -1,7 +1,7 @@
 'use server';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 import { retryWithBackoff, validateAIOutput, sanitizeText } from '@/lib/ai-utils';
 
 const StoryChoiceSchema = z.object({
@@ -34,84 +34,60 @@ export type GenerateStorySegmentOutput = z.infer<typeof GenerateStorySegmentOutp
 export async function generateStorySegment(
   input: GenerateStorySegmentInput
 ): Promise<GenerateStorySegmentOutput> {
-  return generateStorySegmentFlow(input);
+  const genrePrompt = input.preferredGenre 
+    ? `O género deste segmento deve focar-se em: ${input.preferredGenre}.` 
+    : 'O género deve fluir naturalmente da narrativa.';
+
+  const nsfwPrompt = input.isNSFW
+    ? 'AVISO: O modo "Sem Censura" está ATIVO.'
+    : 'Mantenha o conteúdo adequado para uma audiência geral (PG-13).';
+
+  const choicePrompt = input.userChoice
+    ? `O utilizador escolheu anteriormente: "${input.userChoice}".`
+    : 'Este é o início de um novo capítulo ou arco.';
+
+  const finalPrompt = `
+    Você é um autor mestre de Light Novels e Manhwas.
+    Você está a escrever uma história interativa para um "Caçador".
+
+    **Contexto do Utilizador:** ${input.userProfile}
+    **Eventos Recentes:** ${input.recentEvents}
+    **História até agora:** ${input.storyContext}
+    **Situação Atual:** ${choicePrompt}
+    **Diretrizes:** ${nsfwPrompt} ${genrePrompt}
+
+    Escreva o próximo segmento da história. Termine com um cliffhanger e 2 ou 3 escolhas.
+
+    Responda em formato JSON seguindo este esquema:
+    {
+      "title": "...",
+      "content": "...",
+      "choices": [{ "id": "...", "text": "...", "consequenceHint": "..." }],
+      "newSummary": "...",
+      "genre": "..."
+    }
+  `;
+
+  try {
+    const output = await retryWithBackoff(
+      async () => await generateWithAppwriteAI<any>(finalPrompt, true),
+      3,
+      2000,
+      'Generate Story Segment'
+    );
+
+    validateAIOutput(output, ['title', 'content', 'choices', 'newSummary'], 'Story Segment');
+
+    return {
+      title: sanitizeText(output!.title, 100),
+      content: output!.content,
+      choices: output!.choices,
+      newSummary: sanitizeText(output!.newSummary, 1000),
+      genre: sanitizeText(output!.genre, 50),
+    };
+  } catch (error) {
+    console.error('Failed to generate story segment:', error);
+    throw new Error('Falha ao gerar a história. O Sistema está instável.');
+  }
 }
 
-const generateStorySegmentFlow = ai.defineFlow(
-  {
-    name: 'generateStorySegmentFlow',
-    inputSchema: GenerateStorySegmentInputSchema,
-    outputSchema: GenerateStorySegmentOutputSchema,
-  },
-  async (input) => {
-    const genrePrompt = input.preferredGenre 
-      ? `O género deste segmento deve focar-se em: ${input.preferredGenre}.` 
-      : 'O género deve fluir naturalmente da narrativa, podendo variar entre Ação, Aventura, Mistério, Terror, Romance ou Drama.';
-
-    const nsfwPrompt = input.isNSFW
-      ? 'AVISO: O modo "Sem Censura" está ATIVO. Você tem permissão total para descrever cenas de violência gráfica, horror intenso, temas adultos, romance explícito ou situações moralmente ambíguas se a história pedir. Não suavize o conteúdo. Seja visceral e realista.'
-      : 'Mantenha o conteúdo adequado para uma audiência geral (PG-13). Evite descrições excessivamente gráficas de violência ou conteúdo sexual explícito.';
-
-    const choicePrompt = input.userChoice
-      ? `O utilizador escolheu anteriormente: "${input.userChoice}". A história DEVE reagir a esta escolha, mostrando as consequências imediatas.`
-      : 'Este é o início de um novo capítulo ou arco.';
-
-    const finalPrompt = `
-Você é um autor mestre de Light Novels e Manhwas (como Solo Leveling, Omniscient Reader's Viewpoint, The Beginning After The End).
-Você está a escrever uma história interativa única para um "Caçador" (o utilizador) que usa um "Sistema" para evoluir na vida real.
-
-**Contexto do Utilizador:**
-${input.userProfile}
-
-**Eventos Recentes (O "Sistema" na vida real):**
-${input.recentEvents}
-(Use estes eventos como inspiração para o que acontece na história. Se ele completou uma missão de "Estudar Python", na história isso pode ser traduzido como "Decifrar runas antigas" ou "Aprender uma nova linguagem mágica". Se foi "Correr 5km", pode ser "Uma perseguição" ou "Treino de resistência".)
-
-**História até agora:**
-${input.storyContext}
-
-**Situação Atual:**
-${choicePrompt}
-
-**Diretrizes de Conteúdo:**
-${nsfwPrompt}
-
-**Diretrizes de Estilo:**
-1.  **Narrativa:** Escreva na segunda pessoa ("Você...") ou terceira pessoa limitada ao protagonista.
-2.  **Tom:** Épico, emocional e imersivo. Não tenha medo de temas maduros ou complexos (dentro dos limites de segurança). Misture géneros conforme necessário (${genrePrompt}).
-3.  **O Sistema:** O "Sistema" é uma entidade misteriosa que guia o utilizador. Pode ser benevolente, frio ou até manipulador.
-4.  **Criatividade:** Transforme as metas mundanas do utilizador em aventuras fantásticas. O mundo real e o mundo do "Sistema" sobrepõem-se.
-
-**Tarefa:**
-Escreva o próximo segmento da história.
-Termine com um momento de decisão (cliffhanger) e forneça 2 ou 3 escolhas distintas para o utilizador.
-As escolhas devem ser significativas e levar a caminhos diferentes (ex: Combate vs Diplomacia, Arriscar vs Cautela, Paixão vs Dever).
-`;
-
-    try {
-      const {output} = await retryWithBackoff(
-        async () => await ai.generate({
-          prompt: finalPrompt,
-          model: 'googleai/gemini-2.5-flash',
-          output: {schema: GenerateStorySegmentOutputSchema},
-        }),
-        3,
-        2000,
-        'Generate Story Segment'
-      );
-
-      validateAIOutput(output, ['title', 'content', 'choices', 'newSummary'], 'Story Segment');
-
-      return {
-        title: sanitizeText(output!.title, 100),
-        content: output!.content, // Allow longer content for story
-        choices: output!.choices,
-        newSummary: sanitizeText(output!.newSummary, 1000),
-        genre: sanitizeText(output!.genre, 50),
-      };
-    } catch (error) {
-      console.error('Failed to generate story segment:', error);
-      throw new Error('Falha ao gerar a história. O Sistema está instável.');
-    }
-  }
-);

@@ -232,70 +232,96 @@ export default function App() {
   return (
     <>
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-      
-      <div className="h-screen bg-background text-foreground flex font-sans overflow-hidden">
+
+      {/* Native App Container with Safe Areas */}
+      <div
+        className="h-screen bg-background text-foreground flex font-sans overflow-hidden"
+        style={{
+          paddingTop: isMobile ? 'env(safe-area-inset-top)' : '0',
+          paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0',
+          paddingLeft: isMobile ? 'env(safe-area-inset-left)' : '0',
+          paddingRight: isMobile ? 'env(safe-area-inset-right)' : '0'
+        }}
+      >
         {!isMobile && (
           <aside className={cn(
             "bg-card border-r border-border/50 flex flex-col shadow-xl z-20 transition-all duration-300 ease-in-out",
             isSidebarCollapsed ? "w-20" : "w-72"
           )}>
-            <Sidebar 
-              collapsed={isSidebarCollapsed} 
-              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+            <Sidebar
+              collapsed={isSidebarCollapsed}
+              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
           </aside>
         )}
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {!(isMobile && (currentPage === 'dashboard' || currentPage === 'missions')) && (
-          <TopHeader
-            title={getPageTitle(currentPage)}
-            profile={profile}
-            isMobile={isMobile}
-            onOpenCommand={() => setCommandOpen(true)}
-          />
-        )}
-
-        <main
-          className={cn(
-            "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
-            isMobile && !(currentPage === 'dashboard' || currentPage === 'missions') && "pb-40",
-            isMobile && (currentPage === 'dashboard' || currentPage === 'missions') && "pb-0 overflow-hidden"
-          )}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={() => onTouchEnd(false)}
-        >
-          {renderContent()}
-        </main>
-
-        {/* Mobile Bottom Navigation - Modern App Style */}
-        {isMobile && (
-          <>
-            <IonicMobileNavigation 
-              onNavigate={handleNavigate} 
-              onMenuOpen={() => setIsSheetOpen(true)} 
+        <div className="flex-1 flex flex-col h-screen overflow-hidden">
+          {!(isMobile && (currentPage === 'dashboard' || currentPage === 'missions')) && (
+            <TopHeader
+              title={getPageTitle(currentPage)}
+              profile={profile}
+              isMobile={isMobile}
+              onOpenCommand={() => setCommandOpen(true)}
             />
+          )}
 
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="bottom" className="md:h-[85vh] h-[92vh] rounded-t-[24px] px-0 bg-card/95 backdrop-blur-xl border-t-2 border-primary/20">
-                     <SheetHeader className="px-6 mb-4 text-left">
-                        <SheetTitle className="font-cinzel text-2xl text-gradient tracking-wider flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <MenuIcon className="h-4 w-4 text-primary" />
-                            </div>
-                            MENU DO SISTEMA
-                        </SheetTitle>
-                        <SheetDescription className="text-muted-foreground/80">Acesse todas as funcionalidades do sistema.</SheetDescription>
-                    </SheetHeader>
-                    <div className="h-full overflow-y-auto pb-20">
-                        <Sidebar inSheet={true} onNavigate={(page) => handleNavigate(page)} />
-                    </div>
-                </SheetContent>
-            </Sheet>
-          </>
-        )}
-      </div>
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
+              isMobile && !(currentPage === 'dashboard' || currentPage === 'missions') && "pb-28",
+              isMobile && (currentPage === 'dashboard' || currentPage === 'missions') && "pb-0 overflow-hidden"
+            )}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={() => onTouchEnd(false)}
+            style={{
+              WebkitOverflowScrolling: 'touch', // Native iOS scroll behavior
+              scrollBehavior: 'smooth'
+            }}
+          >
+            {renderContent()}
+          </main>
+
+          {/* Enhanced Mobile Bottom Navigation */}
+          {isMobile && (
+            <>
+              <IonicMobileNavigation
+                onNavigate={handleNavigate}
+                onMenuOpen={() => setIsSheetOpen(true)}
+              />
+
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetContent
+                    side="bottom"
+                    className="md:h-[85vh] h-[92vh] rounded-t-[24px] px-0 bg-card/95 backdrop-blur-xl border-t-2 border-primary/20"
+                    style={{
+                      paddingBottom: 'env(safe-area-inset-bottom)',
+                      borderRadius: '24px 24px 0 0'
+                    }}
+                  >
+                       <SheetHeader className="px-6 mb-4 text-left">
+                          <SheetTitle className="font-cinzel text-2xl text-gradient tracking-wider flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                                  <MenuIcon className="h-4 w-4 text-primary" />
+                              </div>
+                              MENU DO SISTEMA
+                          </SheetTitle>
+                          <SheetDescription className="text-muted-foreground/80">Acesse todas as funcionalidades do sistema.</SheetDescription>
+                      </SheetHeader>
+                      <div
+                        className="h-full overflow-y-auto pb-safe"
+                        style={{
+                          paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)',
+                          WebkitOverflowScrolling: 'touch'
+                        }}
+                      >
+                          <Sidebar inSheet={true} onNavigate={(page) => handleNavigate(page)} />
+                      </div>
+                  </SheetContent>
+              </Sheet>
+            </>
+          )}
+        </div>
       </div>
     </>
   );

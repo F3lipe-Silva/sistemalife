@@ -8,8 +8,8 @@
  * - GenerateTowerChallengeOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const ChallengeRequirementSchema = z.object({
   type: z.enum(['missions_completed', 'skill_level_reached', 'streak_maintained', 'level_reached', 'missions_in_category_completed'])
@@ -50,64 +50,39 @@ export type GenerateTowerChallengeOutput = z.infer<typeof GenerateTowerChallenge
 export async function generateTowerChallenge(
   input: GenerateTowerChallengeInput
 ): Promise<GenerateTowerChallengeOutput> {
-  return generateTowerChallengeFlow(input);
+  const prompt = `
+    Você é a "Arquiteta da Torre", uma IA especializada em criar desafios progressivos e personalizados para um RPG da vida real.
+
+    A sua tarefa é criar um novo desafio para um Caçador na Torre dos Desafios.
+
+    **DADOS DO CAÇADOR E DO CONTEXTO:**
+    - Andar Atual: ${input.floorNumber}
+    - Perfil do Caçador: ${input.userProfile}
+    - Habilidades do Caçador: ${input.userSkills}
+    - Metas Ativas do Caçador: ${input.activeGoals}
+    - Desafios Recentes (a evitar): ${input.recentChallenges?.join(', ') || 'Nenhum'}
+
+    **DIRETIVAS:**
+    1. Escala de Dificuldade proporcional ao andar (${input.floorNumber}).
+    2. Personalização baseada nos dados do Caçador.
+    3. Requisitos claros e mensuráveis.
+
+    Responda em formato JSON seguindo este esquema:
+    {
+      "id": "...",
+      "floor": ${input.floorNumber},
+      "title": "...",
+      "description": "...",
+      "type": "daily",
+      "difficulty": "beginner/intermediate/advanced/expert/master/infinite",
+      "requirements": [{ "type": "...", "value": "...", "target": 10 }],
+      "rewards": { "xp": 100, "fragments": 10 },
+      "timeLimit": 24
+    }
+  `;
+
+  return await generateWithAppwriteAI<GenerateTowerChallengeOutput>(prompt, true);
 }
 
-
-const generateTowerChallengeFlow = ai.defineFlow(
-  {
-    name: 'generateTowerChallengeFlow',
-    inputSchema: GenerateTowerChallengeInputSchema,
-    outputSchema: GenerateTowerChallengeOutputSchema,
-  },
-  async (input) => {
-    
-    const prompt = `
-      Você é a "Arquiteta da Torre", uma IA especializada em criar desafios progressivos e personalizados para um RPG da vida real.
-
-      A sua tarefa é criar um novo desafio para um Caçador na Torre dos Desafios.
-
-      **DADOS DO CAÇADOR E DO CONTEXTO:**
-      - Andar Atual: ${input.floorNumber}
-      - Perfil do Caçador: ${input.userProfile}
-      - Habilidades do Caçador: ${input.userSkills}
-      - Metas Ativas do Caçador: ${input.activeGoals}
-      - Desafios Recentes (a evitar): ${input.recentChallenges?.join(', ') || 'Nenhum'}
-
-      **DIRETIVAS PARA A CRIAÇÃO DO DESAFIO:**
-      1.  **Escala de Dificuldade:** A dificuldade DEVE ser diretamente proporcional ao número do andar.
-          - Andares 1-20 (Beginner): Desafios simples, focados em consistência básica.
-          - Andares 21-40 (Intermediate): Desafios que exigem mais tempo e foco.
-          - Andares 41-60 (Advanced): Desafios de desenvolvimento de habilidades e disciplina.
-          - Andares 61-80 (Expert): Desafios complexos e multidisciplinares.
-          - Andares 81-100 (Master): Desafios transformacionais que exigem um alto nível de comprometimento.
-          - **Andares 101+ (Infinite):** A Torre é infinita. Para andares acima de 100, continue a aumentar a complexidade dos requisitos (valores alvo maiores) e a magnitude das recompensas. Seja criativo e combine diferentes tipos de requisitos para criar desafios únicos e cada vez mais difíceis. Use o 'difficulty' como 'infinite'.
-
-      2.  **Personalização:** Analise os dados do Caçador para criar um desafio relevante.
-          - Se uma habilidade está baixa, crie um desafio para a incentivar.
-          - Se o Caçador está a trabalhar numa meta específica, alinhe o desafio com essa meta.
-          - Use as estatísticas do perfil para calibrar as metas numéricas.
-
-      3.  **Variedade:** Não repita os desafios recentes. Escolha um tipo de desafio ('type') e um critério ('requirement.type') que ofereça uma nova experiência. Gere principalmente desafios do tipo 'daily'.
-
-      4.  **Requisitos Claros:** Os requisitos devem ser mensuráveis e acionáveis.
-          - Exemplo Bom: { type: 'missions_in_category_completed', value: 'Saúde & Fitness', target: 5 }
-          - Exemplo Ruim: "Seja mais saudável."
-
-      5.  **Recompensas Equilibradas:** As recompensas (XP, fragmentos) devem escalar com a dificuldade e o esforço exigido. Desafios de andares mais altos recompensam muito mais.
-
-      6. **ID e Andar:** O id deve ser único (pode usar timestamp). O 'floor' na resposta deve ser o mesmo 'floorNumber' do input.
-
-      Gere um único desafio em formato JSON que siga todas estas diretivas.
-    `;
-
-    const {output} = await ai.generate({
-        prompt: prompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: GenerateTowerChallengeOutputSchema },
-    });
-    return output!;
-  }
-);
 
     

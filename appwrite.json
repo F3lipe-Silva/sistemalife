@@ -1,0 +1,33 @@
+{
+    "projectId": "695179150010e5d6ac06",
+    "projectName": "SistemaLife",
+    "settings": {
+        "services": {
+            "databases": true,
+            "functions": true,
+            "storage": true,
+            "users": true,
+            "teams": true,
+            "health": true,
+            "locale": true,
+            "avatars": true,
+            "messaging": true
+        }
+    },
+    "functions": [
+        {
+            "$id": "gemini-api",
+            "name": "Gemini API",
+            "runtime": "node-18.0",
+            "execute": ["any"],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "path": "functions/Gemini API"
+        }
+    ]
+}

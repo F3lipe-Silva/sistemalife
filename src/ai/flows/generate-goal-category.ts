@@ -7,8 +7,8 @@
  * - GenerateGoalCategoryOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const GenerateGoalCategoryInputSchema = z.object({
   goalName: z.string().describe('O nome da meta inserida pelo utilizador.'),
@@ -24,18 +24,7 @@ export type GenerateGoalCategoryOutput = z.infer<typeof GenerateGoalCategoryOutp
 export async function generateGoalCategory(
   input: GenerateGoalCategoryInput
 ): Promise<GenerateGoalCategoryOutput> {
-  return generateGoalCategoryFlow(input);
-}
-
-const generateGoalCategoryFlow = ai.defineFlow(
-  {
-    name: 'generateGoalCategoryFlow',
-    inputSchema: GenerateGoalCategoryInputSchema,
-    outputSchema: GenerateGoalCategoryOutputSchema,
-  },
-  async (input) => {
-
-    const prompt = `Analise o nome da meta a seguir e escolha a categoria mais apropriada da lista fornecida.
+  const prompt = `Analise o nome da meta a seguir e escolha a categoria mais apropriada da lista fornecida.
 
 Meta: "${input.goalName}"
 
@@ -44,11 +33,7 @@ ${input.categories.map(c => `- ${c}`).join('\n')}
 
 Responda APENAS com a categoria escolhida da lista. Não adicione nenhuma outra palavra ou pontuação.`;
 
-    const {output} = await ai.generate({
-        prompt: prompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: GenerateGoalCategoryOutputSchema },
-    });
-    return output!;
-  }
-);
+  const category = await generateWithAppwriteAI(prompt);
+  return { category: category.trim() };
+}
+

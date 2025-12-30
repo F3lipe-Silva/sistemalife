@@ -8,8 +8,8 @@
  * - GenerateMissionSuggestionOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const GenerateMissionSuggestionInputSchema = z.object({
   missionName: z.string().describe("O nome da missão diária atual."),
@@ -27,49 +27,35 @@ export type GenerateMissionSuggestionOutput = z.infer<typeof GenerateMissionSugg
 export async function generateMissionSuggestion(
   input: GenerateMissionSuggestionInput
 ): Promise<GenerateMissionSuggestionOutput> {
-  return generateMissionSuggestionFlow(input);
+  let prompt = '';
+  const userContext = input.userText ? `Contexto adicional do utilizador: "${input.userText}"` : '';
+
+  if (input.feedbackType === 'hint') {
+    prompt = `Você é o 'Sistema', um coach de IA. O utilizador está a pedir uma dica para a seguinte missão:
+      - Missão: "${input.missionName}"
+      - Descrição: "${input.missionDescription}"
+      ${userContext}
+      
+      Forneça uma sugestão útil e acionável com base na dificuldade descrita. Não dê a resposta completa, mas ofereça uma pista que o ajude a começar ou a pensar no problema de uma forma diferente. Seja conciso e estratégico.`;
+  } else if (input.feedbackType === 'too_hard') {
+    prompt = `Você é o 'Sistema', um coach de IA. O utilizador sinalizou que a seguinte missão é muito difícil:
+      - Missão: "${input.missionName}"
+      - Descrição: "${input.missionDescription}"
+      ${userContext}
+
+      Reconheça o feedback do utilizador. Confirme que a dificuldade será ajustada na próxima missão com base na sua descrição. Reforce que o importante é a consistência. Diga algo como: "Entendido. A dificuldade será ajustada com base no seu feedback. O progresso, por menor que seja, é a chave."`;
+  } else { // too_easy
+    prompt = `Você é o 'Sistema', um coach de IA. O utilizador sinalizou que a seguinte missão é muito fácil:
+      - Missão: "${input.missionName}"
+      - Descrição: "${input.missionDescription}"
+      ${userContext}
+
+      Reconheça o feedback do utilizador. Confirme que o desafio irá aumentar na próxima missão. Diga algo como: "Feedback recebido. Prepare-se para um desafio maior na sua próxima missão."`;
+  }
+
+  // Usando a nova função do Appwrite
+  const suggestion = await generateWithAppwriteAI(prompt);
+
+  return { suggestion };
 }
 
-
-const generateMissionSuggestionFlow = ai.defineFlow(
-  {
-    name: 'generateMissionSuggestionFlow',
-    inputSchema: GenerateMissionSuggestionInputSchema,
-    outputSchema: GenerateMissionSuggestionOutputSchema,
-  },
-  async (input) => {
-    let prompt = '';
-    const userContext = input.userText ? `Contexto adicional do utilizador: "${input.userText}"` : '';
-
-    if (input.feedbackType === 'hint') {
-      prompt = `Você é o 'Sistema', um coach de IA. O utilizador está a pedir uma dica para a seguinte missão:
-        - Missão: "${input.missionName}"
-        - Descrição: "${input.missionDescription}"
-        ${userContext}
-        
-        Forneça uma sugestão útil e acionável com base na dificuldade descrita. Não dê a resposta completa, mas ofereça uma pista que o ajude a começar ou a pensar no problema de uma forma diferente. Seja conciso e estratégico.`;
-    } else if (input.feedbackType === 'too_hard') {
-      prompt = `Você é o 'Sistema', um coach de IA. O utilizador sinalizou que a seguinte missão é muito difícil:
-        - Missão: "${input.missionName}"
-        - Descrição: "${input.missionDescription}"
-        ${userContext}
-
-        Reconheça o feedback do utilizador. Confirme que a dificuldade será ajustada na próxima missão com base na sua descrição. Reforce que o importante é a consistência. Diga algo como: "Entendido. A dificuldade será ajustada com base no seu feedback. O progresso, por menor que seja, é a chave."`;
-    } else { // too_easy
-      prompt = `Você é o 'Sistema', um coach de IA. O utilizador sinalizou que a seguinte missão é muito fácil:
-        - Missão: "${input.missionName}"
-        - Descrição: "${input.missionDescription}"
-        ${userContext}
-
-        Reconheça o feedback do utilizador. Confirme que o desafio irá aumentar na próxima missão. Diga algo como: "Feedback recebido. Prepare-se para um desafio maior na sua próxima missão."`;
-    }
-
-    const {output} = await ai.generate({
-      prompt,
-      model: 'googleai/gemini-2.5-flash',
-      output: { schema: GenerateMissionSuggestionOutputSchema },
-    });
-
-    return output!;
-  }
-);

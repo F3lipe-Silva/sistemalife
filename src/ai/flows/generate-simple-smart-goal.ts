@@ -8,8 +8,8 @@
  * - GenerateSimpleSmartGoalOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 import { retryWithBackoff, validateAIOutput, sanitizeText } from '@/lib/ai-utils';
 
 const SmartGoalSchema = z.object({
@@ -35,19 +35,8 @@ export type GenerateSimpleSmartGoalOutput = z.infer<typeof GenerateSimpleSmartGo
 export async function generateSimpleSmartGoal(
   input: GenerateSimpleSmartGoalInput
 ): Promise<GenerateSimpleSmartGoalOutput> {
-  return generateSimpleSmartGoalFlow(input);
-}
-
-
-const generateSimpleSmartGoalFlow = ai.defineFlow(
-  {
-    name: 'generateSimpleSmartGoalFlow',
-    inputSchema: GenerateSimpleSmartGoalInputSchema,
-    outputSchema: GenerateSimpleSmartGoalOutputSchema,
-  },
-  async input => {
-    try {
-        const prompt = `Você é um coach de produtividade de elite, mestre em transformar ideias em metas acionáveis.
+  try {
+    const prompt = `Você é um coach de produtividade de elite, mestre em transformar ideias em metas acionáveis.
 Sua tarefa é pegar o nome de uma meta fornecida pelo utilizador e expandi-la para uma meta SMART completa.
 
 Meta do Utilizador: "${input.goalName}"
@@ -56,52 +45,52 @@ Seja criativo, mas realista. Crie detalhes específicos, mensuráveis, atingíve
 IMPORTANTE: O campo 'name' na resposta DEVE ser exatamente igual à "Meta do Utilizador" fornecida. Não modifique o nome.
 Para o campo 'timeBound', defina um prazo realista e futuro (ex: "nos próximos 3 meses", "até ao final do ano fiscal atual"). Não use uma data específica com ano, como "até 31/12/2024".
 
-Responda APENAS com o objeto JSON do "refinedGoal". Não adicione nenhuma outra palavra ou pontuação.
+Responda em formato JSON seguindo este esquema exato para o objeto refinedGoal:
+{
+  "name": "${input.goalName}",
+  "specific": "...",
+  "measurable": "...",
+  "achievable": "...",
+  "relevant": "...",
+  "timeBound": "..."
+}
 `;
-        const {output} = await retryWithBackoff(
-          async () => await ai.generate({
-            prompt: prompt,
-            model: 'googleai/gemini-2.5-flash',
-            output: { schema: z.object({ refinedGoal: SmartGoalSchema }) },
-          }),
-          3,
-          1000,
-          'Generate Simple SMART Goal'
-        );
+    const response = await retryWithBackoff(
+      async () => await generateWithAppwriteAI<any>(prompt, true),
+      3,
+      1000,
+      'Generate Simple SMART Goal'
+    );
 
-        // Validate and sanitize output
-        validateAIOutput(output, ['refinedGoal'], 'Simple SMART Goal');
-        
-        if (!output || !output.refinedGoal) {
-          throw new Error('AI returned invalid SMART goal');
-        }
+    // Se o retorno for { refinedGoal: { ... } }, extraímos. Se for direto { ... }, usamos.
+    const refinedData = response.refinedGoal || response;
 
-        const refinedGoal = {
-          name: sanitizeText(output.refinedGoal.name, 200),
-          specific: sanitizeText(output.refinedGoal.specific, 500),
-          measurable: sanitizeText(output.refinedGoal.measurable, 500),
-          achievable: sanitizeText(output.refinedGoal.achievable, 500),
-          relevant: sanitizeText(output.refinedGoal.relevant, 500),
-          timeBound: sanitizeText(output.refinedGoal.timeBound, 200),
-        };
+    const refinedGoal = {
+      name: sanitizeText(refinedData.name || input.goalName, 200),
+      specific: sanitizeText(refinedData.specific, 500),
+      measurable: sanitizeText(refinedData.measurable, 500),
+      achievable: sanitizeText(refinedData.achievable, 500),
+      relevant: sanitizeText(refinedData.relevant, 500),
+      timeBound: sanitizeText(refinedData.timeBound, 200),
+    };
 
-        return { refinedGoal, fallback: false };
-    } catch (error) {
-        console.error("Falha ao gerar meta SMART, acionando fallback:", error);
-        
-        const fallbackGoal = {
-            name: input.goalName,
-            specific: `Definir e alcançar o objetivo: ${input.goalName}.`,
-            measurable: 'Defina aqui os marcos e KPIs para medir o progresso.',
-            achievable: 'Liste os passos e recursos necessários para tornar isto possível.',
-            relevant: 'Descreva aqui porque esta meta é importante para si neste momento.',
-            timeBound: 'Defina um prazo realista para a conclusão desta meta.',
-        };
+    return { refinedGoal, fallback: false };
+  } catch (error) {
+    console.error("Falha ao gerar meta SMART, acionando fallback:", error);
+    
+    const fallbackGoal = {
+        name: input.goalName,
+        specific: `Definir e alcançar o objetivo: ${input.goalName}.`,
+        measurable: 'Defina aqui os marcos e KPIs para medir o progresso.',
+        achievable: 'Liste os passos e recursos necessários para tornar isto possível.',
+        relevant: 'Descreva aqui porque esta meta é importante para si neste momento.',
+        timeBound: 'Defina um prazo realista para a conclusão desta meta.',
+    };
 
-        return {
-            refinedGoal: fallbackGoal,
-            fallback: true,
-        };
-    }
+    return {
+        refinedGoal: fallbackGoal,
+        fallback: true,
+    };
   }
-);
+}
+

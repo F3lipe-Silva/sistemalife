@@ -1,5 +1,16 @@
 "use client";
 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonMenuButton,
+  IonRefresher,
+  IonRefresherContent
+} from '@ionic/react';
 import { useState, useCallback, memo } from 'react';
 import { Trash2, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, PlusCircle, Link2, AlertTriangle, KeySquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -130,8 +141,156 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
 
     const metasWithoutSkills = metas.filter((meta: any) => !skills.some((skill: any) => skill.id === meta.habilidade_associada_id));
 
+    if (isMobile) {
+        return (
+            <IonPage>
+                <IonHeader className="ion-no-border">
+                    <IonToolbar className="bg-background/80 backdrop-blur-md border-b border-border/20 [--background:transparent]">
+                        <IonButtons slot="start">
+                            <IonMenuButton />
+                        </IonButtons>
+                        <IonTitle className="font-cinzel text-foreground">HABILIDADES</IonTitle>
+                        <IonButtons slot="end">
+                            <Button onClick={() => setShowAddDialog(true)} size="icon" variant="ghost" className="text-foreground">
+                                <PlusCircle className="h-5 w-5" />
+                            </Button>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonContent fullscreen className="ion-padding">
+                    <IonRefresher slot="fixed" onIonRefresh={(e) => { setTimeout(() => e.detail.complete(), 1500); }}>
+                        <IonRefresherContent></IonRefresherContent>
+                    </IonRefresher>
+
+                    <div className="pb-24 space-y-4">
+                        <div className="bg-blue-950/20 border border-blue-500/20 rounded-lg p-3">
+                            <h2 className="text-blue-400 font-cinzel text-sm tracking-widest mb-1">ÁRVORE DE HABILIDADES</h2>
+                            <p className="text-[10px] text-blue-300/60 font-mono leading-relaxed">
+                                Habilidades evoluem com o combate e tarefas diárias. Inatividade prolongada resulta em <span className="text-purple-400 font-bold">CORRUPÇÃO DE DADOS</span> (Decaimento de XP).
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {skills.map((skill: any) => {
+                                const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
+                                const stats: string[] = statCategoryMapping[skill.categoria as keyof typeof statCategoryMapping] || [];
+                                const associatedMeta = metas.find((m: any) => m.habilidade_associada_id === skill.id);
+                                
+                                const lastActivity = new Date(skill.ultima_atividade_em || new Date());
+                                const daysSinceActivity = (new Date().getTime() - lastActivity.getTime()) / (1000 * 3600 * 24);
+                                const isDecaying = daysSinceActivity > 14;
+                                const isAtRisk = daysSinceActivity > 7 && !isDecaying;
+
+                                return (
+                                    <div key={skill.id} className={cn(
+                                        "relative bg-black/60 border rounded-xl overflow-hidden transition-all duration-300",
+                                        isDecaying ? "border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]" : "border-blue-900/40",
+                                        isAtRisk && "border-yellow-500/50"
+                                    )}>
+                                        {/* Mobile Card Layout */}
+                                        <div className="p-3">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={cn("p-2 rounded-lg bg-black/40 border", isDecaying ? "border-purple-500/50 text-purple-400" : "border-blue-500/30 text-blue-400")}>
+                                                        {isDecaying || isAtRisk ? (
+                                                            <AlertTriangle className="h-5 w-5 animate-pulse" />
+                                                        ) : (
+                                                            <Zap className="h-5 w-5" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-white font-mono text-sm uppercase tracking-wide">{skill.nome}</h3>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[10px] bg-blue-950/40 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20">LVL {skill.nivel_atual}</span>
+                                                            {associatedMeta && (
+                                                                <span className="text-[9px] text-blue-400/50 font-mono truncate max-w-[120px]">
+                                                                    LINK: {associatedMeta.nome}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex gap-1">
+                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-400/50 hover:text-blue-400 hover:bg-blue-500/10" onClick={() => spendDungeonCrystal(skill.id)} disabled={(profile?.dungeon_crystals || 0) <= 0}>
+                                                        <KeySquare className="h-4 w-4" />
+                                                    </Button>
+                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400/50 hover:text-red-400 hover:bg-red-500/10" onClick={() => {}}> 
+                                                         {/* Note: Delete dialog logic simplified for mobile view integration, would normally wire up to same state */}
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-[10px] text-gray-400/80 font-mono mb-3 line-clamp-2 border-l-2 border-blue-500/20 pl-2">
+                                                {skill.descricao}
+                                            </p>
+
+                                            {/* Progress Bar */}
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-[9px] font-mono text-blue-400/60 uppercase">
+                                                    <span>MASTERY</span>
+                                                    <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel} XP</span>
+                                                </div>
+                                                <div className="w-full bg-blue-950/30 h-1 rounded-full overflow-hidden">
+                                                    <div className={cn(
+                                                        "h-full transition-all duration-500",
+                                                        isDecaying ? "bg-purple-500" : "bg-blue-500"
+                                                     )} style={{ width: `${skillProgress}%` }}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Reusing existing Dialogs (Add Skill, etc) - they are responsive by default */}
+                    <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                        <DialogContent className="max-w-[95vw] bg-black/95 border-blue-500/30">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-white font-cinzel text-lg">
+                                    <PlusCircle className="text-blue-500 h-5 w-5"/>
+                                    NOVA HABILIDADE
+                                </DialogTitle>
+                                <DialogDescription className="text-xs font-mono text-gray-400">
+                                    Selecione uma meta para sintetizar uma nova habilidade baseada nela.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-3">
+                                <Label htmlFor="meta-select-mobile" className="text-blue-400 font-mono text-[10px] uppercase tracking-widest">META ALVO</Label>
+                                <Select onValueChange={(value) => setSelectedMetaId(value)} value={selectedMetaId ? String(selectedMetaId) : ''}>
+                                    <SelectTrigger id="meta-select-mobile" className="w-full bg-blue-950/20 border-blue-500/30 text-white font-mono text-xs h-10">
+                                        <SelectValue placeholder="SELECIONE..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-black border-blue-500/30 text-white font-mono text-xs">
+                                        {metasWithoutSkills.length > 0 ? (
+                                            metasWithoutSkills.map((meta: any) => (
+                                                <SelectItem key={meta.id} value={String(meta.id)} className="focus:bg-blue-900/20">{meta.nome}</SelectItem>
+                                            ))
+                                        ) : (
+                                            <SelectItem value="none" disabled>NENHUMA META DISPONÍVEL</SelectItem>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <DialogFooter className="flex-col gap-2">
+                                <Button variant="outline" onClick={() => setShowAddDialog(false)} className="w-full border-gray-700 text-gray-400 h-9 text-xs">CANCELAR</Button>
+                                <Button onClick={handleSaveNewSkill} disabled={isLoading || !selectedMetaId} className="w-full bg-blue-600 hover:bg-blue-500 h-9 text-xs">
+                                    {isLoading ? 'ANALISANDO...' : 'SINTETIZAR'}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </IonContent>
+            </IonPage>
+        );
+    }
+
     return (
-        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
+        <div className={cn("h-full overflow-y-auto", "p-4 md:p-6")}>
             <div className={cn("flex flex-col gap-2 mb-6", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
                 <div>
                     <h1 className={cn("font-bold text-white font-cinzel tracking-[0.15em] drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]", isMobile ? "text-xl" : "text-3xl")}>

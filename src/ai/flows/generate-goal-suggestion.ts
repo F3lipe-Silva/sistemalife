@@ -7,8 +7,8 @@
  * - GenerateGoalSuggestionOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const GoalSuggestionSchema = z.object({
   name: z.string().describe("O nome conciso e inspirador para a nova meta sugerida."),
@@ -33,43 +33,33 @@ export type GenerateGoalSuggestionOutput = z.infer<typeof GenerateGoalSuggestion
 export async function generateGoalSuggestion(
   input: GenerateGoalSuggestionInput
 ): Promise<GenerateGoalSuggestionOutput> {
-  return generateGoalSuggestionFlow(input);
+  const prompt = `
+      Você é o "Estratega do Sistema", um coach de IA especializado em desenvolvimento a longo prazo. A sua tarefa é analisar o perfil completo de um utilizador e sugerir os próximos grandes objetivos para a sua jornada.
+
+      Dados do Utilizador:
+      - Perfil: ${input.profile}
+      - Habilidades Atuais: ${input.skills}
+      - Metas Já Concluídas: ${input.completedGoals || 'Nenhuma ainda.'}
+
+      Categorias de Metas Disponíveis:
+      ${input.existingCategories.join(', ')}
+
+      Com base em todos estes dados, siga as seguintes diretivas:
+      1.  **Análise Holística:** Avalie as habilidades mais fortes e mais fracas do utilizador. Identifique áreas de especialização e áreas que precisam de desenvolvimento para criar um perfil mais equilibrado.
+      2.  **Sinergia de Habilidades:** Sugira metas que possam complementar as habilidades existentes. Por exemplo, se o utilizador é bom em "Programação Python", sugira uma meta como "Construir um Projeto de IA Pessoal" que utilize essa habilidade.
+      3.  **Desenvolvimento de Atributos:** Olhe para os atributos do perfil (força, inteligência, etc.). Sugira metas que possam fortalecer os atributos mais baixos. Por exemplo, se a 'força' é baixa, sugira uma meta de fitness. Se a 'carisma' é baixo, sugira uma meta social.
+      4.  **Evitar Repetição:** Não sugira metas que sejam muito semelhantes às já concluídas. O objetivo é o crescimento e a exploração de novos desafios.
+      5.  **Qualidade sobre Quantidade:** Gere entre 3 a 5 sugestões de alta qualidade. Cada sugestão deve incluir um nome de meta inspirador, uma descrição que justifique a sugestão com base nos dados do utilizador e a categoria mais apropriada.
+
+      Responda em formato JSON seguindo este esquema:
+      {
+        "suggestions": [
+          { "name": "...", "description": "...", "category": "..." }
+        ]
+      }
+  `;
+
+  // Usando Appwrite AI com modo JSON
+  return await generateWithAppwriteAI<GenerateGoalSuggestionOutput>(prompt, true);
 }
 
-const generateGoalSuggestionFlow = ai.defineFlow(
-  {
-    name: 'generateGoalSuggestionFlow',
-    inputSchema: GenerateGoalSuggestionInputSchema,
-    outputSchema: GenerateGoalSuggestionOutputSchema,
-  },
-  async (input) => {
-    const prompt = `
-        Você é o "Estratega do Sistema", um coach de IA especializado em desenvolvimento a longo prazo. A sua tarefa é analisar o perfil completo de um utilizador e sugerir os próximos grandes objetivos para a sua jornada.
-
-        Dados do Utilizador:
-        - Perfil: ${input.profile}
-        - Habilidades Atuais: ${input.skills}
-        - Metas Já Concluídas: ${input.completedGoals || 'Nenhuma ainda.'}
-
-        Categorias de Metas Disponíveis:
-        ${input.existingCategories.join(', ')}
-
-        Com base em todos estes dados, siga as seguintes diretivas:
-        1.  **Análise Holística:** Avalie as habilidades mais fortes e mais fracas do utilizador. Identifique áreas de especialização e áreas que precisam de desenvolvimento para criar um perfil mais equilibrado.
-        2.  **Sinergia de Habilidades:** Sugira metas que possam complementar as habilidades existentes. Por exemplo, se o utilizador é bom em "Programação Python", sugira uma meta como "Construir um Projeto de IA Pessoal" que utilize essa habilidade.
-        3.  **Desenvolvimento de Atributos:** Olhe para os atributos do perfil (força, inteligência, etc.). Sugira metas que possam fortalecer os atributos mais baixos. Por exemplo, se a 'força' é baixa, sugira uma meta de fitness. Se a 'carisma' é baixo, sugira uma meta social.
-        4.  **Evitar Repetição:** Não sugira metas que sejam muito semelhantes às já concluídas. O objetivo é o crescimento e a exploração de novos desafios.
-        5.  **Qualidade sobre Quantidade:** Gere entre 3 a 5 sugestões de alta qualidade. Cada sugestão deve incluir um nome de meta inspirador, uma descrição que justifique a sugestão com base nos dados do utilizador e a categoria mais apropriada.
-
-        O seu resultado deve ser um objeto JSON contendo uma lista de sugestões.
-    `;
-
-    const {output} = await ai.generate({
-      prompt,
-      model: 'googleai/gemini-2.5-flash',
-      output: { schema: GenerateGoalSuggestionOutputSchema },
-    });
-
-    return output!;
-  }
-);

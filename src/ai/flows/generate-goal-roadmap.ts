@@ -1,15 +1,6 @@
 
-'use server';
-/**
- * @fileOverview Um agente de IA que cria um roteiro estratégico para atingir uma meta.
- *
- * - generateGoalRoadmap - Gera um plano passo a passo para uma meta.
- * - GenerateGoalRoadmapInput - O tipo de entrada para a função.
- * - GenerateGoalRoadmapOutput - O tipo de retorno para a função.
- */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const RoadmapPhaseSchema = z.object({
   phaseTitle: z.string().describe("O título temático para a fase (ex: 'Fase 1: A Fundação do Conhecimento', 'Fase 2: As Primeiras Batalhas')."),
@@ -32,18 +23,7 @@ export type GenerateGoalRoadmapOutput = z.infer<typeof GenerateGoalRoadmapOutput
 export async function generateGoalRoadmap(
   input: GenerateGoalRoadmapInput
 ): Promise<GenerateGoalRoadmapOutput> {
-  return generateGoalRoadmapFlow(input);
-}
-
-const generateGoalRoadmapFlow = ai.defineFlow(
-  {
-    name: 'generateGoalRoadmapFlow',
-    inputSchema: GenerateGoalRoadmapInputSchema,
-    outputSchema: GenerateGoalRoadmapOutputSchema,
-  },
-  async (input) => {
-    
-    const prompt = `Você é o "Estratega Mestre" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é pegar num grande objetivo e dividi-lo num roteiro estratégico claro e motivador para um Caçador de nível ${input.userLevel}.
+  const prompt = `Você é o "Estratega Mestre" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é pegar num grande objetivo e dividi-lo num roteiro estratégico claro e motivador para um Caçador de nível ${input.userLevel}.
 
 A meta do Caçador é: "${input.goalName}"
 Detalhes da Meta (SMART): ${input.goalDetails}
@@ -53,17 +33,16 @@ Sua tarefa é criar um Roteiro Estratégico. Siga estas diretivas:
 2.  **Marcos Estratégicos:** Para cada fase, defina de 3 a 5 "Marcos Estratégicos". Estes não são pequenas tarefas diárias, mas sim objetivos importantes a serem alcançados nessa fase. Pense neles como as "Missões Principais" de um jogo.
 3.  **Linguagem de RPG:** Use uma linguagem que inspire e se encaixe no tema. Use termos como "jornada", "desafio", "maestria", "fundação", "arsenal", "campo de batalha".
 4.  **Foco no "Como":** O roteiro não deve ser apenas "o quê", mas também sugerir o "como". Os marcos devem ser acionáveis.
-    - Exemplo Ruim: "Aprender Python."
-    - Exemplo Bom: "Dominar as estruturas de dados fundamentais (Listas, Dicionários, Tuplas) e quando usar cada uma."
 
-Analise a meta e os seus detalhes para construir o roteiro mais eficaz e inspirador possível.
+Responda em formato JSON seguindo este esquema:
+{
+  "roadmap": [
+    { "phaseTitle": "...", "phaseDescription": "...", "strategicMilestones": ["...", "..."] }
+  ]
+}
 `;
 
-    const {output} = await ai.generate({
-      prompt: prompt,
-      model: 'googleai/gemini-2.5-flash',
-      output: { schema: GenerateGoalRoadmapOutputSchema },
-    });
-    return output!;
-  }
-);
+  return await generateWithAppwriteAI<GenerateGoalRoadmapOutput>(prompt, true);
+}
+
+

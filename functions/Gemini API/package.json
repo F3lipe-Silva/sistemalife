@@ -1,0 +1,9 @@
+{
+  "name": "gemini-api",
+  "version": "1.0.0",
+  "description": "Appwrite function to interact with Gemini API",
+  "main": "src/main.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  }
+}

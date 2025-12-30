@@ -8,8 +8,8 @@
  * - GenerateMissionRewardsOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import {z} from 'zod';
 import { retryWithBackoff } from '@/lib/ai-utils';
 
 const GenerateMissionRewardsInputSchema = z.object({
@@ -27,76 +27,62 @@ export type GenerateMissionRewardsOutput = z.infer<typeof GenerateMissionRewards
 export async function generateMissionRewards(
   input: GenerateMissionRewardsInput
 ): Promise<GenerateMissionRewardsOutput> {
-  return generateMissionRewardsFlow(input);
+  const {missionText, userLevel} = input;
+  
+  // Fatores de cálculo para atingir ~10950 XP por ano (30XP/dia)
+  const baseXP = 15; // XP mínimo para uma tarefa muito simples
+  const difficultyMultiplier = 1.2; // Aumenta o XP com base na dificuldade percebida
+  const levelMultiplier = 0.2; // Aumenta ligeiramente o XP para jogadores de nível mais alto
+  
+  // Fatores de cálculo para fragmentos
+  const baseFragments = 2;
+  const fragmentDifficultyMultiplier = 0.5;
+  const fragmentLevelMultiplier = 0.1;
+
+  const prompt = `
+      Analise a seguinte missão e avalie a sua complexidade, esforço e tempo necessários numa escala de 1 a 10.
+      - 1-2: Tarefa trivial (ex: 'abrir um ficheiro').
+      - 3-4: Tarefa simples (ex: 'escrever 10 linhas de código', 'fazer um aquecimento de 5 minutos').
+      - 5-6: Tarefa de esforço moderado (ex: 'implementar uma função pequena', 'correr 1km').
+      - 7-8: Tarefa desafiadora (ex: 'depurar um bug complexo', 'completar um treino de 45 minutos').
+      - 9-10: Tarefa muito difícil ou demorada (ex: 'construir um pequeno componente de UI', 'ler um capítulo de um livro técnico').
+      
+      Missão: "${missionText}"
+      
+      Responda APENAS com um número de 1 a 10 para a dificuldade. Não inclua mais nada na resposta além do número.
+  `;
+
+  try {
+    const difficultyScoreText = await retryWithBackoff(
+      async () => await generateWithAppwriteAI(prompt),
+      3,
+      1000,
+      'Generate Mission Rewards'
+    );
+
+    const difficultyScore = parseInt(difficultyScoreText, 10) || 4;
+
+    const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + (userLevel * levelMultiplier);
+    const finalXP = Math.round(Math.max(10, Math.min(100, calculatedXP)));
+    
+    const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier);
+    const finalFragments = Math.round(Math.max(1, Math.min(20, calculatedFragments)));
+
+    return {
+      xp: finalXP,
+      fragments: finalFragments
+    };
+  } catch (error) {
+    console.error('Failed to generate mission rewards with AI, using fallback calculation:', error);
+    
+    const missionComplexity = Math.min(10, Math.max(3, Math.floor(missionText.length / 20)));
+    const fallbackXP = Math.round(baseXP + (missionComplexity * difficultyMultiplier) + (userLevel * levelMultiplier));
+    const fallbackFragments = Math.round(baseFragments + (missionComplexity * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier));
+    
+    return {
+      xp: Math.max(10, Math.min(100, fallbackXP)),
+      fragments: Math.max(1, Math.min(20, fallbackFragments))
+    };
+  }
 }
 
-const generateMissionRewardsFlow = ai.defineFlow(
-  {
-    name: 'generateMissionRewardsFlow',
-    inputSchema: GenerateMissionRewardsInputSchema,
-    outputSchema: GenerateMissionRewardsOutputSchema,
-  },
-  async ({missionText, userLevel}) => {
-    // Fatores de cálculo para atingir ~10950 XP por ano (30XP/dia)
-    const baseXP = 15; // XP mínimo para uma tarefa muito simples
-    const difficultyMultiplier = 1.2; // Aumenta o XP com base na dificuldade percebida
-    const levelMultiplier = 0.2; // Aumenta ligeiramente o XP para jogadores de nível mais alto
-    
-    // Fatores de cálculo para fragmentos
-    const baseFragments = 2;
-    const fragmentDifficultyMultiplier = 0.5;
-    const fragmentLevelMultiplier = 0.1;
-
-    const prompt = `
-        Analise a seguinte missão e avalie a sua complexidade, esforço e tempo necessários numa escala de 1 a 10.
-        - 1-2: Tarefa trivial (ex: 'abrir um ficheiro').
-        - 3-4: Tarefa simples (ex: 'escrever 10 linhas de código', 'fazer um aquecimento de 5 minutos').
-        - 5-6: Tarefa de esforço moderado (ex: 'implementar uma função pequena', 'correr 1km').
-        - 7-8: Tarefa desafiadora (ex: 'depurar um bug complexo', 'completar um treino de 45 minutos').
-        - 9-10: Tarefa muito difícil ou demorada (ex: 'construir um pequeno componente de UI', 'ler um capítulo de um livro técnico').
-        
-        Missão: "${missionText}"
-        
-        Responda APENAS com um número de 1 a 10 para a dificuldade.
-    `;
-
-    try {
-      const {output: difficultyScoreText} = await retryWithBackoff(
-        async () => await ai.generate({
-          prompt,
-          model: 'googleai/gemini-2.5-flash',
-        }),
-        3,
-        1000,
-        'Generate Mission Rewards'
-      );
-
-      const difficultyScore = parseInt(difficultyScoreText, 10) || 4; // Padrão para 4 se a análise falhar
-
-      // Fórmula para calcular o XP
-      const calculatedXP = baseXP + (difficultyScore * difficultyMultiplier) + (userLevel * levelMultiplier);
-      const finalXP = Math.round(Math.max(10, Math.min(100, calculatedXP)));
-      
-      // Fórmula para calcular os fragmentos
-      const calculatedFragments = baseFragments + (difficultyScore * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier);
-      const finalFragments = Math.round(Math.max(1, Math.min(20, calculatedFragments)));
-
-      return {
-        xp: finalXP,
-        fragments: finalFragments
-      };
-    } catch (error) {
-      console.error('Failed to generate mission rewards with AI, using fallback calculation:', error);
-      
-      // Fallback: estimate based on mission text length and user level
-      const missionComplexity = Math.min(10, Math.max(3, Math.floor(missionText.length / 20)));
-      const fallbackXP = Math.round(baseXP + (missionComplexity * difficultyMultiplier) + (userLevel * levelMultiplier));
-      const fallbackFragments = Math.round(baseFragments + (missionComplexity * fragmentDifficultyMultiplier) + (userLevel * fragmentLevelMultiplier));
-      
-      return {
-        xp: Math.max(10, Math.min(100, fallbackXP)),
-        fragments: Math.max(1, Math.min(20, fallbackFragments))
-      };
-    }
-  }
-);

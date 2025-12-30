@@ -1,0 +1,21 @@
+{
+    "projectId": "695179150010e5d6ac06",
+    "functions": [
+        {
+            "$id": "gemini-api",
+            "execute": [],
+            "name": "Gemini API",
+            "enabled": true,
+            "logging": true,
+            "runtime": "node-18.0",
+            "scopes": [],
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "entrypoint": "src/main.js",
+            "commands": "",
+            "specification": "s-1vcpu-512mb",
+            "path": "functions/Gemini API"
+        }
+    ]
+}

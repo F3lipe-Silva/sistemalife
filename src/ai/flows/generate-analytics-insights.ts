@@ -8,8 +8,8 @@
  * - GenerateAnalyticsInsightsOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const InsightSchema = z.object({
   title: z.string().describe("Um título curto e impactante para o insight (ex: 'Pico de Produtividade Matinal', 'Oportunidade de Equilíbrio')."),
@@ -32,51 +32,26 @@ export type GenerateAnalyticsInsightsOutput = z.infer<typeof GenerateAnalyticsIn
 export async function generateAnalyticsInsights(
   input: GenerateAnalyticsInsightsInput
 ): Promise<GenerateAnalyticsInsightsOutput> {
-  return generateAnalyticsInsightsFlow(input);
+  const prompt = `
+    Você é o "Oráculo Analítico" do SISTEMA DE VIDA, um RPG da vida real. A sua especialidade é analisar dados de progresso e transformar números brutos em sabedoria estratégica.
+
+    A sua tarefa é analisar os seguintes dados de um Caçador:
+    - Metas (Ativas e Concluídas): ${input.metas}
+    - Histórico de Missões Concluídas: ${input.missions}
+
+    **DIRETIVAS PARA A ANÁLISE:**
+    1.  **Identifique Padrões Significativos:** Procure por padrões interessantes nos dados.
+    2.  **Gere de 2 a 3 Insights de Alta Qualidade:** Para cada padrão, crie um título, descrição, sugestão acionável e escolha um ícone.
+
+    Responda em formato JSON seguindo este esquema:
+    {
+      "insights": [
+        { "title": "...", "description": "...", "suggestion": "...", "icon": "..." }
+      ]
+    }
+  `;
+
+  return await generateWithAppwriteAI<GenerateAnalyticsInsightsOutput>(prompt, true);
 }
 
-const generateAnalyticsInsightsFlow = ai.defineFlow(
-  {
-    name: 'generateAnalyticsInsightsFlow',
-    inputSchema: GenerateAnalyticsInsightsInputSchema,
-    outputSchema: GenerateAnalyticsInsightsOutputSchema,
-  },
-  async (input) => {
-    
-    const prompt = `
-      Você é o "Oráculo Analítico" do SISTEMA DE VIDA, um RPG da vida real. A sua especialidade é analisar dados de progresso e transformar números brutos em sabedoria estratégica.
 
-      A sua tarefa é analisar os seguintes dados de um Caçador:
-      - Metas (Ativas e Concluídas): ${input.metas}
-      - Histórico de Missões Concluídas: ${input.missions}
-
-      **DIRETIVAS PARA A ANÁLISE:**
-      1.  **Identifique Padrões Significativos:** Procure por padrões interessantes nos dados. Não se limite a contar coisas.
-          - O Caçador tem mais sucesso em missões de uma categoria específica (ex: 'Saúde & Fitness')?
-          - Existe um desequilíbrio notável? (Muitas metas de 'Carreira', mas nenhuma de 'Social').
-          - O Caçador tende a concluir missões em dias ou horários específicos (se os dados permitirem essa inferência)?
-          - Há alguma meta antiga que está estagnada há muito tempo?
-      2.  **Gere de 2 a 3 Insights de Alta Qualidade:** Para cada padrão que você identificar, transforme-o num "insight".
-      3.  **Estrutura do Insight:** Cada insight deve ter:
-          - **title:** Um título curto e cativante.
-          - **description:** Uma explicação clara do padrão que você encontrou nos dados.
-          - **suggestion:** O mais importante - um conselho estratégico e ACIONÁVEL que o Caçador pode seguir. Diga o que ele pode fazer para capitalizar um ponto forte ou mitigar um ponto fraco.
-          - **icon:** Escolha o ícone mais apropriado da lista fornecida que represente o tema do insight.
-
-      **EXEMPLO DE INSIGHT:**
-      - title: "Especialista em Fitness"
-      - description: "A análise mostra que 60% das suas missões concluídas nos últimos 30 dias pertencem à categoria 'Saúde & Fitness', indicando um foco e sucesso notáveis nesta área."
-      - suggestion: "Considere aumentar o desafio: crie uma nova meta de fitness de rank mais elevado ou explore a Torre dos Desafios com um desafio focado em 'Constituição' para capitalizar este momentum."
-      - icon: "TrendingUp"
-
-      Analise os dados fornecidos e gere o seu relatório em formato JSON.
-    `;
-
-    const {output} = await ai.generate({
-        prompt: prompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: GenerateAnalyticsInsightsOutputSchema },
-    });
-    return output!;
-  }
-);

@@ -1,6 +1,20 @@
 
 "use client";
 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonMenuButton,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonRefresher,
+  IonRefresherContent
+} from '@ionic/react';
 import { useState, useEffect, memo, useMemo } from 'react';
 import { PlusCircle, Edit, Trash2, Save, FileDown, BrainCircuit, Sparkles, ChevronsUpDown, Calendar, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -609,6 +623,137 @@ const RoutineViewComponent = () => {
         }
         setIsDialogOpen(true);
     };
+
+    if (isMobile) {
+        return (
+            <IonPage>
+                <IonHeader className="ion-no-border">
+                    <IonToolbar className="bg-background/80 backdrop-blur-md border-b border-border/20 [--background:transparent]">
+                        <IonButtons slot="start">
+                            <IonMenuButton />
+                        </IonButtons>
+                        <IonTitle className="font-cinzel text-foreground">ROTINA</IonTitle>
+                        <IonButtons slot="end">
+                            <Button onClick={() => handleOpenDialog()} size="icon" variant="ghost" className="text-foreground" disabled={isCurrentDayPast}>
+                                <PlusCircle className="h-5 w-5" />
+                            </Button>
+                        </IonButtons>
+                    </IonToolbar>
+                    <IonToolbar className="bg-background/95 backdrop-blur-xl border-b border-border/10 [--background:var(--background)] px-2 pb-2">
+                        {/* Day Selector - Horizontal Scroll */}
+                        <div className="flex overflow-x-auto gap-2 pb-2 mb-2 no-scrollbar">
+                            {weekDays.map(day => (
+                                <button
+                                    key={day.name}
+                                    onClick={() => setSelectedDay(day.name)}
+                                    className={cn(
+                                        "flex flex-col items-center justify-center min-w-[3.5rem] py-1.5 rounded-lg border transition-all",
+                                        selectedDay === day.name 
+                                            ? "bg-primary/20 border-primary text-primary" 
+                                            : "bg-card/40 border-border text-muted-foreground",
+                                        day.isPast && !day.isToday && "opacity-60"
+                                    )}
+                                >
+                                    <span className="text-[10px] uppercase font-bold">{day.name.substring(0, 3)}</span>
+                                    <span className="text-sm font-bold">{day.date}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <IonSegment value={viewMode} onIonChange={e => setViewMode(e.detail.value as 'agenda' | 'list')} mode="ios">
+                            <IonSegmentButton value="lista">
+                                <IonLabel>Lista</IonLabel>
+                            </IonSegmentButton>
+                            <IonSegmentButton value="agenda">
+                                <IonLabel>Agenda</IonLabel>
+                            </IonSegmentButton>
+                        </IonSegment>
+                    </IonToolbar>
+                </IonHeader>
+
+                <IonContent fullscreen className="ion-padding">
+                    <IonRefresher slot="fixed" onIonRefresh={(e) => { setTimeout(() => e.detail.complete(), 1500); }}>
+                        <IonRefresherContent></IonRefresherContent>
+                    </IonRefresher>
+
+                    {/* Content Area */}
+                    <div className="pb-24 pt-2">
+                        {viewMode === 'list' ? (
+                            <ListView 
+                                routineItems={sortedRoutineForDay}
+                                onEditItem={handleOpenDialog}
+                                onDeleteItem={handleDelete}
+                                missions={unscheduledMissions}
+                                onSuggestTime={handleGetSuggestion}
+                                onManualAdd={handleOpenManualAdd}
+                                isLoadingSuggestion={isLoadingSuggestion}
+                                suggestions={suggestions}
+                                onImplementSuggestion={handleImplementSuggestion}
+                                onDiscardSuggestion={handleDiscardSuggestion}
+                                isPastDay={isCurrentDayPast}
+                                isMobile={isMobile}
+                            />
+                        ) : (
+                            <AgendaView 
+                                routineItems={sortedRoutineForDay}
+                                onEditItem={handleOpenDialog}
+                                missions={unscheduledMissions}
+                                onSuggestTime={handleGetSuggestion}
+                                onManualAdd={handleOpenManualAdd}
+                                isLoadingSuggestion={isLoadingSuggestion}
+                                suggestions={suggestions}
+                                onImplementSuggestion={handleImplementSuggestion}
+                                onDiscardSuggestion={handleDiscardSuggestion}
+                                isPastDay={isCurrentDayPast}
+                                isMobile={isMobile}
+                            />
+                        )}
+                    </div>
+
+                    {/* Mobile Dialogs */}
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogContent className="max-w-[95vw]">
+                            <DialogHeader>
+                                <DialogTitle className="text-lg font-cinzel">{editedItem ? 'Editar Atividade' : 'Nova Atividade'}</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-3 py-3">
+                                <div className="grid grid-cols-3 items-center gap-3">
+                                    <Label className="text-right text-xs uppercase text-muted-foreground">Início</Label>
+                                    <Input 
+                                        type="time" 
+                                        value={editedItem?.start_time || "09:00"} 
+                                        onChange={(e) => setEditedItem(editedItem ? {...editedItem, start_time: e.target.value} : null)} 
+                                        className="col-span-2 h-9" 
+                                    />
+                                </div>
+                                <div className="grid grid-cols-3 items-center gap-3">
+                                    <Label className="text-right text-xs uppercase text-muted-foreground">Fim</Label>
+                                    <Input 
+                                        type="time" 
+                                        value={editedItem?.end_time || "10:00"} 
+                                        onChange={(e) => setEditedItem(editedItem ? {...editedItem, end_time: e.target.value} : null)} 
+                                        className="col-span-2 h-9" 
+                                    />
+                                </div>
+                                <div className="grid grid-cols-3 items-center gap-3">
+                                    <Label className="text-right text-xs uppercase text-muted-foreground">Atividade</Label>
+                                    <Input 
+                                        value={editedItem?.activity || ""} 
+                                        onChange={(e) => setEditedItem(editedItem ? {...editedItem, activity: e.target.value} : null)} 
+                                        className="col-span-2 h-9" 
+                                        placeholder="Ex: Treino"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleSave} className="w-full h-9">Salvar</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </IonContent>
+            </IonPage>
+        );
+    }
 
     return (
         <div className={cn("h-full flex flex-col", isMobile ? "p-2" : "p-4 md:p-6")}>

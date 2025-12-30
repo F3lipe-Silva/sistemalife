@@ -8,8 +8,8 @@
  * - GenerateSmartGoalQuestionOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const SmartGoalSchema = z.object({
   name: z.string().describe('O nome inicial ou atual da meta.'),
@@ -40,75 +40,41 @@ export type GenerateSmartGoalQuestionOutput = z.infer<typeof GenerateSmartGoalQu
 export async function generateSmartGoalQuestion(
   input: GenerateSmartGoalQuestionInput
 ): Promise<GenerateSmartGoalQuestionOutput> {
-  return generateSmartGoalQuestionFlow(input);
+  const { goal, history } = input;
+  let nextStep = '';
+  if (!goal.specific) nextStep = 'specific';
+  else if (!goal.measurable) nextStep = 'measurable';
+  else if (!goal.achievable) nextStep = 'achievable';
+  else if (!goal.relevant) nextStep = 'relevant';
+  else if (!goal.timeBound) nextStep = 'timeBound';
+
+  if (!nextStep) {
+      return { isComplete: true, refinedGoal: goal };
+  }
+
+  const historyString = history ? history.map(h => `- Pergunta: "${h.question}" / Resposta: "${h.answer}"`).join('\n') : '';
+
+  const prompt = `
+      Você é um coach de produtividade de elite.
+      O utilizador está a definir a meta: "${goal.name}".
+      Estado atual: S:${goal.specific}, M:${goal.measurable}, A:${goal.achievable}, R:${goal.relevant}, T:${goal.timeBound}
+      ${historyString}
+
+      Formule a próxima pergunta para o componente '${nextStep}'.
+
+      Responda em formato JSON seguindo este esquema:
+      {
+        "nextQuestion": "...",
+        "exampleAnswers": ["...", "...", "..."]
+      }
+  `;
+
+  const output = await generateWithAppwriteAI<any>(prompt, true);
+  
+  return {
+      isComplete: false,
+      nextQuestion: output.nextQuestion,
+      exampleAnswers: output.exampleAnswers,
+  };
 }
 
-const generateSmartGoalQuestionFlow = ai.defineFlow(
-  {
-    name: 'generateSmartGoalQuestionFlow',
-    inputSchema: GenerateSmartGoalQuestionInputSchema,
-    outputSchema: GenerateSmartGoalQuestionOutputSchema,
-  },
-  async ({ goal, history }) => {
-
-    let nextStep = '';
-    if (!goal.specific) nextStep = 'specific';
-    else if (!goal.measurable) nextStep = 'measurable';
-    else if (!goal.achievable) nextStep = 'achievable';
-    else if (!goal.relevant) nextStep = 'relevant';
-    else if (!goal.timeBound) nextStep = 'timeBound';
-
-
-    if (!nextStep) {
-        // A meta está completa. Não é necessário refinar mais. Apenas retorne o objeto da meta como está.
-        return { isComplete: true, refinedGoal: goal };
-    }
-
-    const historyString = history ? history.map(h => `- Pergunta: "${h.question}" / Resposta: "${h.answer}"`).join('\n') : '';
-
-    const prompt = `
-        Você é um coach de produtividade de elite, especialista em ajudar pessoas a transformar ideias vagas em metas SMART acionáveis. A sua comunicação é concisa, motivadora e sempre focada no próximo passo.
-        
-        O utilizador está a definir a seguinte meta: "${goal.name}".
-        
-        Estado atual da meta:
-        - Específico (S): ${goal.specific || 'Ainda não definido'}
-        - Mensurável (M): ${goal.measurable || 'Ainda não definido'}
-        - Atingível (A): ${goal.achievable || 'Ainda não definido'}
-        - Relevante (R): ${goal.relevant || 'Ainda não definido'}
-        - Prazo (T): ${goal.timeBound || 'Ainda não definido'}
-
-        ${historyString ? `Histórico da conversa:\n${historyString}` : ''}
-
-        O próximo passo é definir o componente '${nextStep}'.
-        
-        Com base em todas as informações fornecidas, formule a próxima pergunta. A pergunta deve ser aberta, instigante e projetada para extrair uma resposta detalhada e útil. Não faça perguntas de sim/não.
-        
-        Exemplos de perguntas para inspirar o seu tom:
-        - Para 'specific': "Excelente começo! Para tornar isto cristalino, descreva exatamente o que você quer alcançar. Que resultado específico você visualiza?"
-        - Para 'measurable': "Ótimo. Agora, como saberemos que você está no caminho certo? Quais números ou marcos específicos indicarão o seu progresso e o sucesso final?"
-        - Para 'achievable': "Isso é ambicioso, e eu gosto disso. Realisticamente, quais são os passos que você pode dar para alcançar essa meta? Você tem os recursos e o tempo necessários?"
-        - Para 'relevant': "Vamos conectar isso ao seu 'porquê'. De que forma esta meta se alinha com os seus objetivos de vida ou carreira a longo prazo? Porque é que isto é importante para si *agora*?"
-        - Para 'timeBound': "Toda grande meta precisa de um prazo. Quando, exatamente, você pretende alcançar este objetivo? Defina uma data final para criar um senso de urgência."
-
-        A sua tarefa é gerar um objeto JSON com dois campos: "nextQuestion" (a pergunta que você irá formular) e "exampleAnswers" (um array de 3 exemplos de respostas criativas e úteis para a sua pergunta).
-        
-        Responda APENAS com o objeto JSON. Não inclua saudações ou texto extra.
-    `;
-
-    const {output} = await ai.generate({
-        prompt: prompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: z.object({
-            nextQuestion: z.string(),
-            exampleAnswers: z.array(z.string()),
-        }) }
-    });
-    
-    return {
-        isComplete: false,
-        nextQuestion: output!.nextQuestion,
-        exampleAnswers: output!.exampleAnswers,
-    };
-  }
-);

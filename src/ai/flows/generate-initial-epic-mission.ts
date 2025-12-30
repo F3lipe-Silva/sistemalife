@@ -8,9 +8,9 @@
  * - GenerateInitialEpicMissionOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
 import {generateMissionRewards} from './generate-mission-rewards';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { retryWithBackoff, validateAIOutput, sanitizeUrls, sanitizeText, withTimeout, validateSubTasks } from '@/lib/ai-utils';
 
 const EpicMissionSchema = z.object({
@@ -56,113 +56,92 @@ export type GenerateInitialEpicMissionOutput = z.infer<typeof GenerateInitialEpi
 export async function generateInitialEpicMission(
   input: GenerateInitialEpicMissionInput
 ): Promise<GenerateInitialEpicMissionOutput> {
-  return generateInitialEpicMissionFlow(input);
-}
-
-const generateInitialEpicMissionFlow = ai.defineFlow(
-  {
-    name: 'generateInitialEpicMissionFlow',
-    inputSchema: GenerateInitialEpicMissionInputSchema,
-    outputSchema: GenerateInitialEpicMissionOutputSchema,
-  },
-  async (input) => {
-    try {
-        const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa e equilibrada.
+  try {
+    const finalPrompt = `Você é o "Planeador Mestre" do Sistema de um RPG da vida real. A sua função é analisar uma nova meta do utilizador e criar uma "Árvore de Progressão" completa e equilibrada.
 
 Utilizador: Nível ${input.userLevel}
 Nova Meta: "${input.goalName}"
 Detalhes da Meta (SMART): ${input.goalDetails}
 
 A sua tarefa é:
-1.  **Criar Árvore de Progressão:** Gere uma lista de 3 a 5 "Missões Épicas" em sequência.
-    *   **Ponto de Partida Fixo:** Toda nova meta começa do zero. A primeira missão épica DEVE ser sempre Rank 'F'.
-    *   **Progressão Lógica:** A sequência de ranks (F -> E -> D -> C, etc.) deve ser lógica e gradual.
-    *   **Requisitos de Nível:** Para CADA missão épica, defina um 'level_requirement'. O requisito da primeira missão (Rank F) deve ser 1. As missões subsequentes devem ter requisitos de nível crescentes e lógicos (ex: Rank E - nível 3, Rank D - nível 5, etc.).
-2.  **Criar a Primeira Missão Diária:** Com base na *primeira* missão épica (Rank F) que você criou, gere a *primeira* missão diária atómica.
-    *   **Nome e Descrição:** Defina um nome e descrição claros para esta missão diária. Deve ser um passo fundamental e muito básico.
-    *   **Sub-tarefas:** Crie de 1 a 3 sub-tarefas específicas, mensuráveis e com unidades (se aplicável).
-    *   **Recursos:** Se relevante, forneça até 2 URLs de recursos de aprendizagem de alta qualidade.
-`;
-        
-        const MissionSchema = z.object({
-            progression: z.array(EpicMissionSchema),
-            firstDailyMission: FirstDailyMissionSchema,
-        })
+1.  **Criar Árvore de Progressão:** Gere uma lista de 3 a 5 "Missões Épicas" em sequência. Comece com Rank 'F'.
+2.  **Criar a Primeira Missão Diária:** Com base na *primeira* missão épica (Rank F), gere a *primeira* missão diária atómica.
 
-        const {output} = await withTimeout(
-          retryWithBackoff(
-            async () => await ai.generate({
-              prompt: finalPrompt,
-              model: 'googleai/gemini-2.5-flash',
-              output: { schema: MissionSchema },
-            }),
-            3,
-            1000,
-            'Generate Initial Epic Mission'
-          ),
-          30000,
-          'Geração de missão inicial excedeu 30 segundos'
-        );
-
-        // Validate output
-        validateAIOutput(output, ['progression', 'firstDailyMission'], 'Initial Epic Mission');
-        
-        if (!output || !output.progression || output.progression.length === 0) {
-            throw new Error('AI generated empty progression');
-        }
-        
-        if (!output.firstDailyMission || !validateSubTasks(output.firstDailyMission.firstDailyMissionSubTasks)) {
-            throw new Error('AI generated first mission with invalid subtasks');
-        }
-
-        // Sanitize outputs
-        const sanitizedName = sanitizeText(output.firstDailyMission.firstDailyMissionName, 100);
-        const sanitizedDescription = sanitizeText(output.firstDailyMission.firstDailyMissionDescription, 500);
-        const sanitizedResources = sanitizeUrls(output.firstDailyMission.firstDailyMissionLearningResources);
-
-        const missionTextForRewards = `${sanitizedName}: ${output.firstDailyMission.firstDailyMissionSubTasks.map(st => st.name).join(', ')}`;
-        const rewards = await generateMissionRewards({
-            missionText: missionTextForRewards,
-            userLevel: input.userLevel,
-        });
-
-        return {
-            progression: output.progression,
-            firstDailyMissionName: sanitizedName,
-            firstDailyMissionDescription: sanitizedDescription,
-            firstDailyMissionXp: rewards.xp,
-            firstDailyMissionFragments: rewards.fragments,
-            firstDailyMissionSubTasks: output.firstDailyMission.firstDailyMissionSubTasks.map(st => ({...st, current: 0 })),
-            firstDailyMissionLearningResources: sanitizedResources,
-            fallback: false,
-        };
-    } catch (error) {
-        console.error("Falha ao gerar árvore de progressão, acionando fallback:", error);
-
-        // Fallback: Gerar uma única missão épica e uma missão diária simples.
-        const fallbackProgression = [{
-            epicMissionName: `Missão Épica: ${input.goalName}`,
-            epicMissionDescription: `Uma grande jornada em direção ao seu objetivo: ${input.goalName}.`,
-            rank: 'F' as const,
-            level_requirement: 1,
-        }];
-
-        const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
-        const fallbackDailyMissionDescription = 'Completar o primeiro passo para alcançar a sua meta.';
-        const fallbackDailyMissionSubTasks = [{ name: 'Completar o primeiro passo', target: 1, unit: 'tarefa', current: 0 }];
-        const missionText = `${fallbackDailyMissionName}: Completar o primeiro passo`;
-        const {xp, fragments} = await generateMissionRewards({ missionText, userLevel: input.userLevel });
-
-        return {
-            progression: fallbackProgression,
-            firstDailyMissionName: fallbackDailyMissionName,
-            firstDailyMissionDescription: fallbackDailyMissionDescription,
-            firstDailyMissionXp: xp,
-            firstDailyMissionFragments: fragments,
-            firstDailyMissionSubTasks: fallbackDailyMissionSubTasks,
-            firstDailyMissionLearningResources: [],
-            fallback: true,
-        };
-    }
+Responda em formato JSON seguindo este esquema:
+{
+  "progression": [
+    { "epicMissionName": "...", "epicMissionDescription": "...", "rank": "F", "level_requirement": 1 }
+  ],
+  "firstDailyMission": {
+    "firstDailyMissionName": "...",
+    "firstDailyMissionDescription": "...",
+    "firstDailyMissionSubTasks": [{"name": "...", "target": 1, "unit": "..."}],
+    "firstDailyMissionLearningResources": ["..."]
   }
-);
+}
+`;
+
+    const output = await withTimeout(
+      retryWithBackoff(
+        async () => await generateWithAppwriteAI<any>(finalPrompt, true),
+        3,
+        1000,
+        'Generate Initial Epic Mission'
+      ),
+      30000,
+      'Geração de missão inicial excedeu 30 segundos'
+    );
+
+    // Validate output
+    validateAIOutput(output, ['progression', 'firstDailyMission'], 'Initial Epic Mission');
+    
+    // Sanitize outputs
+    const sanitizedName = sanitizeText(output.firstDailyMission.firstDailyMissionName, 100);
+    const sanitizedDescription = sanitizeText(output.firstDailyMission.firstDailyMissionDescription, 500);
+    const sanitizedResources = sanitizeUrls(output.firstDailyMission.firstDailyMissionLearningResources);
+
+    const missionTextForRewards = `${sanitizedName}: ${output.firstDailyMission.firstDailyMissionSubTasks.map((st: any) => st.name).join(', ')}`;
+    const rewards = await generateMissionRewards({
+        missionText: missionTextForRewards,
+        userLevel: input.userLevel,
+    });
+
+    return {
+        progression: output.progression,
+        firstDailyMissionName: sanitizedName,
+        firstDailyMissionDescription: sanitizedDescription,
+        firstDailyMissionXp: rewards.xp,
+        firstDailyMissionFragments: rewards.fragments,
+        firstDailyMissionSubTasks: output.firstDailyMission.firstDailyMissionSubTasks.map((st: any) => ({...st, current: 0 })),
+        firstDailyMissionLearningResources: sanitizedResources,
+        fallback: false,
+    };
+  } catch (error) {
+    console.error("Falha ao gerar árvore de progressão, acionando fallback:", error);
+
+    const fallbackProgression = [{
+        epicMissionName: `Missão Épica: ${input.goalName}`,
+        epicMissionDescription: `Uma grande jornada em direção ao seu objetivo: ${input.goalName}.`,
+        rank: 'F' as const,
+        level_requirement: 1,
+    }];
+
+    const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
+    const fallbackDailyMissionDescription = 'Completar o primeiro passo para alcançar a sua meta.';
+    const fallbackDailyMissionSubTasks = [{ name: 'Completar o primeiro passo', target: 1, unit: 'tarefa', current: 0 }];
+    const missionText = `${fallbackDailyMissionName}: Completar o primeiro passo`;
+    const {xp, fragments} = await generateMissionRewards({ missionText, userLevel: input.userLevel });
+
+    return {
+        progression: fallbackProgression,
+        firstDailyMissionName: fallbackDailyMissionName,
+        firstDailyMissionDescription: fallbackDailyMissionDescription,
+        firstDailyMissionXp: xp,
+        firstDailyMissionFragments: fragments,
+        firstDailyMissionSubTasks: fallbackDailyMissionSubTasks,
+        firstDailyMissionLearningResources: [],
+        fallback: true,
+    };
+  }
+}
+

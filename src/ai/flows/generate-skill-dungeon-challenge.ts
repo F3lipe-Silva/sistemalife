@@ -8,8 +8,8 @@
  * - GenerateSkillDungeonChallengeOutput - O tipo de retorno para a função.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
+import { z } from 'zod';
 
 const DungeonChallengeSchema = z.object({
   roomLevel: z.number().describe("O nível da sala para o qual este desafio foi gerado."),
@@ -35,43 +35,30 @@ export type GenerateSkillDungeonChallengeOutput = z.infer<typeof GenerateSkillDu
 export async function generateSkillDungeonChallenge(
   input: GenerateSkillDungeonChallengeInput
 ): Promise<GenerateSkillDungeonChallengeOutput> {
-  return generateSkillDungeonChallengeFlow(input);
+  const prompt = `
+    Você é o "Mestre da Masmorra", uma IA especializada em criar desafios práticos e focados para desenvolver uma habilidade específica.
+
+    A sua tarefa é criar um desafio para a Masmorra da Habilidade: "${input.skillName}".
+    - Descrição da Habilidade: ${input.skillDescription}
+    - Nível atual da Habilidade do Caçador: ${input.skillLevel}
+    - Nível da Sala da Masmorra (Dificuldade): ${input.dungeonRoomLevel}
+    - Desafios Anteriores (a evitar): ${input.previousChallenges?.join(', ') || 'Nenhum'}
+
+    **DIRETIVAS:**
+    1. Desafio prático e específico relacionado à habilidade.
+    2. Dificuldade progressiva baseada no nível da sala (${input.dungeonRoomLevel}).
+    3. Critério de sucesso claro e verificável.
+
+    Responda em formato JSON seguindo este esquema:
+    {
+      "roomLevel": ${input.dungeonRoomLevel},
+      "challengeName": "...",
+      "challengeDescription": "...",
+      "successCriteria": "...",
+      "xpReward": 50
+    }
+  `;
+
+  return await generateWithAppwriteAI<GenerateSkillDungeonChallengeOutput>(prompt, true);
 }
 
-
-const generateSkillDungeonChallengeFlow = ai.defineFlow(
-  {
-    name: 'generateSkillDungeonChallengeFlow',
-    inputSchema: GenerateSkillDungeonChallengeInputSchema,
-    outputSchema: GenerateSkillDungeonChallengeOutputSchema,
-  },
-  async (input) => {
-    
-    const prompt = `
-      Você é o "Mestre da Masmorra", uma IA especializada em criar desafios práticos e focados para desenvolver uma habilidade específica.
-
-      A sua tarefa é criar um desafio para a Masmorra da Habilidade: "${input.skillName}".
-      - Descrição da Habilidade: ${input.skillDescription}
-      - Nível atual da Habilidade do Caçador: ${input.skillLevel}
-      - Nível da Sala da Masmorra (Dificuldade): ${input.dungeonRoomLevel}
-      - Desafios Anteriores (a evitar): ${input.previousChallenges?.join(', ') || 'Nenhum'}
-
-      **DIRETIVAS PARA A CRIAÇÃO DO DESAFIO:**
-      1.  **Desafio Prático e Específico:** O desafio deve ser uma tarefa concreta e aplicável que teste o conhecimento do Caçador naquela habilidade. Não peça teoria, peça prática.
-          - **Exemplo Bom (para Habilidade 'Programação Python'):** "Escreva uma função em Python que receba uma lista de números e retorne a média."
-          - **Exemplo Ruim:** "Explique o que é uma função em Python."
-      2.  **Dificuldade Progressiva:** A complexidade do desafio DEVE escalar com o 'dungeonRoomLevel'. Salas de nível baixo devem testar conceitos fundamentais, enquanto salas de nível alto devem testar conceitos avançados ou a combinação de vários conceitos. Use o 'skillLevel' do Caçador como referência para o seu nível de conhecimento geral.
-      3.  **Critério de Sucesso Claro:** O 'successCriteria' deve dizer ao Caçador EXATAMENTE o que ele precisa de fazer para provar a conclusão. "Cole o seu código", "Faça upload de um screenshot", "Grave um vídeo de 1 minuto a demonstrar" são bons exemplos.
-      4.  **Recompensa de XP Equilibrada:** A recompensa de XP deve ser significativa e escalar com a dificuldade. Uma boa base é (5 * dungeonRoomLevel).
-
-      Gere um único desafio em formato JSON que siga todas estas diretivas.
-    `;
-
-    const {output} = await ai.generate({
-        prompt: prompt,
-        model: 'googleai/gemini-2.5-flash',
-        output: { schema: GenerateSkillDungeonChallengeOutputSchema },
-    });
-    return output!;
-  }
-);
