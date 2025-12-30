@@ -1,7 +1,8 @@
+
 "use client";
 
 import { memo } from 'react';
-import { User, Bot, AlertTriangle, Bell, Database, PieChart, Gamepad2, Link } from 'lucide-react';
+import { User, Bot, AlertTriangle, Bell, Database, PieChart, Gamepad2, Link, Settings as SettingsIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProfileSettingsTab from './ProfileSettingsTab';
 import AISettingsTab from './AISettingsTab';
@@ -17,73 +18,89 @@ const SettingsViewComponent = () => {
     const isMobile = useIsMobile();
     
     return (
-        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-8")}>
-            <div className={cn("mb-4", isMobile ? "mb-4" : "mb-8")}>
-                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Ficha de Caçador</h1>
-                <p className={cn("text-muted-foreground max-w-3xl", isMobile ? "mt-1 text-sm" : "mt-2")}>
-                    Edite os seus dados, personalize a experiência e gira a sua conta no Sistema.
-                </p>
+        <div className={cn("h-full overflow-y-auto relative", isMobile ? "p-2" : "p-4 md:p-8")}>
+             <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)] -z-10"></div>
+
+            <div className={cn("mb-8 flex items-center gap-4 border-b border-blue-900/30 pb-4")}>
+                <div className="p-3 bg-blue-900/10 border border-blue-500/30">
+                    <SettingsIcon className="h-8 w-8 text-blue-400 animate-spin-slow" />
+                </div>
+                <div>
+                    <h1 className={cn("font-black text-white font-cinzel tracking-[0.1em] uppercase drop-shadow-md", isMobile ? "text-2xl" : "text-3xl")}>
+                        SYSTEM CONFIGURATION
+                    </h1>
+                    <p className={cn("text-blue-400/60 font-mono text-xs tracking-widest uppercase mt-1")}>
+                        USER PREFERENCES & DATA MANAGEMENT
+                    </p>
+                </div>
             </div>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className={cn("grid w-full", isMobile ? "grid-cols-7 gap-0.5 mb-2" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 mb-6 gap-2")}>
-                    <TabsTrigger value="profile" className={isMobile ? "text-[8px] py-1 px-0.5" : ""}>
-                        <User className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Perfil" : "Perfil"}
+                <TabsList className={cn("bg-black/60 border border-blue-900/30 p-1 mb-6 flex flex-wrap h-auto gap-1", isMobile ? "justify-start" : "")}>
+                    <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-mono uppercase text-xs">
+                        <User className={cn("mr-2 h-4 w-4")} />
+                        PROFILE
                     </TabsTrigger>
-                    <TabsTrigger value="ai" className={isMobile ? "text-[8px] py-1 px-0.5" : ""}>
-                         <Bot className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "IA" : "IA & Interface"}
+                    <TabsTrigger value="ai" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-mono uppercase text-xs">
+                         <Bot className={cn("mr-2 h-4 w-4")} />
+                        INTERFACE & AI
                     </TabsTrigger>
-                     <TabsTrigger value="gamification" className={isMobile ? "text-[8px] py-1 px-0.5" : ""}>
-                         <Gamepad2 className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Game" : "Gamificação"}
+                     <TabsTrigger value="gamification" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-mono uppercase text-xs">
+                         <Gamepad2 className={cn("mr-2 h-4 w-4")} />
+                        GAMEPLAY
                     </TabsTrigger>
-                    <TabsTrigger value="notifications" className={isMobile ? "text-[8px] py-1 px-0.5" : ""}>
-                         <Bell className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Notif" : "Notificações"}
+                    <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-mono uppercase text-xs">
+                         <Bell className={cn("mr-2 h-4 w-4")} />
+                        ALERTS
                     </TabsTrigger>
-                    <TabsTrigger value="data_backup" className={isMobile ? "text-[8px] py-1 px-0.5" : ""}>
-                         <Database className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Dados" : "Dados & Integrações"}
+                    <TabsTrigger value="data_backup" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-mono uppercase text-xs">
+                         <Database className={cn("mr-2 h-4 w-4")} />
+                        DATA
                     </TabsTrigger>
-                     <TabsTrigger value="analytics" className={isMobile ? "text-[8px] py-1 px-0.5" : ""}>
-                         <PieChart className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Anal" : "Analytics"}
+                     <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-mono uppercase text-xs">
+                         <PieChart className={cn("mr-2 h-4 w-4")} />
+                        ANALYTICS
                     </TabsTrigger>
-                    <TabsTrigger value="danger_zone" className={cn("text-red-500 data-[state=active]:text-red-500", isMobile ? "text-[8px] py-1 px-0.5" : "")}>
-                         <AlertTriangle className={cn("mr-1", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Perigo" : "Zona de Perigo"}
+                    <TabsTrigger value="danger_zone" className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-red-500 font-mono uppercase text-xs border border-transparent data-[state=active]:border-red-500">
+                         <AlertTriangle className={cn("mr-2 h-4 w-4")} />
+                        DANGER ZONE
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="profile">
-                    <ProfileSettingsTab />
-                </TabsContent>
+                <div className="bg-black/40 border border-blue-900/20 p-6 relative">
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/30" />
+                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/30" />
+                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/30" />
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/30" />
 
-                <TabsContent value="ai">
-                    <AISettingsTab />
-                </TabsContent>
-                
-                 <TabsContent value="gamification">
-                    <GamificationSettingsTab />
-                </TabsContent>
+                    <TabsContent value="profile" className="mt-0">
+                        <ProfileSettingsTab />
+                    </TabsContent>
 
-                <TabsContent value="notifications">
-                    <NotificationsSettingsTab />
-                </TabsContent>
+                    <TabsContent value="ai" className="mt-0">
+                        <AISettingsTab />
+                    </TabsContent>
+                    
+                     <TabsContent value="gamification" className="mt-0">
+                        <GamificationSettingsTab />
+                    </TabsContent>
 
-                <TabsContent value="data_backup">
-                    <DataBackupTab />
-                </TabsContent>
-                
-                <TabsContent value="analytics">
-                    <AnalyticsTab />
-                </TabsContent>
-                
-                <TabsContent value="danger_zone">
-                    <DangerZoneTab />
-                </TabsContent>
+                    <TabsContent value="notifications" className="mt-0">
+                        <NotificationsSettingsTab />
+                    </TabsContent>
+
+                    <TabsContent value="data_backup" className="mt-0">
+                        <DataBackupTab />
+                    </TabsContent>
+                    
+                    <TabsContent value="analytics" className="mt-0">
+                        <AnalyticsTab />
+                    </TabsContent>
+                    
+                    <TabsContent value="danger_zone" className="mt-0">
+                        <DangerZoneTab />
+                    </TabsContent>
+                </div>
             </Tabs>
         </div>
     );

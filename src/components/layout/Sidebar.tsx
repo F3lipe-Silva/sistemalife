@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Award, Store, Backpack, UserSquare, TowerControl, KeySquare, ScrollText, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bot, BookOpen, Target, Settings, LogOut, Clock, BarChart3, LayoutDashboard, Award, Store, Backpack, UserSquare, TowerControl, KeySquare, ScrollText, Sparkles, ChevronLeft, ChevronRight, Hexagon, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
@@ -23,52 +23,54 @@ export const Sidebar = ({ inSheet = false, onNavigate, collapsed = false, onTogg
     };
 
     const NavItem = ({ icon: Icon, label, page, className = "", highlight = false, tooltip }: any) => {
+        const isActive = currentPage === page;
+        
         const button = (
             <button
                 onClick={() => handleNav(page)}
                 className={cn(
-                    'group flex items-center rounded-xl transition-all duration-300 relative overflow-hidden',
-                    collapsed ? 'justify-center w-12 h-12 mx-auto' : 'w-full space-x-3 px-4 py-3',
-                    currentPage === page 
-                        ? 'bg-primary/15 text-primary font-semibold shadow-lg shadow-primary/10' 
-                        : 'text-muted-foreground hover:bg-secondary/80 hover:text-foreground',
-                    highlight && currentPage !== page && 'border border-primary/20 hover:border-primary/40'
+                    'group relative flex items-center transition-all duration-300 overflow-hidden rounded-sm',
+                    collapsed ? 'justify-center w-10 h-10 mx-auto mb-2' : 'w-full space-x-3 px-4 py-3 mx-2 mb-1 max-w-[calc(100%-16px)]',
+                    isActive 
+                        ? 'bg-blue-900/30 text-blue-100 shadow-[inset_0_0_10px_rgba(59,130,246,0.2)]' 
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white',
+                    highlight && !isActive && 'border border-blue-500/30 text-blue-300'
                 )}
             >
-                {/* Active indicator */}
-                {currentPage === page && !collapsed && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_10px_hsl(var(--primary))]" />
+                {/* Active Indicator Line */}
+                {isActive && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_#3b82f6]" />
                 )}
                 
-                {/* Icon with glow effect when active */}
+                {/* Icon */}
                 <div className={cn(
                     "relative flex items-center justify-center transition-all duration-300",
-                    currentPage === page && "drop-shadow-[0_0_6px_hsl(var(--primary))]"
+                    isActive ? "text-blue-400 drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]" : "group-hover:text-white"
                 )}>
                     <Icon className={cn(
                         "transition-transform duration-300",
-                        currentPage === page ? "scale-110" : "group-hover:scale-105",
-                        collapsed ? "h-6 w-6" : "h-5 w-5"
+                        isActive ? "scale-110" : "group-hover:scale-105",
+                        collapsed ? "h-5 w-5" : "h-4 w-4"
                     )} />
                 </div>
                 
                 {!collapsed && (
-                    <span className={cn("font-medium tracking-wide whitespace-nowrap overflow-hidden transition-all duration-300", className)}>{label}</span>
+                    <span className={cn(
+                        "font-mono text-xs uppercase tracking-wider whitespace-nowrap overflow-hidden transition-all duration-300", 
+                        className,
+                        isActive ? "font-bold text-white" : ""
+                    )}>{label}</span>
                 )}
                 
-                {/* Highlight sparkle for special items */}
-                {highlight && !collapsed && (
-                    <Sparkles className="h-3 w-3 text-primary/60 ml-auto" />
-                )}
-
-                {/* Collapsed Active Indicator Dot */}
-                {currentPage === page && collapsed && (
-                    <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_5px_hsl(var(--primary))]" />
+                {/* Highlight Effect */}
+                {isActive && !collapsed && (
+                    <div className="absolute right-2 opacity-50">
+                        <Activity className="h-3 w-3 text-blue-500 animate-pulse" />
+                    </div>
                 )}
             </button>
         );
 
-        // Always show tooltip when collapsed, or if specifically requested
         if (tooltip && (collapsed || !inSheet)) {
             return (
                 <TooltipProvider delayDuration={0}>
@@ -76,7 +78,7 @@ export const Sidebar = ({ inSheet = false, onNavigate, collapsed = false, onTogg
                         <TooltipTrigger asChild>
                             {button}
                         </TooltipTrigger>
-                        <TooltipContent side="right" className="font-semibold" sideOffset={10}>
+                        <TooltipContent side="right" className="bg-black border border-blue-500/50 text-blue-100 font-mono text-xs uppercase tracking-wider" sideOffset={10}>
                             <p>{collapsed ? label : tooltip}</p>
                         </TooltipContent>
                     </Tooltip>
@@ -88,92 +90,103 @@ export const Sidebar = ({ inSheet = false, onNavigate, collapsed = false, onTogg
     };
 
     const SectionTitle = ({ children }: { children: React.ReactNode }) => {
-        if (collapsed) return <div className="h-px w-8 mx-auto bg-border/50 my-4" />;
+        if (collapsed) return <div className="h-px w-6 mx-auto bg-blue-900/30 my-4" />;
         
         return (
-            <div className="flex items-center gap-2 mb-3 mt-6 px-4 animate-in fade-in duration-300">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-                <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.2em] whitespace-nowrap">
+            <div className="flex items-center gap-2 mb-2 mt-6 px-4 animate-in fade-in duration-300">
+                <div className="h-1 w-1 bg-blue-500 rounded-full" />
+                <span className="text-[10px] font-bold text-blue-500/50 font-mono uppercase tracking-[0.2em] whitespace-nowrap">
                     {children}
                 </span>
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                <div className="h-px flex-1 bg-gradient-to-r from-blue-900/30 to-transparent" />
             </div>
         );
     };
 
     return (
-        <div className={cn("h-full flex flex-col py-4 transition-all duration-300", collapsed ? "px-2" : "px-0")}>
+        <div className={cn(
+            "h-full flex flex-col py-4 transition-all duration-300 bg-black/95 backdrop-blur-md relative border-r border-blue-900/30", 
+            collapsed ? "px-0" : "px-0"
+        )}>
+            {/* Background Tech Grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+
             {!inSheet && (
-                <div className={cn("mb-8 flex items-center transition-all duration-300", collapsed ? "justify-center px-0" : "px-4 justify-between")}>
+                <div className={cn("mb-6 flex items-center transition-all duration-300 border-b border-blue-900/30 pb-4 mx-4", collapsed ? "justify-center px-0 mx-2" : "justify-between")}>
                     <div className={cn("flex items-center gap-3 transition-all duration-300", collapsed ? "justify-center" : "")}>
                         <div className={cn(
-                            "rounded-xl bg-primary/20 flex items-center justify-center shadow-lg shadow-primary/20 transition-all duration-300",
-                            collapsed ? "w-10 h-10" : "w-10 h-10"
+                            "flex items-center justify-center transition-all duration-300 relative",
+                            collapsed ? "w-8 h-8" : "w-8 h-8"
                         )}>
-                            <Sparkles className="h-5 w-5 text-primary" />
+                            <Hexagon className="h-8 w-8 text-blue-600 absolute opacity-50 animate-pulse-slow" />
+                            <Sparkles className="h-4 w-4 text-blue-400 relative z-10" />
                         </div>
                         {!collapsed && (
-                            <span className="font-cinzel text-2xl font-bold text-gradient tracking-widest animate-in fade-in slide-in-from-left-2 duration-300">
-                                SISTEMA
-                            </span>
+                            <div className="flex flex-col">
+                                <span className="font-cinzel text-lg font-black text-white tracking-[0.2em] leading-none">
+                                    SYSTEM
+                                </span>
+                                <span className="text-[8px] font-mono text-blue-500 uppercase tracking-widest leading-none">
+                                    INTERFACE V.2.0
+                                </span>
+                            </div>
                         )}
                     </div>
                     
                     {!collapsed && onToggleCollapse && (
-                         <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                         <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-6 w-6 text-blue-500/50 hover:text-blue-400 hover:bg-blue-900/20">
                             <ChevronLeft className="h-4 w-4" />
                          </Button>
                     )}
                 </div>
             )}
             
-            {/* Collapsed Toggle Button (Centered when collapsed) */}
             {collapsed && !inSheet && onToggleCollapse && (
-                <div className="mb-4 flex justify-center">
-                     <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                <div className="mb-4 flex justify-center pb-4 border-b border-blue-900/30 mx-2">
+                     <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-6 w-6 text-blue-500/50 hover:text-blue-400 hover:bg-blue-900/20">
                         <ChevronRight className="h-4 w-4" />
                      </Button>
                 </div>
             )}
 
-            <div className={cn("flex-grow overflow-y-auto space-y-1 scrollbar-hide", collapsed ? "px-0 items-center flex flex-col" : "px-2")}>
-                <SectionTitle>Principal</SectionTitle>
-                <NavItem icon={LayoutDashboard} label="Dashboard" page="dashboard" tooltip="Visão geral" />
-                <NavItem icon={BookOpen} label="Metas" page="metas" tooltip="Metas" />
-                <NavItem icon={Target} label="Missões" page="missions" tooltip="Missões" />
+            <div className={cn("flex-grow overflow-y-auto space-y-1 scrollbar-hide relative z-10", collapsed ? "px-0" : "")}>
+                <SectionTitle>MAIN</SectionTitle>
+                <NavItem icon={LayoutDashboard} label="DASHBOARD" page="dashboard" tooltip="Overview" />
+                <NavItem icon={BookOpen} label="OBJECTIVES" page="metas" tooltip="Goals" />
+                <NavItem icon={Target} label="QUESTS" page="missions" tooltip="Missions" />
 
-                <SectionTitle>Aventura</SectionTitle>
-                <NavItem icon={TowerControl} label="Torre" page="tower" tooltip="Torre do Destino" />
-                <NavItem icon={KeySquare} label="Masmorra" page="dungeon" tooltip="Masmorra" />
+                <SectionTitle>COMBAT</SectionTitle>
+                <NavItem icon={TowerControl} label="DEMON CASTLE" page="tower" tooltip="Tower" />
+                <NavItem icon={KeySquare} label="DUNGEONS" page="dungeon" tooltip="Dungeons" />
 
-                <SectionTitle>Personagem</SectionTitle>
-                <NavItem icon={BarChart3} label="Habilidades" page="skills" tooltip="Habilidades" />
-                <NavItem icon={UserSquare} label="Classe" page="class" tooltip="Classe" />
-                <NavItem icon={Clock} label="Rotina" page="routine" tooltip="Rotina" />
-                <NavItem icon={Award} label="Conquistas" page="achievements" tooltip="Conquistas" />
+                <SectionTitle>PLAYER</SectionTitle>
+                <NavItem icon={BarChart3} label="ABILITIES" page="skills" tooltip="Skills" />
+                <NavItem icon={UserSquare} label="CLASS" page="class" tooltip="Class" />
+                <NavItem icon={Clock} label="ROUTINE" page="routine" tooltip="Routine" />
+                <NavItem icon={Award} label="ACHIEVEMENTS" page="achievements" tooltip="Awards" />
 
-                <SectionTitle>Economia</SectionTitle>
-                <NavItem icon={Store} label="Loja" page="shop" tooltip="Loja" />
-                <NavItem icon={Backpack} label="Inventário" page="inventory" tooltip="Inventário" />
+                <SectionTitle>MARKET</SectionTitle>
+                <NavItem icon={Store} label="SHOP" page="shop" tooltip="Shop" />
+                <NavItem icon={Backpack} label="INVENTORY" page="inventory" tooltip="Inventory" />
 
-                <SectionTitle>Sistema</SectionTitle>
-                <NavItem icon={Bot} label="Arquiteto" page="ai-chat" className="font-cinzel font-bold tracking-wider" highlight tooltip="Arquiteto IA" />
-                <NavItem icon={Settings} label="Configurações" page="settings" tooltip="Configurações" />
+                <SectionTitle>CORE</SectionTitle>
+                <NavItem icon={Bot} label="ARCHITECT" page="ai-chat" className="text-blue-300 font-bold" highlight tooltip="AI Chat" />
+                <NavItem icon={Settings} label="CONFIG" page="settings" tooltip="Settings" />
             </div>
 
-            <div className={cn("mt-auto pt-4 border-t border-border/30", collapsed ? "px-0" : "px-2")}>
+            <div className={cn("mt-auto pt-4 border-t border-blue-900/30 mx-4", collapsed ? "mx-2 px-0" : "")}>
                 <button
                     onClick={logout}
                     className={cn(
-                        "group flex items-center rounded-xl text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-all duration-300",
-                        collapsed ? "justify-center w-12 h-12 mx-auto" : "w-full space-x-3 px-4 py-3"
+                        "group flex items-center rounded-sm text-red-400/70 hover:bg-red-950/20 hover:text-red-400 transition-all duration-300 w-full",
+                        collapsed ? "justify-center w-10 h-10 mx-auto" : "space-x-3 px-4 py-2"
                     )}
                 >
                     <LogOut className={cn(
                         "transition-transform duration-300 group-hover:scale-110", 
-                        collapsed ? "h-6 w-6" : "h-5 w-5"
+                        collapsed ? "h-5 w-5" : "h-4 w-4"
                     )} />
-                    {!collapsed && <span className="font-medium">Terminar Sessão</span>}
+                    {!collapsed && <span className="font-mono text-xs uppercase tracking-widest">LOGOUT</span>}
                 </button>
             </div>
         </div>

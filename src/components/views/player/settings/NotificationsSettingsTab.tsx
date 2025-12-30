@@ -151,30 +151,35 @@ export default function NotificationsSettingsTab() {
 
     return (
         <div className={cn("space-y-6", isMobile && "space-y-4")}>
-            <Card className={isMobile ? "p-2" : ""}>
-                <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
-                    <CardTitle className={isMobile ? "text-lg" : ""}>Notificações Push</CardTitle>
-                    <CardDescription className={isMobile ? "text-xs" : ""}>
-                        Receba notificações mesmo quando o aplicativo estiver fechado ou em segundo plano.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className={cn("space-y-4", isMobile && "space-y-2 p-3")}>
+            <div className="bg-black/60 border border-blue-900/30 p-6 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/50" />
+                <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/50" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
+
+                <div className="mb-6 border-b border-blue-900/30 pb-2">
+                    <h3 className={cn("font-bold font-cinzel text-white uppercase tracking-widest flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                        PUSH COMMUNICATION
+                    </h3>
+                    <p className={cn("font-mono text-blue-400/50 text-xs", isMobile ? "text-[10px]" : "")}>EXTERNAL ALERT CONFIGURATION</p>
+                </div>
+
+                <div className={cn("space-y-4", isMobile && "space-y-2")}>
                     {!pushNotificationSupported ? (
-                        <Alert variant="destructive" className={isMobile ? "p-2" : ""}>
-                            <AlertTitle className={isMobile ? "text-sm" : ""}>Notificações não suportadas</AlertTitle>
-                            <AlertDescription className={isMobile ? "text-xs" : ""}>
-                                O seu navegador ou dispositivo não suporta notificações push. 
-                                Atualize o seu navegador ou utilize um dispositivo compatível.
+                        <div className={cn("bg-red-950/20 border border-red-500/30 p-4 flex items-start gap-3", isMobile ? "p-3" : "")}>
+                            <AlertTitle className="text-red-500 font-mono text-xs uppercase tracking-widest">ERROR: UNSUPPORTED DEVICE</AlertTitle>
+                            <AlertDescription className="text-red-400/70 font-mono text-xs">
+                                HARDWARE/SOFTWARE INCOMPATIBLE. UPDATE REQUIRED.
                             </AlertDescription>
-                        </Alert>
+                        </div>
                     ) : (
-                        <div className={cn("flex items-start justify-between gap-4 rounded-lg border p-4", isMobile ? "flex-col p-2 gap-2" : "flex-row p-4")}>
+                        <div className={cn("flex items-center justify-between gap-4 border border-blue-900/20 bg-blue-950/5 p-4", isMobile ? "flex-col items-start gap-2 p-3" : "flex-row")}>
                             <div className={cn("space-y-1", isMobile && "space-y-0")}>
-                                <h4 className={cn("font-medium", isMobile ? "text-sm" : "text-base")}>Notificações Push</h4>
-                                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
+                                <h4 className={cn("font-bold text-white font-mono uppercase tracking-wide", isMobile ? "text-xs" : "text-sm")}>PUSH ALERTS</h4>
+                                <p className={cn("text-gray-500 font-mono text-xs", isMobile ? "text-[10px]" : "")}>
                                     {pushNotificationEnabled 
-                                        ? "Notificações ativadas" 
-                                        : "Ative para receber notificações mesmo com o app fechado"}
+                                        ? "STATUS: ACTIVE" 
+                                        : "STATUS: INACTIVE - ENABLE FOR REAL-TIME UPDATES"}
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -183,23 +188,23 @@ export default function NotificationsSettingsTab() {
                                         variant="outline" 
                                         onClick={handleDisablePushNotifications}
                                         disabled={enablingPush}
-                                        className={isMobile ? "text-xs py-1 h-7" : ""}
+                                        className={cn("bg-red-900/20 border-red-500/30 text-red-400 hover:bg-red-900/40 hover:text-white rounded-none font-mono text-xs uppercase tracking-widest h-8", isMobile ? "w-full" : "")}
                                     >
-                                        <BellOff className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                        {isMobile ? "Desativar" : "Desativar"}
+                                        <BellOff className={cn("mr-2", isMobile ? "h-3 w-3" : "h-3 w-3")} />
+                                        DEACTIVATE
                                     </Button>
                                 ) : (
                                     <Button 
                                         onClick={handleEnablePushNotifications}
                                         disabled={enablingPush}
-                                        className={isMobile ? "text-xs py-1 h-7" : ""}
+                                        className={cn("bg-blue-600 hover:bg-blue-500 text-white rounded-none font-mono text-xs uppercase tracking-widest h-8", isMobile ? "w-full" : "")}
                                     >
                                         {enablingPush ? (
-                                            <LoaderCircle className={cn("mr-2 animate-spin", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                            <LoaderCircle className={cn("mr-2 animate-spin", isMobile ? "h-3 w-3" : "h-3 w-3")} />
                                         ) : (
-                                            <Bell className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                            <Bell className={cn("mr-2", isMobile ? "h-3 w-3" : "h-3 w-3")} />
                                         )}
-                                        {isMobile ? "Ativar" : "Ativar Notificações"}
+                                        ACTIVATE
                                     </Button>
                                 )}
                             </div>
@@ -207,51 +212,53 @@ export default function NotificationsSettingsTab() {
                     )}
                     
                     {pushNotificationEnabled && (
-                        <Alert className={isMobile ? "p-2" : ""}>
-                            <Bell className={cn("h-4 w-4", isMobile ? "h-3 w-3" : "")} />
-                            <AlertTitle className={isMobile ? "text-sm" : ""}>Notificações Ativadas</AlertTitle>
-                            <AlertDescription className={isMobile ? "text-xs" : ""}>
-                                Você receberá notificações push para eventos importantes como:
-                                <ul className={cn("list-disc list-inside mt-2 space-y-1", isMobile ? "space-y-0 text-xs" : "space-y-1")}>
-                                    <li>Conclusão de missões</li>
-                                    <li>Aumento de nível</li>
-                                    <li>Desbloqueio de conquistas</li>
-                                    <li>Alertas de habilidades em risco</li>
-                                    <li>Bônus de sequência</li>
-                                </ul>
-                            </AlertDescription>
-                        </Alert>
+                        <div className={cn("bg-blue-950/10 border border-blue-500/20 p-4", isMobile ? "p-3" : "")}>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Bell className={cn("h-4 w-4 text-blue-400", isMobile ? "h-3 w-3" : "")} />
+                                <span className={cn("text-blue-400 font-bold font-mono text-xs uppercase tracking-widest", isMobile ? "text-[10px]" : "")}>ACTIVE CHANNELS</span>
+                            </div>
+                            <ul className={cn("list-none space-y-1 pl-6 border-l border-blue-500/20", isMobile ? "space-y-0.5" : "space-y-1")}>
+                                {['MISSION COMPLETION', 'LEVEL UP', 'ACHIEVEMENT UNLOCKED', 'SKILL DECAY WARNING', 'STREAK BONUS'].map((item) => (
+                                    <li key={item} className="text-[10px] font-mono text-gray-400 uppercase tracking-wide">
+                                        &gt; {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
-            <Card className={isMobile ? "p-2" : ""}>
-                <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
-                    <CardTitle className={isMobile ? "text-lg" : ""}>Preferências de Notificação</CardTitle>
-                    <CardDescription className={isMobile ? "text-xs" : ""}>
-                        Escolha quais tipos de notificações deseja receber.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className={isMobile ? "p-3" : ""}>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6", isMobile && "space-y-3")}>
+            <div className="bg-black/60 border border-blue-900/30 p-6 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/50" />
+                <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/50" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
+
+                <div className="mb-6 border-b border-blue-900/30 pb-2">
+                    <h3 className={cn("font-bold font-cinzel text-white uppercase tracking-widest flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                        ALERT PREFERENCES
+                    </h3>
+                    <p className={cn("font-mono text-blue-400/50 text-xs", isMobile ? "text-[10px]" : "")}>CUSTOMIZE NOTIFICATION TYPES</p>
+                </div>
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6", isMobile && "space-y-4")}>
+                        <div className="space-y-4">
                             <FormField
                                 control={form.control}
                                 name="daily_briefing"
                                 render={({ field }) => (
-                                    <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
-                                        <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
-                                            <FormLabel className={cn("text-base", isMobile && "text-sm")}>
-                                                Briefing Diário
-                                            </FormLabel>
-                                            <FormDescription className={isMobile ? "text-xs" : ""}>
-                                                Receber notificações com as suas missões diárias.
-                                            </FormDescription>
+                                    <FormItem className={cn("flex items-center justify-between border border-blue-900/20 bg-blue-950/5 p-3", isMobile && "p-2")}>
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-xs font-mono text-blue-300 uppercase tracking-wide">DAILY BRIEFING</FormLabel>
+                                            <FormDescription className="text-[10px] font-mono text-blue-500/50">Mission summary report.</FormDescription>
                                         </div>
                                         <FormControl>
                                             <Switch
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
+                                                className="data-[state=checked]:bg-blue-600"
                                             />
                                         </FormControl>
                                     </FormItem>
@@ -262,19 +269,16 @@ export default function NotificationsSettingsTab() {
                                 control={form.control}
                                 name="goal_completed"
                                 render={({ field }) => (
-                                    <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
-                                        <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
-                                            <FormLabel className={cn("text-base", isMobile && "text-sm")}>
-                                                Meta Concluída
-                                            </FormLabel>
-                                            <FormDescription className={isMobile ? "text-xs" : ""}>
-                                                Notificação quando completar uma meta.
-                                            </FormDescription>
+                                    <FormItem className={cn("flex items-center justify-between border border-blue-900/20 bg-blue-950/5 p-3", isMobile && "p-2")}>
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-xs font-mono text-blue-300 uppercase tracking-wide">OBJECTIVE COMPLETED</FormLabel>
+                                            <FormDescription className="text-[10px] font-mono text-blue-500/50">Target acquisition alert.</FormDescription>
                                         </div>
                                         <FormControl>
                                             <Switch
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
+                                                className="data-[state=checked]:bg-blue-600"
                                             />
                                         </FormControl>
                                     </FormItem>
@@ -285,109 +289,102 @@ export default function NotificationsSettingsTab() {
                                 control={form.control}
                                 name="level_up"
                                 render={({ field }) => (
-                                    <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
-                                        <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
-                                            <FormLabel className={cn("text-base", isMobile && "text-sm")}>
-                                                Aumento de Nível
-                                            </FormLabel>
-                                            <FormDescription className={isMobile ? "text-xs" : ""}>
-                                                Notificação quando subir de nível.
-                                            </FormDescription>
+                                    <FormItem className={cn("flex items-center justify-between border border-blue-900/20 bg-blue-950/5 p-3", isMobile && "p-2")}>
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-xs font-mono text-blue-300 uppercase tracking-wide">LEVEL UP</FormLabel>
+                                            <FormDescription className="text-[10px] font-mono text-blue-500/50">Rank advancement notification.</FormDescription>
                                         </div>
                                         <FormControl>
                                             <Switch
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
+                                                className="data-[state=checked]:bg-blue-600"
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        
+                        <Separator className="bg-blue-900/30" />
+                        
+                        <div className={cn("space-y-4", isMobile && "space-y-2")}>
+                            <div>
+                                <h3 className={cn("font-bold text-white font-mono uppercase tracking-wide text-sm", isMobile ? "text-xs" : "")}>SILENT MODE</h3>
+                                <p className={cn("text-gray-500 font-mono text-xs", isMobile ? "text-[10px]" : "")}>
+                                    SUPPRESS NOTIFICATIONS DURING DESIGNATED HOURS.
+                                </p>
+                            </div>
+                            
+                            <FormField
+                                control={form.control}
+                                name="quiet_hours.enabled"
+                                render={({ field }) => (
+                                    <FormItem className={cn("flex items-center justify-between border border-blue-900/20 bg-blue-950/5 p-3", isMobile && "p-2")}>
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-xs font-mono text-blue-300 uppercase tracking-wide">ENABLE SILENT PROTOCOL</FormLabel>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                className="data-[state=checked]:bg-blue-600"
                                             />
                                         </FormControl>
                                     </FormItem>
                                 )}
                             />
                             
-                            <Separator className={isMobile ? "my-2" : ""} />
-                            
-                            <div className={cn("space-y-4", isMobile && "space-y-2")}>
-                                <div>
-                                    <h3 className={cn("font-medium", isMobile ? "text-sm" : "text-lg")}>Horário Silencioso</h3>
-                                    <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
-                                        Defina um período em que não deseja receber notificações.
-                                    </p>
+                            {form.watch("quiet_hours.enabled") && (
+                                <div className={cn("grid gap-4 pl-4 border-l-2 border-blue-900/30", isMobile ? "grid-cols-1 gap-2" : "grid-cols-2")}>
+                                    <FormField
+                                        control={form.control}
+                                        name="quiet_hours.start"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] font-mono text-gray-400 uppercase">START TIME</FormLabel>
+                                                <FormControl>
+                                                    <Input type="time" {...field} className={cn("bg-black/40 border-blue-900/30 text-white font-mono text-xs h-8 rounded-none focus:ring-blue-500/50", isMobile ? "text-xs" : "")} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="quiet_hours.end"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-[10px] font-mono text-gray-400 uppercase">END TIME</FormLabel>
+                                                <FormControl>
+                                                    <Input type="time" {...field} className={cn("bg-black/40 border-blue-900/30 text-white font-mono text-xs h-8 rounded-none focus:ring-blue-500/50", isMobile ? "text-xs" : "")} />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
-                                
-                                <FormField
-                                    control={form.control}
-                                    name="quiet_hours.enabled"
-                                    render={({ field }) => (
-                                        <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", isMobile && "p-2")}>
-                                            <div className={cn("space-y-0.5", isMobile && "space-y-0")}>
-                                                <FormLabel className={cn("text-base", isMobile && "text-sm")}>
-                                                    Ativar Horário Silencioso
-                                                </FormLabel>
-                                                <FormDescription className={isMobile ? "text-xs" : ""}>
-                                                    Silenciar todas as notificações durante um período específico.
-                                                </FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                
-                                {form.watch("quiet_hours.enabled") && (
-                                    <div className={cn("gap-4 ml-2", isMobile ? "grid grid-cols-1 gap-2 ml-1" : "grid grid-cols-1 sm:grid-cols-2")}>
-                                        <FormField
-                                            control={form.control}
-                                            name="quiet_hours.start"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={isMobile ? "text-xs" : ""}>Início</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="time" {...field} className={isMobile ? "text-xs py-1 h-8" : ""} />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="quiet_hours.end"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={isMobile ? "text-xs" : ""}>Fim</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="time" {...field} className={isMobile ? "text-xs py-1 h-8" : ""} />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
+                            )}
+                        </div>
+                        
+                        <div className="flex justify-end pt-4 border-t border-blue-900/30">
+                            <Button type="submit" disabled={isSaving} className={cn("bg-blue-600 hover:bg-blue-500 text-white font-mono uppercase tracking-widest rounded-none min-w-[150px]", isMobile ? "h-9 text-xs" : "h-10")}>
+                                {isSaving ? (
+                                    <>
+                                        <LoaderCircle className={cn("mr-2 animate-spin", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        {isMobile ? "SAVING..." : "SAVING..."}
+                                    </>
+                                ) : justSaved ? (
+                                    <>
+                                        <Check className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                        {isMobile ? "SAVED" : "SAVED"}
+                                    </>
+                                ) : (
+                                    isMobile ? "SAVE" : "SAVE CONFIG"
                                 )}
-                            </div>
-                            
-                            <div className="flex justify-end">
-                                <Button type="submit" disabled={isSaving} className={isMobile ? "text-sm py-1 h-8" : ""}>
-                                    {isSaving ? (
-                                        <>
-                                            <LoaderCircle className={cn("mr-2 animate-spin", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                            {isMobile ? "Guardando..." : "Guardando..."}
-                                        </>
-                                    ) : justSaved ? (
-                                        <>
-                                            <Check className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                            {isMobile ? "Guardado!" : "Guardado!"}
-                                        </>
-                                    ) : (
-                                        isMobile ? "Guardar" : "Guardar Preferências"
-                                    )}
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </div>
         </div>
     );
 }

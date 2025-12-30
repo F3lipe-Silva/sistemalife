@@ -78,22 +78,28 @@ export default function GamificationSettingsTab() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6", isMobile && "space-y-4")}>
-                <Card className={isMobile ? "p-2" : ""}>
-                    <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
-                        <CardTitle className={isMobile ? "text-lg" : ""}>Gamificação</CardTitle>
-                        <CardDescription className={isMobile ? "text-xs" : ""}>
-                            Personalize os elementos lúdicos e de recompensa da sua experiência no Sistema.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className={cn("space-y-6", isMobile && "space-y-4 p-3")}>
+                <div className="bg-black/60 border border-blue-900/30 p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/50" />
+                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/50" />
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
+
+                    <div className="mb-6 border-b border-blue-900/30 pb-2">
+                        <h3 className={cn("font-bold font-cinzel text-white uppercase tracking-widest flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                            GAMEPLAY DYNAMICS
+                        </h3>
+                        <p className={cn("font-mono text-blue-400/50 text-xs", isMobile ? "text-[10px]" : "")}>ADJUST REWARD SYSTEMS</p>
+                    </div>
+
+                    <div className={cn("space-y-6", isMobile && "space-y-4")}>
                        <FormField
                             control={form.control}
                             name="progress_feedback_intensity"
                             render={({ field }) => (
                                 <FormItem className="space-y-3">
-                                <FormLabel className={isMobile ? "text-sm" : ""}>Intensidade do Feedback de Progresso</FormLabel>
-                                <FormDescription className={isMobile ? "text-xs" : ""}>
-                                    Escolha o quão "celebratório" o sistema deve ser ao completar missões ou subir de nível.
+                                <FormLabel className="text-xs font-mono text-blue-400 uppercase tracking-widest">FEEDBACK INTENSITY LEVEL</FormLabel>
+                                <FormDescription className="text-[10px] font-mono text-blue-500/50">
+                                    CALIBRATE SYSTEM RESPONSE TO USER ACHIEVEMENTS.
                                 </FormDescription>
                                 <FormControl>
                                     <RadioGroup
@@ -102,67 +108,47 @@ export default function GamificationSettingsTab() {
                                     value={field.value}
                                     className={cn("grid gap-4 pt-2", isMobile ? "grid-cols-1 gap-2" : "grid-cols-1 sm:grid-cols-3")}
                                     >
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl>
-                                                <div className={cn(
-                                                    "flex w-full items-center justify-center rounded-md border border-muted-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors",
-                                                    isMobile ? "p-2" : "p-4"
-                                                )} data-state={field.value === 'subtle' ? 'checked' : 'unchecked'} onClick={() => field.onChange('subtle')}>
-                                                    <RadioGroupItem value="subtle" id="intensity-subtle" className="sr-only"/>
-                                                    <FormLabel htmlFor="intensity-subtle" className={cn("font-normal cursor-pointer w-full text-center", isMobile ? "text-xs" : "")}>
-                                                        Subtil
-                                                    </FormLabel>
-                                                </div>
-                                            </FormControl>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                             <FormControl>
-                                                <div className={cn(
-                                                    "flex w-full items-center justify-center rounded-md border border-muted-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors",
-                                                    isMobile ? "p-2" : "p-4"
-                                                )} data-state={field.value === 'default' ? 'checked' : 'unchecked'} onClick={() => field.onChange('default')}>
-                                                    <RadioGroupItem value="default" id="intensity-default" className="sr-only"/>
-                                                    <FormLabel htmlFor="intensity-default" className={cn("font-normal cursor-pointer w-full text-center", isMobile ? "text-xs" : "")}>
-                                                        Padrão
-                                                    </FormLabel>
-                                                </div>
-                                            </FormControl>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl>
-                                                <div className={cn(
-                                                    "flex w-full items-center justify-center rounded-md border border-muted-foreground cursor-pointer data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 transition-colors",
-                                                    isMobile ? "p-2" : "p-4"
-                                                )} data-state={field.value === 'celebratory' ? 'checked' : 'unchecked'} onClick={() => field.onChange('celebratory')}>
-                                                    <RadioGroupItem value="celebratory" id="intensity-celebratory" className="sr-only"/>
-                                                    <FormLabel htmlFor="intensity-celebratory" className={cn("font-normal cursor-pointer w-full text-center", isMobile ? "text-xs" : "")}>
-                                                        Celebratório
-                                                    </FormLabel>
-                                                </div>
-                                            </FormControl>
-                                        </FormItem>
+                                        {['subtle', 'default', 'celebratory'].map((intensity) => (
+                                            <FormItem key={intensity} className="flex items-center space-x-0 space-y-0">
+                                                <FormControl>
+                                                    <div className={cn(
+                                                        "flex w-full items-center justify-center border transition-all duration-200 cursor-pointer relative overflow-hidden group h-12",
+                                                        field.value === intensity
+                                                            ? "border-blue-500 bg-blue-950/30 text-white" 
+                                                            : "border-blue-900/30 bg-black/40 text-gray-500 hover:border-blue-500/50 hover:text-gray-300"
+                                                    )} onClick={() => field.onChange(intensity)}>
+                                                        <RadioGroupItem value={intensity} id={`intensity-${intensity}`} className="sr-only"/>
+                                                        <div className={cn("absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity")} />
+                                                        {field.value === intensity && <div className="absolute left-0 top-0 h-full w-1 bg-blue-500" />}
+                                                        <FormLabel htmlFor={`intensity-${intensity}`} className={cn("font-mono text-xs uppercase tracking-widest cursor-pointer relative z-10")}>
+                                                            {intensity.toUpperCase()}
+                                                        </FormLabel>
+                                                    </div>
+                                                </FormControl>
+                                            </FormItem>
+                                        ))}
                                     </RadioGroup>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
                         />
-                         <Separator className={isMobile ? "my-2" : ""} />
+                         <Separator className="bg-blue-900/30" />
                          <div className={cn(
-                            "flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg",
-                            isMobile ? "h-32 p-4 text-xs" : "h-48 p-8"
+                            "flex flex-col items-center justify-center text-center border-2 border-dashed border-blue-900/30 bg-blue-950/5 rounded-none",
+                            isMobile ? "h-32 p-4" : "h-48 p-8"
                          )}>
-                            <p className={cn("font-semibold", isMobile ? "text-sm" : "text-lg")}>Mais Opções em Breve</p>
-                            <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>
-                                Estamos a trabalhar para trazer mais personalizações, como emblemas, títulos e temas sazonais.
+                            <p className={cn("font-bold text-blue-400 font-mono text-xs uppercase tracking-widest", isMobile ? "text-[10px]" : "text-sm")}>ADDITIONAL MODULES LOCKED</p>
+                            <p className={cn("mt-1 text-blue-500/40 font-mono text-xs", isMobile ? "text-[10px]" : "")}>
+                                SYSTEM UPDATE IN PROGRESS. BADGES & TITLES COMING SOON.
                             </p>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved} className={isMobile ? "text-sm py-1 h-8" : ""}>
-                         {isSaving ? <LoaderCircle className={cn("animate-spin", isMobile ? "h-4 w-4" : "")} /> : justSaved ? <Check className={isMobile ? "h-4 w-4" : ""} /> : "Salvar Preferências"}
+                <div className="flex justify-end pt-4 border-t border-blue-900/30">
+                    <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved} className={cn("bg-blue-600 hover:bg-blue-500 text-white font-mono uppercase tracking-widest rounded-none min-w-[150px]", isMobile ? "h-9 text-xs" : "h-10")}>
+                         {isSaving ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : justSaved ? <Check className="mr-2 h-4 w-4" /> : "UPDATE SYSTEM"}
                     </Button>
                 </div>
             </form>

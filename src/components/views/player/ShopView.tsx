@@ -4,7 +4,7 @@
 import { useState, memo, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw, Ticket, Heart, Shirt, KeySquare } from 'lucide-react';
+import { Gem, LoaderCircle, Sparkles, Zap, Shield, BookOpen, Repeat, RefreshCw, Ticket, Heart, Shirt, KeySquare, ShoppingBag, Coins } from 'lucide-react';
 import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,13 @@ const iconMap: { [key: string]: React.ElementType } = {
     KeySquare,
 };
 
+const getRarityColor = (price: number) => {
+    if (price >= 1000) return { border: 'border-orange-500', text: 'text-orange-500', bg: 'bg-orange-500/10', glow: 'shadow-orange-500/20' }; // Legendary
+    if (price >= 500) return { border: 'border-purple-500', text: 'text-purple-500', bg: 'bg-purple-500/10', glow: 'shadow-purple-500/20' }; // Epic
+    if (price >= 100) return { border: 'border-blue-500', text: 'text-blue-500', bg: 'bg-blue-500/10', glow: 'shadow-blue-500/20' }; // Rare
+    return { border: 'border-gray-500', text: 'text-gray-400', bg: 'bg-gray-500/10', glow: 'shadow-none' }; // Common
+};
+
 const ShopViewComponent = () => {
     const { profile, missions, skills, persistData, isDataLoaded } = usePlayerDataContext();
     const { toast } = useToast();
@@ -39,7 +46,7 @@ const ShopViewComponent = () => {
         const itemsExist = profile.recommended_shop_items && profile.recommended_shop_items.length > 0;
 
         if (itemsExist && lastGenerated && isToday(parseISO(lastGenerated)) && !forceRefresh) {
-            console.log("A usar itens da loja em cache.");
+            console.log("Using cached shop items.");
             return;
         }
         
@@ -63,15 +70,15 @@ const ShopViewComponent = () => {
             await persistData('profile', updatedProfile);
 
             if (forceRefresh) {
-                 toast({ title: "Loja Atualizada!", description: "O Mercador trouxe novas ofertas." });
+                 toast({ title: "SHOP REFRESHED", description: "New inventory acquired." });
             }
 
         } catch (error) {
             console.error("Failed to generate shop items:", error);
             toast({
                 variant: 'destructive',
-                title: "Erro ao Carregar a Loja",
-                description: "O Mercador do Sistema está indisponível. A usar ofertas padrão."
+                title: "CONNECTION ERROR",
+                description: "Merchant unavailable. Loading standard stock."
             });
             const fallbackItems = {
                 ...profile,
@@ -95,8 +102,8 @@ const ShopViewComponent = () => {
         if ((profile.fragmentos || 0) < item.price) {
             toast({
                 variant: 'destructive',
-                title: 'Fundos Insuficientes',
-                description: `Você precisa de mais ${item.price - (profile.fragmentos || 0)} fragmentos para comprar este item.`,
+                title: 'INSUFFICIENT FUNDS',
+                description: `Need ${item.price - (profile.fragmentos || 0)} more fragments.`,
             });
             return;
         }
@@ -126,8 +133,8 @@ const ShopViewComponent = () => {
             persistData('profile', updatedProfile);
 
             toast({
-                title: 'Compra Efetuada!',
-                description: `Você adquiriu "${item.name}".`,
+                title: 'TRANSACTION COMPLETE',
+                description: `Acquired: ${item.name}`,
             });
             setIsBuying(null);
         }, 500);
@@ -137,7 +144,7 @@ const ShopViewComponent = () => {
     if (!profile) {
         return (
             <div className="p-4 md:p-6 h-full flex items-center justify-center">
-                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                <LoaderCircle className="h-8 w-8 animate-spin text-blue-500" />
             </div>
         );
     }
@@ -154,21 +161,9 @@ const ShopViewComponent = () => {
                         : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 )}>
                     {[...Array(3)].map((_, i) => (
-                        <Card key={i} className={cn("bg-gradient-to-br from-card/80 to-card/40 border-border/80 flex flex-col animate-pulse", isMobile ? "p-2" : "p-0")}>
-                            <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-6")}>
-                                <div className={cn("rounded-lg bg-secondary flex-shrink-0 animate-pulse", isMobile ? "w-12 h-12" : "w-14 h-14")}></div>
-                                <div className="flex-1 space-y-2">
-                                    <div className={cn("rounded bg-secondary animate-pulse", isMobile ? "h-4 w-3/4" : "h-5 w-3/4")}></div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className={cn("flex-grow space-y-2", isMobile ? "p-3 pt-0" : "p-6 pt-0")}>
-                                <div className={cn("rounded bg-secondary animate-pulse", isMobile ? "h-3 w-full" : "h-4 w-full")}></div>
-                                <div className={cn("rounded bg-secondary animate-pulse", isMobile ? "h-3 w-5/6" : "h-4 w-5/6")}></div>
-                            </CardContent>
-                            <CardFooter className={isMobile ? "p-3 pt-0" : "p-6 pt-0"}>
-                                <div className={cn("rounded bg-secondary animate-pulse", isMobile ? "h-8 w-full" : "h-10 w-full")}></div>
-                            </CardFooter>
-                        </Card>
+                        <div key={i} className={cn("bg-black/40 border border-blue-900/30 h-48 animate-pulse flex items-center justify-center")}>
+                            <LoaderCircle className="h-8 w-8 text-blue-900 animate-spin" />
+                        </div>
                     ))}
                 </div>
             );
@@ -176,10 +171,10 @@ const ShopViewComponent = () => {
 
         if (shopItems.length === 0) {
             return (
-                 <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed border-border rounded-lg bg-gradient-to-br from-card/80 to-card/40", isMobile ? "h-48 p-4" : "h-64 p-8")}>
-                    <Sparkles className={cn("text-primary animate-pulse", isMobile ? "h-8 w-8 mb-4" : "h-12 w-12 mb-6")} />
-                    <p className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>O Mercador do Sistema está a reabastecer.</p>
-                    <p className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>Volte mais tarde para ver novas ofertas personalizadas.</p>
+                 <div className={cn("flex flex-col items-center justify-center text-center text-muted-foreground border border-blue-900/30 border-dashed bg-blue-950/10", isMobile ? "h-48 p-4" : "h-64 p-8")}>
+                    <ShoppingBag className={cn("text-blue-500/30 mb-4", isMobile ? "h-8 w-8" : "h-12 w-12")} />
+                    <p className={cn("font-mono font-bold text-blue-400 uppercase tracking-widest", isMobile ? "text-sm" : "text-base")}>STOCK DEPLETED</p>
+                    <p className={cn("mt-1 text-blue-300/50 font-mono text-xs", isMobile ? "text-[10px]" : "text-xs")}>Merchant is restocking. Check back later.</p>
                 </div>
             )
         }
@@ -197,55 +192,64 @@ const ShopViewComponent = () => {
 
                     const Icon = iconMap[itemDetails.icon];
                     const canAfford = (profile.fragmentos || 0) >= item.price;
-                    const isSpecial = item.reasoning; // Assuming reasoning indicates special item
+                    const rarity = getRarityColor(item.price);
+                    
                     return (
-                        <Card 
+                        <div 
                             key={item.id}
                             className={cn(
-                                "bg-gradient-to-br from-card/80 to-card/40 border-border/80 flex flex-col transition-all duration-300",
-                                canAfford 
-                                    ? 'hover:shadow-xl hover:scale-[1.02] hover:border-primary/50' 
-                                    : 'opacity-70 hover:shadow-md hover:scale-[1.01]',
-                                isSpecial && 'shadow-lg shadow-primary/20',
-                                isMobile ? 'p-2' : 'p-0'
+                                "relative group border bg-black/60 transition-all duration-300 overflow-hidden flex flex-col",
+                                rarity.border,
+                                canAfford ? 'hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'opacity-70 grayscale-[0.5]',
+                                isMobile ? 'p-3' : 'p-4'
                             )}
                         >
-                            <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-6")}>
-                                 <div className={cn("rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 transition-all duration-200", isMobile ? "w-12 h-12" : "w-14 h-14")}>
-                                    <Icon className={cn("transition-all duration-200", isMobile ? "w-6 h-6" : "w-8 h-8", canAfford ? "hover:animate-pulse" : "")}/>
+                            <div className="flex flex-row items-start gap-4 mb-3">
+                                 <div className={cn(
+                                     "flex items-center justify-center flex-shrink-0 border bg-black",
+                                     rarity.border,
+                                     isMobile ? "w-12 h-12" : "w-16 h-16"
+                                 )}>
+                                    <Icon className={cn("text-white", isMobile ? "w-6 h-6" : "w-8 h-8")}/>
                                 </div>
-                                <div className="flex-1">
-                                    <CardTitle className={cn("text-foreground", isMobile ? "text-base" : "text-lg")}>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className={cn("font-bold text-white font-mono uppercase truncate", rarity.text, isMobile ? "text-sm" : "text-base")}>
                                         {item.name}
-                                    </CardTitle>
+                                    </h3>
+                                    <p className={cn("text-gray-400 font-mono text-xs mt-1 line-clamp-2", isMobile ? "text-[10px]" : "text-xs")}>
+                                        {item.description}
+                                    </p>
                                 </div>
-                            </CardHeader>
-                            <CardContent className={cn("flex-grow", isMobile ? "p-3 pt-0" : "p-6 pt-0")}>
-                                <CardDescription className={cn("text-muted-foreground", isMobile ? "text-xs" : "")}>
-                                    {item.description}
-                                </CardDescription>
-                                {item.reasoning && (
-                                     <Alert className={cn("border-cyan-500/30 bg-cyan-900/10 text-cyan-200 p-2 mt-3 shadow-md", isMobile ? "text-[10px]" : "text-xs")}>
-                                        <Sparkles className={cn("text-cyan-400 animate-pulse", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                        <AlertDescription>{item.reasoning}</AlertDescription>
-                                    </Alert>
-                                )}
-                            </CardContent>
-                            <CardFooter className={isMobile ? "p-3 pt-0" : "p-6 pt-0"}>
+                            </div>
+                            
+                            {item.reasoning && (
+                                <div className="mb-3 px-2 py-1 bg-blue-900/20 border-l-2 border-blue-500 text-[10px] text-blue-300 font-mono italic">
+                                    "{item.reasoning}"
+                                </div>
+                            )}
+
+                            <div className="mt-auto pt-3 border-t border-gray-800">
                                 <Button 
                                     className={cn(
-                                        "w-full transition-all duration-200 hover:scale-[1.02]", 
-                                        isMobile ? "h-8 text-sm" : "",
-                                        canAfford ? "hover:shadow-lg" : ""
+                                        "w-full rounded-none font-mono text-xs uppercase tracking-wider h-9",
+                                        canAfford 
+                                            ? "bg-blue-600 hover:bg-blue-500 text-white" 
+                                            : "bg-gray-800 text-gray-500 cursor-not-allowed"
                                     )} 
                                     onClick={() => handleBuyItem(item)}
                                     disabled={!canAfford || isBuying === item.id}
                                 >
-                                    <Gem className={cn("mr-2 transition-all duration-200", isMobile ? "h-3 w-3" : "h-4 w-4", canAfford ? "hover:animate-pulse" : "")} />
-                                    {isBuying === item.id ? (isMobile ? 'A comprar...' : 'A comprar...') : `Comprar por ${item.price}`}
+                                    {isBuying === item.id ? (
+                                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            <Gem className="h-3 w-3" />
+                                            {item.price}
+                                        </span>
+                                    )}
                                 </Button>
-                            </CardFooter>
-                        </Card>
+                            </div>
+                        </div>
                     );
                 })}
             </div>
@@ -253,25 +257,27 @@ const ShopViewComponent = () => {
     }
 
     return (
-        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
-            <div className={cn("flex flex-col gap-4 mb-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-4 animate-fade-in", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
+        <div className={cn("h-full overflow-y-auto relative", isMobile ? "p-2" : "p-4 md:p-6")}>
+            {/* Background Grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none -z-10"></div>
+
+            <div className={cn("flex flex-col gap-4 mb-6 border-b border-blue-900/30 pb-4", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
                 <div>
-                    <h1 className={cn("font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary font-cinzel tracking-wider animate-pulse", isMobile ? "text-2xl" : "text-3xl")}>Loja do Sistema</h1>
-                    <p className={cn("text-muted-foreground max-w-3xl", isMobile ? "mt-1 text-sm" : "mt-2")}>
-                        Ofertas diárias geradas pela IA para otimizar a sua jornada.
+                    <h1 className={cn("font-black text-white font-cinzel tracking-[0.1em] drop-shadow-md uppercase", isMobile ? "text-2xl" : "text-3xl")}>
+                        SYSTEM SHOP
+                    </h1>
+                    <p className={cn("text-blue-400/60 font-mono text-xs tracking-widest uppercase mt-1")}>
+                        ACQUIRE UPGRADES & CONSUMABLES
                     </p>
                 </div>
-                <div className={cn("flex items-center gap-2", isMobile ? "" : "")}>
-                     <Button variant="outline" size="icon" onClick={() => fetchShopItems(true)} disabled={isGeneratingItems} className={cn("transition-all duration-200 hover:scale-110", isMobile ? "h-8 w-8" : "")}>
+                <div className={cn("flex items-center gap-3", isMobile ? "justify-between w-full" : "")}>
+                     <div className={cn("flex items-center gap-2 bg-black/60 border border-yellow-500/30 px-3 py-1.5", isMobile ? "flex-1 justify-center" : "")}>
+                        <Gem className={cn("text-yellow-500", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                        <span className={cn("font-mono font-bold text-white", isMobile ? "text-lg" : "text-xl")}>{profile.fragmentos || 0}</span>
+                    </div>
+                     <Button variant="outline" size="icon" onClick={() => fetchShopItems(true)} disabled={isGeneratingItems} className={cn("border-blue-500/30 text-blue-400 hover:bg-blue-900/20 hover:text-white rounded-none", isMobile ? "h-10 w-10" : "")}>
                         <RefreshCw className={cn("h-4 w-4", isGeneratingItems && "animate-spin")} />
                     </Button>
-                    <div className={cn("flex-shrink-0 bg-gradient-to-br from-secondary to-secondary/80 border border-border rounded-lg shadow-md", isMobile ? "p-2" : "p-3")}>
-                        <div className="flex items-center gap-2">
-                            <Gem className={cn("text-yellow-400 animate-pulse", isMobile ? "h-5 w-5" : "h-6 w-6")} />
-                            <span className={cn("font-bold text-foreground", isMobile ? "text-lg" : "text-xl")}>{profile.fragmentos || 0}</span>
-                            <span className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>Fragmentos</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 

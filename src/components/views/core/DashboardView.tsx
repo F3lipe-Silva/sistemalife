@@ -6,109 +6,39 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { WorldEventCard } from './dashboard/WorldEventCard';
 import { ProfileHeader } from './dashboard/ProfileHeader';
-import { ProfileStats } from './dashboard/ProfileStats';
 import { ProfileResources } from './dashboard/ProfileResources';
-import { Sparkles, Activity, Eye, EyeOff, Target, Users, Zap, Heart, Shield, Crown, Flame, Gem, KeySquare, User } from 'lucide-react';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Activity, Eye, EyeOff, Bell, User, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Componente para o Header da Dashboard - Compacto
+// Componente para o Header da Dashboard - Estilo "System Notification"
 const DashboardHeader = ({ profile, isMobile }: { profile: any; isMobile: boolean }) => (
-    <header className="space-y-4">
-        {/* Status Bar Superior - Compacto */}
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <Badge variant="outline" className="gap-1.5 bg-primary/10 border-primary/20 backdrop-blur-sm">
-                    <Activity className="h-3 w-3 text-primary animate-pulse" />
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-primary font-medium">Sistema</span>
-                </Badge>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 hidden sm:inline-block">·</span>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 hidden sm:inline-block">Comando</span>
-            </div>
+    <header className="space-y-2 mb-6">
+         {/* System Alert Bar */}
+         <div className="flex items-center justify-between bg-blue-950/30 border-y border-blue-900/50 py-2 px-4 backdrop-blur-sm">
+             <div className="flex items-center gap-3">
+                <Bell className="h-4 w-4 text-blue-400 animate-pulse" />
+                <span className="font-mono text-xs text-blue-300 uppercase tracking-widest">
+                    SYSTEM NOTIFICATIONS: <span className="text-white">NO NEW ALERTS</span>
+                </span>
+             </div>
+             <div className="flex items-center gap-2">
+                 <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]" />
+                 <span className="font-mono text-xs text-green-400 tracking-wider">ONLINE</span>
+             </div>
+         </div>
 
-            <Badge variant="secondary" className="gap-1.5 bg-secondary/50 border-border/30 backdrop-blur-sm">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] text-muted-foreground">Online</span>
-            </Badge>
-        </div>
-
-        {/* Título e Métricas - Mais Compacto */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-1">
-                <h1 className="font-cinzel text-2xl sm:text-3xl tracking-[0.15em] text-gradient font-bold">
-                    Centro de Comando
-                </h1>
-                <p className="text-sm text-muted-foreground/70">
-                    Monitore sua jornada RPG
-                </p>
-            </div>
-
-            {/* Métricas Principais - Grid Compacto */}
-            <div className="grid grid-cols-4 gap-2">
-                <Card className="bg-card/40 border-border/30 backdrop-blur-sm">
-                    <CardContent className="p-2 sm:p-3 text-center">
-                        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Nv</div>
-                        <div className="text-sm sm:text-base font-bold text-primary">{profile?.nivel || 1}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-card/40 border-border/30 backdrop-blur-sm">
-                    <CardContent className="p-2 sm:p-3 text-center">
-                        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">XP</div>
-                        <div className="text-sm sm:text-base font-bold text-green-400">{profile?.xp?.toLocaleString() || 0}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-card/40 border-border/30 backdrop-blur-sm">
-                    <CardContent className="p-2 sm:p-3 text-center">
-                        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">HP</div>
-                        <div className="text-sm sm:text-base font-bold text-red-400">{profile?.hp_atual || 100}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-card/40 border-border/30 backdrop-blur-sm">
-                    <CardContent className="p-2 sm:p-3 text-center">
-                        <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Stk</div>
-                        <div className="text-sm sm:text-base font-bold text-blue-400">{profile?.streak_atual || 0}</div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+         {/* Welcome Message */}
+         <div className="px-2">
+             <h1 className="font-cinzel text-3xl md:text-4xl font-bold text-white tracking-wider drop-shadow-[0_0_10px_rgba(37,99,235,0.5)]">
+                 BEM-VINDO, <span className="text-blue-400">{profile?.primeiro_nome?.toUpperCase() || 'JOGADOR'}</span>
+             </h1>
+             <p className="text-blue-300/60 font-mono text-sm tracking-wide mt-1">
+                 PAINEL DE CONTROLE DO SISTEMA INICIADO.
+             </p>
+         </div>
     </header>
 );
-
-
-
-// Componente para Recursos em Cards
-const ResourcesWidget = ({ profile, isMobile }: { profile: any; isMobile: boolean }) => {
-    const resources = [
-        { label: 'Nome Completo', value: `${profile.primeiro_nome} ${profile.apelido}`, icon: User, color: 'text-blue-400' },
-        { label: 'Sequência Atual', value: `${profile.streak_atual || 0} dias`, icon: Flame, color: 'text-orange-400' },
-        { label: 'Fragmentos', value: profile.fragmentos || 0, icon: Gem, color: 'text-yellow-400' },
-        { label: 'Cristais Dungeon', value: profile.dungeon_crystals || 0, icon: KeySquare, color: 'text-purple-400' },
-    ];
-
-    return (
-        <div className="space-y-6">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                {resources.map((resource, index) => (
-                    <Card key={resource.label} className="bg-gradient-to-br from-card/40 to-card/20 backdrop-blur-sm border-border/30 hover:scale-[1.02] transition-transform">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center ${resource.color}`}>
-                                <resource.icon className={`h-6 w-6 ${resource.color}`} />
-                            </div>
-                            <div>
-                                <div className="text-sm text-muted-foreground">{resource.label}</div>
-                                <div className="text-lg font-bold text-foreground">{resource.value}</div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </div>
-    );
-};
-
 
 const DashboardViewComponent = () => {
     const { profile, worldEvents } = usePlayerDataContext();
@@ -132,13 +62,12 @@ const DashboardViewComponent = () => {
         return (
             <div className="flex h-full flex-col items-center justify-center p-8 gap-6">
                 <div className="relative">
-                    <Skeleton className="w-20 h-20 rounded-3xl bg-primary/20" />
-                    <Sparkles className="absolute inset-0 m-auto h-10 w-10 text-primary animate-spin" />
-                    <div className="absolute -inset-3 bg-primary/10 rounded-3xl blur-2xl animate-pulse" />
+                    <Skeleton className="w-20 h-20 rounded-full bg-blue-900/20" />
+                    <Activity className="absolute inset-0 m-auto h-10 w-10 text-blue-500 animate-spin" />
                 </div>
                 <div className="text-center space-y-2">
-                    <Skeleton className="h-6 w-48 mx-auto bg-muted/20" />
-                    <Skeleton className="h-4 w-32 mx-auto bg-muted/20" />
+                    <Skeleton className="h-6 w-48 mx-auto bg-blue-900/20" />
+                    <div className="text-blue-500/50 font-mono text-sm animate-pulse">LOADING SYSTEM DATA...</div>
                 </div>
             </div>
         );
@@ -147,166 +76,64 @@ const DashboardViewComponent = () => {
     return (
         <section
             className={cn(
-                'relative flex h-full flex-col gap-6 font-sans text-white animate-fade-in',
+                'relative flex h-full flex-col gap-4 font-sans text-white animate-fade-in',
                 isMobile ? 'pb-32' : ''
             )}
         >
-            {/* Header */}
+            {/* Background Grid Effect */}
+            <div className="fixed inset-0 pointer-events-none z-[-1] opacity-10 bg-[linear-gradient(rgba(18,18,18,1)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,1)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+
             <DashboardHeader profile={profile} isMobile={isMobile} />
 
-                        {/* Main Content - Organizado em seções individuais */}
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-
-                            {/* Visão Geral */}
-
-                            <Card className="bg-card/50 backdrop-blur-sm border-border/30 lg:col-span-2">
-
-                                <CardHeader className="pb-2">
-
-                                    <div className="flex items-center justify-between">
-
-                                        <CardTitle className="font-cinzel text-lg text-foreground">Visão Geral</CardTitle>
-
-                                        <Button
-
-                                            variant="ghost"
-
-                                            size="sm"
-
-                                            onClick={() => setVisibleSections(prev => ({ ...prev, overview: !prev.overview }))}
-
-                                            className="h-8 w-8 p-0"
-
-                                        >
-
-                                            {visibleSections.overview ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-
-                                        </Button>
-
-                                    </div>
-
-                                </CardHeader>
-
-                                <CardContent>
-
-                                    {visibleSections.overview && (
-
-                                        <div className="space-y-6">
-
-                                            <ProfileHeader profile={profile} isMobile={isMobile} />
-
-                                        </div>
-
-                                    )}
-
-                                </CardContent>
-
-                            </Card>
-
-            
-
-                            {/* Recursos */}
-
-                            <Card className="bg-card/50 backdrop-blur-sm border-border/30">
-
-                                <CardHeader className="pb-2">
-
-                                    <div className="flex items-center justify-between">
-
-                                        <CardTitle className="font-cinzel text-lg text-foreground">Recursos</CardTitle>
-
-                                        <Button
-
-                                            variant="ghost"
-
-                                            size="sm"
-
-                                            onClick={() => setVisibleSections(prev => ({ ...prev, resources: !prev.resources }))}
-
-                                            className="h-8 w-8 p-0"
-
-                                        >
-
-                                            {visibleSections.resources ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-
-                                        </Button>
-
-                                    </div>
-
-                                </CardHeader>
-
-                                <CardContent>
-
-                                    {visibleSections.resources && (
-
-                                        <div className="space-y-6">
-
-                                            <ResourcesWidget profile={profile} isMobile={isMobile} />
-
-                                        </div>
-
-                                    )}
-
-                                </CardContent>
-
-                            </Card>
-
-            
-
-            
-
-                            {/* World Event Card */}
-
-                            {activeEvent && (
-
-                                <Card className="bg-card/50 backdrop-blur-sm border-border/30 lg:col-span-2 xl:col-span-1">
-
-                                    <CardHeader className="pb-2">
-
-                                        <div className="flex items-center justify-between">
-
-                                            <CardTitle className="font-cinzel text-lg text-foreground">Evento Mundial Ativo</CardTitle>
-
-                                            <Button
-
-                                                variant="ghost"
-
-                                                size="sm"
-
-                                                onClick={() => setVisibleSections(prev => ({ ...prev, events: !prev.events }))}
-
-                                                className="h-8 w-8 p-0"
-
-                                            >
-
-                                                {visibleSections.events ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-
-                                            </Button>
-
-                                        </div>
-
-                                    </CardHeader>
-
-                                    <CardContent>
-
-                                        {visibleSections.events && (
-
-                                            <div className="space-y-6">
-
-                                                <WorldEventCard event={activeEvent} userContribution={userContribution} isMobile={isMobile} />
-
-                                            </div>
-
-                                        )}
-
-                                    </CardContent>
-
-                                </Card>
-
-                            )}
-
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                
+                {/* Profile Overview - Spans 2 cols on Large */}
+                <div className="lg:col-span-2 space-y-4">
+                     <div className="flex items-center justify-between px-2 border-b border-blue-500/30 pb-2 mb-2">
+                        <h3 className="font-mono text-sm text-blue-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <User className="h-4 w-4" /> STATUS DO JOGADOR
+                        </h3>
+                     </div>
+                     <ProfileHeader profile={profile} isMobile={isMobile} />
+                </div>
+
+                {/* Resources Panel */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2 border-b border-yellow-500/30 pb-2 mb-2">
+                        <h3 className="font-mono text-sm text-yellow-500/80 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Zap className="h-4 w-4" /> RECURSOS
+                        </h3>
+                         <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setVisibleSections(prev => ({ ...prev, resources: !prev.resources }))}
+                            className="h-6 w-6 p-0 text-yellow-500/50 hover:text-yellow-400"
+                        >
+                            {visibleSections.resources ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                        </Button>
+                    </div>
+                    {visibleSections.resources && (
+                         <div className="bg-black/40 backdrop-blur-md border border-yellow-900/30 p-4 rounded-sm relative group">
+                            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-yellow-500/50" />
+                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-yellow-500/50" />
+                            <ProfileResources profile={profile} isMobile={isMobile} />
                         </div>
+                    )}
+                </div>
+
+                {/* Active Events - Spans full width on mobile/small, 1 col on large */}
+                {activeEvent && visibleSections.events && (
+                     <div className="lg:col-span-2 xl:col-span-1 space-y-4">
+                        <div className="flex items-center justify-between px-2 border-b border-red-500/30 pb-2 mb-2">
+                            <h3 className="font-mono text-sm text-red-400 font-bold uppercase tracking-widest flex items-center gap-2 animate-pulse">
+                                <Activity className="h-4 w-4" /> URGENT QUEST
+                            </h3>
+                        </div>
+                        <WorldEventCard event={activeEvent} userContribution={userContribution} isMobile={isMobile} />
+                    </div>
+                )}
+            </div>
         </section>
     );
 };

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Bot, Send, LoaderCircle, Mic, MicOff } from 'lucide-react';
+import { Bot, Send, LoaderCircle, Mic, MicOff, Terminal, Cpu } from 'lucide-react';
 import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -151,60 +151,88 @@ const AIChatViewComponent = () => {
 
 
     return (
-        <div className="h-full flex flex-col bg-background relative">
-             <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)]"></div>
+        <div className="h-full flex flex-col bg-black relative overflow-hidden font-mono">
+             {/* Background Grid */}
+             <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.03)_1px,transparent_1px)] bg-[size:30px_30px] -z-10 pointer-events-none"></div>
+             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black -z-10 pointer-events-none"></div>
 
-             <div className={cn("flex-shrink-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-sm", isMobile ? "p-2" : "p-4 md:p-6")}>
-                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Arquiteto</h1>
-                <p className={cn("text-muted-foreground", isMobile ? "mt-1 text-xs" : "mt-1")}>A sua linha de comunicação direta com a IA que gere o seu progresso.</p>
+             <div className={cn("flex-shrink-0 z-10 border-b border-blue-900/50 bg-black/80 backdrop-blur-md", isMobile ? "p-3" : "p-4")}>
+                <div className="flex items-center gap-3">
+                    <div className="p-2 border border-blue-500/30 bg-blue-900/10">
+                        <Terminal className="h-6 w-6 text-blue-400" />
+                    </div>
+                    <div>
+                        <h1 className={cn("font-bold text-white font-cinzel tracking-[0.15em] uppercase drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]", isMobile ? "text-xl" : "text-2xl")}>
+                            SYSTEM ARCHITECT
+                        </h1>
+                        <p className={cn("text-blue-500/50 font-mono text-xs tracking-widest uppercase mt-0.5", isMobile ? "text-[10px]" : "text-xs")}>
+                            DIRECT INTERFACE LINK ESTABLISHED
+                        </p>
+                    </div>
+                </div>
             </div>
             
-            <ScrollArea className="flex-grow z-10" ref={scrollAreaRef}>
-                 <div className={cn("mx-auto space-y-6", isMobile ? "p-2 max-w-full" : "p-4 md:p-6 max-w-4xl")}>
+            <ScrollArea className="flex-grow z-10 p-4" ref={scrollAreaRef}>
+                 <div className={cn("mx-auto space-y-6 max-w-4xl", isMobile ? "p-0" : "p-2")}>
                     {messages.map((msg, index) => (
-                        <div key={index} className={cn("flex items-start gap-3", msg.sender === 'user' && 'justify-end')}>
-                            {msg.sender === 'ai' && <Bot className={cn("text-cyan-400 flex-shrink-0 border-2 border-cyan-400/50 rounded-full p-1.5", isMobile ? "h-6 w-6 mt-1" : "h-8 w-8 mt-1")} />}
+                        <div key={index} className={cn("flex items-start gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300", msg.sender === 'user' && 'flex-row-reverse')}>
                             <div className={cn(
-                                "rounded-lg", 
-                                msg.sender === 'user' 
-                                ? 'bg-card border border-border text-foreground shadow-lg' 
-                                : 'bg-transparent text-muted-foreground',
-                                isMobile ? "p-2 text-sm max-w-[85%]" : "p-4 text-base max-w-2xl"
+                                "flex-shrink-0 w-8 h-8 flex items-center justify-center border",
+                                msg.sender === 'ai' ? "border-blue-500 bg-blue-950/30" : "border-gray-500 bg-gray-900/30"
                             )}>
-                                <p className={cn("whitespace-pre-wrap font-sans", isMobile ? "leading-relaxed" : "leading-relaxed")}>{msg.text}</p>
+                                {msg.sender === 'ai' ? <Cpu className="h-5 w-5 text-blue-400" /> : <span className="font-mono text-gray-400 font-bold">P1</span>}
+                            </div>
+                            
+                            <div className={cn(
+                                "relative max-w-[85%] p-4 border text-sm font-mono leading-relaxed", 
+                                msg.sender === 'user' 
+                                ? 'bg-gray-900/50 border-gray-700 text-gray-300' 
+                                : 'bg-blue-950/20 border-blue-500/30 text-blue-100 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+                            )}>
+                                {/* Corner Accents for AI messages */}
+                                {msg.sender === 'ai' && (
+                                    <>
+                                        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500" />
+                                        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500" />
+                                    </>
+                                )}
+                                <p className="whitespace-pre-wrap">{msg.text}</p>
                             </div>
                         </div>
                     ))}
                     {isLoading && (
-                         <div className={cn("flex items-start gap-3 animate-in fade-in-50 duration-500", isMobile ? "" : "")}>
-                             <Bot className={cn("text-cyan-400 flex-shrink-0 border-2 border-cyan-400/50 rounded-full p-1.5", isMobile ? "h-6 w-6 mt-1" : "h-8 w-8 mt-1")} />
-                             <div className={cn("rounded-lg space-y-2 w-full", isMobile ? "p-2" : "p-4")}>
-                                 <Skeleton className={cn("", isMobile ? "h-3 w-4/5" : "h-4 w-4/5")} />
-                                 <Skeleton className={cn("", isMobile ? "h-3 w-full" : "h-4 w-full")} />
-                                 <Skeleton className={cn("", isMobile ? "h-3 w-2/3" : "h-4 w-2/3")} />
+                         <div className={cn("flex items-start gap-4 animate-pulse")}>
+                             <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center border border-blue-500 bg-blue-950/30">
+                                <Cpu className="h-5 w-5 text-blue-400" />
+                             </div>
+                             <div className="p-4 bg-blue-950/10 border border-blue-500/20 w-full max-w-md">
+                                 <div className="h-2 w-24 bg-blue-500/30 mb-2" />
+                                 <div className="h-2 w-full bg-blue-500/20 mb-1" />
+                                 <div className="h-2 w-2/3 bg-blue-500/20" />
+                                 <span className="text-[10px] text-blue-500/50 mt-2 block animate-pulse">PROCESSING DATA...</span>
                              </div>
                          </div>
                      )}
                  </div>
             </ScrollArea>
 
-            <div className={cn("flex-shrink-0 z-10 bg-background/80 backdrop-blur-sm border-t border-border/50", isMobile ? "p-2" : "p-4 md:p-6")}>
-                <div className={cn("mx-auto bg-card border border-border rounded-lg flex items-center shadow-lg", isMobile ? "p-1.5" : "p-2")}>
-                    <span className={cn("text-cyan-400 font-mono select-none", isMobile ? "text-base pl-2 pr-1.5" : "text-lg pl-3 pr-2")}>&gt;</span>
+            <div className={cn("flex-shrink-0 z-10 bg-black border-t border-blue-900/50 p-4", isMobile ? "p-3" : "")}>
+                <div className={cn("mx-auto max-w-4xl flex items-center gap-2 relative")}>
+                    <div className="absolute left-0 w-1 h-full bg-blue-500/50" />
                     <Input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder={isDataLoaded ? (isListening ? "A escutar..." : "Digite sua diretiva...") : "A aguardar conexão com o Sistema..."}
-                        className={cn("flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground", isMobile ? "text-sm" : "text-base")}
+                        placeholder={isDataLoaded ? (isListening ? "LISTENING..." : "ENTER COMMAND...") : "ESTABLISHING CONNECTION..."}
+                        className={cn("flex-1 bg-blue-950/10 border-none focus-visible:ring-0 text-blue-100 font-mono placeholder:text-blue-500/30 rounded-none h-12 pl-4", isMobile ? "text-xs" : "text-sm")}
                         disabled={isLoading || !isDataLoaded}
                     />
-                    <Button onClick={handleMicClick} variant="ghost" size="icon" disabled={!isDataLoaded || isLoading} className={cn(isListening && "text-red-500", isMobile ? "h-8 w-8" : "")}>
-                        {isListening ? <MicOff className={isMobile ? "h-4 w-4" : ""} /> : <Mic className={isMobile ? "h-4 w-4" : ""} />}
+                    <Button onClick={handleMicClick} variant="ghost" size="icon" disabled={!isDataLoaded || isLoading} className={cn("h-12 w-12 rounded-none border border-blue-900/30 bg-blue-950/20 hover:bg-blue-900/40 hover:text-blue-400 text-blue-500/50", isListening && "text-red-500 border-red-500/50 bg-red-950/20 animate-pulse")}>
+                        {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                     </Button>
-                    <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className={cn("bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0", isMobile ? "h-8 w-8" : "")}>
-                        {isLoading ? <LoaderCircle className={cn("animate-spin", isMobile ? "h-4 w-4" : "")} /> : <Send className={cn("", isMobile ? "h-4 w-4" : "h-5 w-5")} />}
+                    <Button onClick={handleSend} disabled={isLoading || !input.trim() || !isDataLoaded} size="icon" className={cn("h-12 w-12 bg-blue-600 hover:bg-blue-500 text-white rounded-none shadow-[0_0_10px_rgba(37,99,235,0.4)]")}>
+                        {isLoading ? <LoaderCircle className="animate-spin h-5 w-5" /> : <Send className="h-5 w-5" />}
                     </Button>
                 </div>
             </div>

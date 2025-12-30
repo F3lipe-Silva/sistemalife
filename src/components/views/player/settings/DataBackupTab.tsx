@@ -91,97 +91,101 @@ export default function DataBackupTab() {
     };
 
     return (
-        <Card className={isMobile ? "p-2" : ""}>
-            <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
-                <CardTitle className={isMobile ? "text-lg" : ""}>Dados & Integrações</CardTitle>
-                <CardDescription className={isMobile ? "text-xs" : ""}>
-                    Faça o download dos seus dados, restaure-os a partir de um backup e gira as suas integrações.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className={cn("space-y-6", isMobile && "space-y-4 p-3")}>
-                 <div className={cn(
-                    "flex items-start justify-between gap-4 rounded-lg border border-border p-4",
-                    isMobile ? "flex-col p-2 gap-2" : "flex-row p-4"
-                 )}>
-                    <div className={isMobile ? "space-y-1" : ""}>
-                        <p className={cn("font-bold text-foreground", isMobile ? "text-sm" : "")}>Exportar os seus dados</p>
-                        <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>
-                            Crie um ficheiro JSON com todo o seu progresso, incluindo perfil, metas, missões, habilidades e rotinas.
-                        </p>
-                    </div>
-                    <Button onClick={handleExportData} className={cn("w-full sm:w-auto", isMobile ? "text-xs py-1 h-8" : "")} disabled={!isDataLoaded}>
-                        <Download className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                        {isMobile ? "Backup" : "Descarregar Backup"}
-                    </Button>
-                </div>
-                
-                <Separator className={isMobile ? "my-2" : ""} />
+        <div className={cn("space-y-6", isMobile && "space-y-4")}>
+            <div className="bg-black/60 border border-blue-900/30 p-6 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/50" />
+                <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/50" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
 
-                <div className={cn(
-                    "flex flex-col gap-4 rounded-lg border border-destructive/30 p-4",
-                    isMobile ? "p-2 gap-2" : "p-4"
-                )}>
-                     <div>
-                        <div className="flex items-center gap-2">
-                             <AlertTriangle className={cn("text-destructive", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                            <p className={cn("font-bold text-destructive", isMobile ? "text-sm" : "")}>Importar dados de um backup</p>
+                <div className="mb-6 border-b border-blue-900/30 pb-2">
+                    <h3 className={cn("font-bold font-cinzel text-white uppercase tracking-widest flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                        DATA ARCHIVES
+                    </h3>
+                    <p className={cn("font-mono text-blue-400/50 text-xs", isMobile ? "text-[10px]" : "")}>MANAGE SYSTEM MEMORY BANKS</p>
+                </div>
+
+                <div className={cn("space-y-6", isMobile && "space-y-4")}>
+                     <div className={cn(
+                        "flex items-start justify-between gap-4 border border-blue-900/20 bg-blue-950/5 p-4",
+                        isMobile ? "flex-col p-3 gap-3" : "flex-row"
+                     )}>
+                        <div className={isMobile ? "space-y-1" : ""}>
+                            <p className={cn("font-bold text-white font-mono uppercase tracking-wide", isMobile ? "text-sm" : "")}>EXPORT SYSTEM DATA</p>
+                            <p className={cn("text-gray-500 font-mono text-xs", isMobile ? "text-[10px]" : "text-xs")}>
+                                CREATE JSON BACKUP OF CURRENT PROGRESS STATE.
+                            </p>
                         </div>
-                        <p className={cn("text-muted-foreground mt-1", isMobile ? "text-xs" : "text-sm")}>
-                            Esta ação é destrutiva e irá substituir todos os seus dados atuais pelos dados do ficheiro de backup. Use com cuidado.
-                        </p>
+                        <Button onClick={handleExportData} className={cn("bg-blue-600 hover:bg-blue-500 text-white rounded-none font-mono text-xs uppercase tracking-widest h-9", isMobile ? "w-full" : "w-auto")} disabled={!isDataLoaded}>
+                            <Download className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                            DOWNLOAD ARCHIVE
+                        </Button>
                     </div>
+                    
+                    <Separator className="bg-blue-900/30" />
 
                     <div className={cn(
-                        "flex items-center gap-4",
-                        isMobile ? "flex-col gap-2" : "flex-row"
+                        "flex flex-col gap-4 border border-red-500/20 bg-red-950/5 p-4",
+                        isMobile ? "p-3 gap-3" : "p-4"
                     )}>
-                         <Input 
-                            type="file" 
-                            accept=".json"
-                            onChange={handleFileSelect}
-                            className={cn(
-                                "flex-grow file:mr-4 file:rounded-full file:border-0 file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20",
-                                isMobile 
-                                    ? "text-xs file:py-1 file:px-2 file:text-xs h-8" 
-                                    : "file:py-2 file:px-4 file:text-sm h-10"
-                            )}
-                            disabled={isImporting}
-                        />
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className={cn("w-full sm:w-auto", isMobile ? "text-xs py-1 h-8" : "")} disabled={!selectedFile || isImporting}>
-                                    {isImporting ? <LoaderCircle className={cn("animate-spin mr-2", isMobile ? "h-3 w-3" : "")} /> : <Upload className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />}
-                                    {isImporting ? (isMobile ? "A importar..." : "A importar...") : (isMobile ? "Importar" : "Importar Dados")}
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className={isMobile ? "p-4" : ""}>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle className={isMobile ? "text-sm" : ""}>Tem a certeza absoluta?</AlertDialogTitle>
-                                    <AlertDialogDescription className={isMobile ? "text-xs" : ""}>
-                                        Esta ação irá **substituir permanentemente** todos os seus dados atuais pelos dados do ficheiro <span className="font-bold text-foreground">{selectedFile?.name}</span>. Esta operação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-                                    <AlertDialogCancel disabled={isImporting} className={isMobile ? "text-xs py-1 h-8" : ""}>
-                                        {isMobile ? "Cancelar" : "Cancelar"}
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction 
-                                        onClick={onImportConfirm} 
-                                        disabled={isImporting} 
-                                        className={cn(
-                                            "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
-                                            isMobile ? "text-xs py-1 h-8" : ""
-                                        )}
-                                    >
-                                        {isMobile ? "Substituir" : "Sim, substituir tudo"}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
+                         <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                 <AlertTriangle className={cn("text-red-500", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                                <p className={cn("font-bold text-red-500 font-mono uppercase tracking-wide", isMobile ? "text-sm" : "")}>OVERWRITE PROTOCOL</p>
+                            </div>
+                            <p className={cn("text-red-400/60 font-mono text-xs", isMobile ? "text-[10px]" : "text-xs")}>
+                                WARNING: IMPORTING DATA WILL PERMANENTLY ERASE CURRENT SESSION.
+                            </p>
+                        </div>
 
+                        <div className={cn(
+                            "flex items-center gap-4",
+                            isMobile ? "flex-col gap-3" : "flex-row"
+                        )}>
+                             <Input 
+                                type="file" 
+                                accept=".json"
+                                onChange={handleFileSelect}
+                                className={cn(
+                                    "flex-grow bg-black/40 border-red-900/30 text-red-200 font-mono text-xs h-10 rounded-none file:bg-red-900/20 file:text-red-400 file:border-0 file:mr-4 file:py-2 file:px-4 hover:file:bg-red-900/40 cursor-pointer",
+                                    isMobile ? "text-[10px] h-9 file:py-1 file:px-2 file:text-[10px]" : ""
+                                )}
+                                disabled={isImporting}
+                            />
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className={cn("bg-red-900/20 border border-red-500/50 text-red-500 hover:bg-red-900/40 hover:text-white rounded-none font-mono text-xs uppercase tracking-widest h-10", isMobile ? "w-full h-9" : "w-auto")} disabled={!selectedFile || isImporting}>
+                                        {isImporting ? <LoaderCircle className={cn("animate-spin mr-2", isMobile ? "h-3 w-3" : "")} /> : <Upload className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />}
+                                        {isImporting ? "IMPORTING..." : "INITIATE OVERWRITE"}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-black/95 border-2 border-red-600 shadow-[0_0_30px_rgba(220,38,38,0.3)]">
+                                    <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(220,38,38,0.05)_10px,rgba(220,38,38,0.05)_20px)] pointer-events-none" />
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-red-500 font-mono uppercase tracking-widest">CRITICAL WARNING</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-gray-400 font-mono text-xs">
+                                            This action will trigger a complete system rewrite using data from <span className="text-white font-bold">{selectedFile?.name}</span>. Current progress will be lost forever.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                                        <AlertDialogCancel disabled={isImporting} className="bg-transparent border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-none font-mono text-xs uppercase tracking-widest">
+                                            ABORT
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                            onClick={onImportConfirm} 
+                                            disabled={isImporting} 
+                                            className="bg-red-600 hover:bg-red-500 text-white rounded-none font-mono text-xs uppercase tracking-widest border border-red-400"
+                                        >
+                                            CONFIRM OVERWRITE
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+
+                    </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

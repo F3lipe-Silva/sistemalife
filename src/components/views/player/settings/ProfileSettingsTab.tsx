@@ -157,55 +157,69 @@ export default function ProfileSettingsTab() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-6", isMobile ? "space-y-4" : "space-y-8")}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className={isMobile ? "text-lg" : ""}>Informações do Caçador</CardTitle>
-                        <CardDescription className={isMobile ? "text-xs" : ""}>Edite os seus dados de identificação.</CardDescription>
-                    </CardHeader>
-                    <CardContent className={cn("grid gap-4", isMobile ? "gap-3" : "gap-8", isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3")}>
-                        <div className={cn("flex flex-col items-center gap-3", isMobile ? "gap-2" : "gap-4", isMobile ? "" : "md:col-span-1")}>
-                            <div className={cn("w-full border-2 border-border p-1 bg-secondary relative", isMobile ? "max-w-[120px] aspect-[4/5]" : "max-w-[200px] aspect-[4/5]")}>
+                <div className="bg-black/60 border border-blue-900/30 p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/50" />
+                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/50" />
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
+
+                    <div className="mb-6 border-b border-blue-900/30 pb-2">
+                        <h3 className={cn("font-bold font-cinzel text-white uppercase tracking-widest flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                            <span className="text-blue-500">ID</span> IDENTIFICATION DATA
+                        </h3>
+                        <p className={cn("font-mono text-blue-400/50 text-xs", isMobile ? "text-[10px]" : "")}>UPDATE PLAYER CREDENTIALS</p>
+                    </div>
+
+                    <div className={cn("grid gap-8", isMobile ? "grid-cols-1 gap-6" : "grid-cols-1 md:grid-cols-3")}>
+                        {/* Avatar Section */}
+                        <div className={cn("flex flex-col items-center gap-4", isMobile ? "" : "md:col-span-1")}>
+                            <div className={cn("w-full border-2 border-blue-500/30 bg-blue-950/10 relative p-1", isMobile ? "max-w-[140px] aspect-[4/5]" : "max-w-[200px] aspect-[4/5]")}>
+                                <div className="absolute top-0 left-0 w-full h-full border border-blue-500/10 pointer-events-none" />
                                 <Avatar className="w-full h-full rounded-none">
                                     <AvatarImage src={watchedAvatarUrl} alt={form.getValues('primeiro_nome')} className="object-cover" />
-                                    <AvatarFallback className="bg-muted rounded-none text-muted-foreground text-4xl">
+                                    <AvatarFallback className="bg-blue-950 rounded-none text-blue-400 text-4xl font-cinzel">
                                         {form.getValues('primeiro_nome')?.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
                                 {isGeneratingAvatar && (
-                                    <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                                        <LoaderCircle className={cn("text-primary animate-spin", isMobile ? "h-6 w-6" : "h-10 w-10")} />
+                                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center border border-blue-500/50">
+                                        <LoaderCircle className={cn("text-blue-500 animate-spin mb-2", isMobile ? "h-6 w-6" : "h-8 w-8")} />
+                                        <span className="text-[10px] font-mono text-blue-400 animate-pulse">GENERATING...</span>
                                     </div>
                                 )}
                             </div>
-                            <Button type="button" onClick={handleGenerateAvatar} disabled={isGeneratingAvatar} className={cn("w-full", isMobile ? "max-w-[120px] h-8 text-xs" : "max-w-[200px]")}>
+                            <Button type="button" onClick={handleGenerateAvatar} disabled={isGeneratingAvatar} className={cn("w-full bg-blue-900/20 hover:bg-blue-900/40 border border-blue-500/30 text-blue-300 font-mono text-xs uppercase tracking-widest rounded-none", isMobile ? "max-w-[140px] h-8" : "max-w-[200px]")}>
                                 <Wand2 className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                {isGeneratingAvatar ? (isMobile ? "Gerando..." : "A gerar...") : "Gerar com IA"}
+                                {isGeneratingAvatar ? "PROCESSING" : "AI GENERATION"}
                             </Button>
+                            
                             <FormField
                                 control={form.control}
                                 name="avatar_url"
                                 render={({ field }) => (
-                                    <FormItem className={cn("w-full", isMobile ? "max-w-[120px]" : "max-w-[200px]")}>
-                                        <FormLabel className={isMobile ? "text-xs" : ""}>URL do Avatar</FormLabel>
+                                    <FormItem className={cn("w-full", isMobile ? "max-w-[140px]" : "max-w-[200px]")}>
+                                        <FormLabel className="text-[10px] font-mono text-blue-500/70 uppercase">IMAGE SOURCE URL</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="https://..." {...field} className={isMobile ? "h-8 text-xs" : ""} />
+                                            <Input placeholder="HTTPS://..." {...field} className={cn("h-8 bg-black/40 border-blue-900/30 text-blue-100 font-mono text-xs rounded-none focus-visible:ring-blue-500/50", isMobile ? "text-[10px]" : "")} />
                                         </FormControl>
-                                        <FormMessage className={isMobile ? "text-xs" : ""} />
+                                        <FormMessage className="text-[10px] font-mono text-red-400" />
                                     </FormItem>
                                 )}
                             />
                         </div>
-                        <div className={cn("grid gap-4", isMobile ? "gap-3" : "gap-6", isMobile ? "grid-cols-1" : "md:col-span-2 grid-cols-1 sm:grid-cols-2")}>
+
+                        {/* Fields Section */}
+                        <div className={cn("grid gap-5", isMobile ? "gap-4" : "md:col-span-2 grid-cols-1 sm:grid-cols-2 content-start")}>
                             <FormField
                                 control={form.control}
                                 name="primeiro_nome"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={isMobile ? "text-xs" : ""}>Primeiro Nome</FormLabel>
+                                        <FormLabel className="text-xs font-mono text-blue-400 uppercase tracking-widest">FIRST NAME</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Seu nome" {...field} className={isMobile ? "h-8 text-sm" : ""} />
+                                            <Input placeholder="ENTER NAME" {...field} className="bg-black/40 border-blue-900/30 text-white font-mono rounded-none focus-visible:ring-blue-500/50 h-10" />
                                         </FormControl>
-                                        <FormMessage className={isMobile ? "text-xs" : ""} />
+                                        <FormMessage className="text-[10px] font-mono text-red-400" />
                                     </FormItem>
                                 )}
                             />
@@ -214,11 +228,11 @@ export default function ProfileSettingsTab() {
                                 name="apelido"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={isMobile ? "text-xs" : ""}>Apelido</FormLabel>
+                                        <FormLabel className="text-xs font-mono text-blue-400 uppercase tracking-widest">CODENAME</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Seu apelido" {...field} className={isMobile ? "h-8 text-sm" : ""} />
+                                            <Input placeholder="ENTER ALIAS" {...field} className="bg-black/40 border-blue-900/30 text-white font-mono rounded-none focus-visible:ring-blue-500/50 h-10" />
                                         </FormControl>
-                                        <FormMessage className={isMobile ? "text-xs" : ""} />
+                                        <FormMessage className="text-[10px] font-mono text-red-400" />
                                     </FormItem>
                                 )}
                             />
@@ -227,11 +241,11 @@ export default function ProfileSettingsTab() {
                                 name="genero"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={isMobile ? "text-xs" : ""}>Género</FormLabel>
+                                        <FormLabel className="text-xs font-mono text-blue-400 uppercase tracking-widest">GENDER</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Não especificado" {...field} className={isMobile ? "h-8 text-sm" : ""} />
+                                            <Input placeholder="UNSPECIFIED" {...field} className="bg-black/40 border-blue-900/30 text-white font-mono rounded-none focus-visible:ring-blue-500/50 h-10" />
                                         </FormControl>
-                                        <FormMessage className={isMobile ? "text-xs" : ""} />
+                                        <FormMessage className="text-[10px] font-mono text-red-400" />
                                     </FormItem>
                                 )}
                             />
@@ -240,36 +254,43 @@ export default function ProfileSettingsTab() {
                                 name="nacionalidade"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={isMobile ? "text-xs" : ""}>Nacionalidade</FormLabel>
+                                        <FormLabel className="text-xs font-mono text-blue-400 uppercase tracking-widest">ORIGIN</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Não especificada" {...field} className={isMobile ? "h-8 text-sm" : ""} />
+                                            <Input placeholder="UNKNOWN" {...field} className="bg-black/40 border-blue-900/30 text-white font-mono rounded-none focus-visible:ring-blue-500/50 h-10" />
                                         </FormControl>
-                                        <FormMessage className={isMobile ? "text-xs" : ""} />
+                                        <FormMessage className="text-[10px] font-mono text-red-400" />
                                     </FormItem>
                                 )}
                             />
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className={isMobile ? "text-lg" : ""}>Privacidade & Visibilidade</CardTitle>
-                        <CardDescription className={isMobile ? "text-xs" : ""}>Controle como os seus dados são vistos e utilizados.</CardDescription>
-                    </CardHeader>
-                    <CardContent className={cn("space-y-3", isMobile ? "space-y-2 p-3" : "space-y-4")}>
+                 <div className="bg-black/60 border border-blue-900/30 p-6 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-blue-500/50" />
+                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-blue-500/50" />
+                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
+
+                    <div className="mb-4 border-b border-blue-900/30 pb-2">
+                        <h3 className={cn("font-bold font-cinzel text-white uppercase tracking-widest", isMobile ? "text-base" : "text-lg")}>PRIVACY PROTOCOLS</h3>
+                        <CardDescription className={cn("font-mono text-blue-400/50 text-xs mt-1", isMobile ? "text-[10px]" : "")}>CONFIGURE DATA VISIBILITY PARAMETERS</CardDescription>
+                    </div>
+                    
+                    <div className="space-y-4">
                         <FormField
                             control={form.control}
                             name="privacy_settings.profile_visibility"
                             render={({ field }) => (
-                                <FormItem className={cn("flex items-center justify-between rounded-lg border", isMobile ? "p-2" : "p-4")}>
+                                <FormItem className={cn("flex items-center justify-between p-3 border border-blue-900/20 bg-blue-950/5", isMobile ? "p-2" : "")}>
                                     <div className="space-y-0.5">
-                                        <FormLabel className={isMobile ? "text-sm" : "text-base"}>Perfil Público</FormLabel>
+                                        <FormLabel className="text-sm font-mono text-blue-300 uppercase">PUBLIC PROFILE</FormLabel>
                                     </div>
                                     <FormControl>
                                         <Switch
                                             checked={field.value === 'public'}
                                             onCheckedChange={(checked) => field.onChange(checked ? 'public' : 'private')}
+                                            className="data-[state=checked]:bg-blue-600"
                                         />
                                     </FormControl>
                                 </FormItem>
@@ -279,29 +300,30 @@ export default function ProfileSettingsTab() {
                             control={form.control}
                             name="privacy_settings.analytics_opt_in"
                             render={({ field }) => (
-                                <FormItem className={cn("flex items-center justify-between rounded-lg border", isMobile ? "p-2" : "p-4")}>
+                                <FormItem className={cn("flex items-center justify-between p-3 border border-blue-900/20 bg-blue-950/5", isMobile ? "p-2" : "")}>
                                     <div className="space-y-0.5">
-                                        <FormLabel className={isMobile ? "text-sm" : "text-base"}>Análise de Dados do Sistema</FormLabel>
-                                        <FormDescription className={isMobile ? "text-xs" : ""}>
-                                           Permitir que o Sistema utilize os seus dados de progresso para melhorar os algoritmos de sugestão.
+                                        <FormLabel className="text-sm font-mono text-blue-300 uppercase">SYSTEM DATA ANALYSIS</FormLabel>
+                                        <FormDescription className="text-[10px] font-mono text-blue-500/50">
+                                           ALLOW SYSTEM OPTIMIZATION BASED ON PERFORMANCE.
                                         </FormDescription>
                                     </div>
                                     <FormControl>
                                         <Switch
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
+                                            className="data-[state=checked]:bg-blue-600"
                                         />
                                     </FormControl>
                                 </FormItem>
                             )}
                         />
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
 
-                <div className="flex justify-end">
-                     <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved} className={isMobile ? "h-8 text-sm" : ""}>
-                        {isSaving ? <LoaderCircle className={cn("animate-spin", isMobile ? "h-4 w-4" : "")} /> : justSaved ? <Check className={isMobile ? "h-4 w-4" : ""} /> : (isMobile ? "Salvar" : "Salvar Alterações")}
+                <div className="flex justify-end pt-4 border-t border-blue-900/30">
+                     <Button type="submit" disabled={isSaving || !form.formState.isDirty || justSaved} className={cn("bg-blue-600 hover:bg-blue-500 text-white font-mono uppercase tracking-widest rounded-none min-w-[150px]", isMobile ? "h-9 text-xs" : "h-10")}>
+                        {isSaving ? <LoaderCircle className="animate-spin mr-2 h-4 w-4" /> : justSaved ? <Check className="mr-2 h-4 w-4" /> : "SAVE CHANGES"}
                     </Button>
                 </div>
             </form>

@@ -132,15 +132,26 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
 
     return (
         <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
-            <div className={cn("flex flex-col gap-4 mb-4", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
-                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Árvore de Habilidades</h1>
-                <Button onClick={() => setShowAddDialog(true)} className={cn("w-full", isMobile ? "sm:w-auto h-9 text-sm" : "sm:w-auto")}>
-                    <PlusCircle className={cn("mr-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                    Adicionar Habilidade
+            <div className={cn("flex flex-col gap-2 mb-6", isMobile ? "sm:flex-row sm:items-center sm:justify-between" : "sm:flex-row sm:items-center sm:justify-between")}>
+                <div>
+                    <h1 className={cn("font-bold text-white font-cinzel tracking-[0.15em] drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]", isMobile ? "text-xl" : "text-3xl")}>
+                        ABILITY TREE
+                    </h1>
+                    <p className={cn("text-blue-400/60 font-mono text-xs tracking-widest uppercase mt-1", isMobile ? "text-[10px]" : "text-sm")}>
+                        PLAYER SKILLS & MASTERY
+                    </p>
+                </div>
+                <Button onClick={() => setShowAddDialog(true)} className={cn("bg-blue-600 hover:bg-blue-500 text-white font-mono uppercase tracking-wider shadow-[0_0_10px_rgba(37,99,235,0.3)]", isMobile ? "w-full h-8 text-xs" : "sm:w-auto")}>
+                    <PlusCircle className={cn("mr-2", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                    ACQUIRE SKILL
                 </Button>
             </div>
-            <p className={cn("text-muted-foreground mb-4", isMobile ? "text-sm" : "mb-8")}>As suas habilidades evoluem automaticamente à medida que você completa missões diárias associadas a uma meta. Mas cuidado, a inatividade prolongada pode levar à Corrupção, causando a perda de XP.</p>
-            <div className={cn("space-y-2", isMobile ? "space-y-2" : "space-y-4")}>
+            
+            <p className={cn("text-blue-300/50 font-mono mb-6 border-l-2 border-blue-500/30 pl-3", isMobile ? "text-[10px] mb-4" : "text-xs mb-8")}>
+                SYSTEM NOTICE: Abilities evolve through combat and daily tasks. Prolonged inactivity results in <span className="text-purple-400 font-bold animate-pulse">DATA CORRUPTION</span> (XP Decay).
+            </p>
+
+            <div className={cn("space-y-3", isMobile ? "space-y-2" : "space-y-4")}>
                 {skills.map((skill: any) => {
                     const skillProgress = (skill.xp_atual / skill.xp_para_proximo_nivel) * 100;
                     const stats: string[] = statCategoryMapping[skill.categoria as keyof typeof statCategoryMapping] || [];
@@ -153,103 +164,111 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
 
                     return(
                     <div key={skill.id} className={cn(
-                        "bg-gradient-to-br from-card/80 to-card/40 border border-l-4 rounded-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01]",
-                        isMobile ? "p-2" : "p-4",
-                        isDecaying ? "border-purple-600 animate-pulse-slow shadow-purple-500/20" : getSkillColor(skill.categoria),
-                        isAtRisk && "border-yellow-500 shadow-yellow-500/20"
+                        "relative bg-black/60 border rounded-sm transition-all duration-300 group overflow-hidden",
+                        isMobile ? "p-3" : "p-5",
+                        isDecaying ? "border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]" : "border-blue-900/40 hover:border-blue-500/50 hover:shadow-[0_0_10px_rgba(59,130,246,0.1)]",
+                        isAtRisk && "border-yellow-500/50"
                     )}>
-                        <div className={cn("flex flex-col gap-3", isMobile ? "sm:flex-row sm:items-start" : "sm:flex-row sm:items-start")}>
+                        {/* Corruption Effect Overlay */}
+                        {isDecaying && (
+                            <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-10 pointer-events-none mix-blend-overlay animate-pulse-slow" />
+                        )}
+
+                        <div className={cn("flex flex-col gap-4", isMobile ? "sm:flex-row sm:items-start" : "sm:flex-row sm:items-start")}>
                             <div className="flex-1 min-w-0">
-                                <div className={cn("flex justify-between items-start", isMobile ? "flex-wrap gap-1" : "")}>
-                                    <div className={cn("flex items-center gap-1 min-w-0", isMobile ? "gap-1" : "gap-2")}>
-                                        {(isDecaying || isAtRisk) && (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <AlertTriangle className={cn("flex-shrink-0", isMobile ? "h-4 w-4" : "h-5 w-5", isDecaying ? "text-purple-500" : "text-yellow-500")} />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p className={isMobile ? "text-xs" : ""}>{isDecaying ? "Esta habilidade está a perder XP por inatividade!" : "Esta habilidade entrará em declínio em breve."}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        )}
-                                        <p className={cn("font-bold text-foreground break-words", isMobile ? "text-base" : "text-lg")}>{skill.nome}</p>
+                                <div className={cn("flex justify-between items-start", isMobile ? "flex-wrap gap-2" : "")}>
+                                    <div className={cn("flex items-center gap-3 min-w-0")}>
+                                        <div className={cn("p-2 border bg-black/40", isDecaying ? "border-purple-500/50 text-purple-400" : "border-blue-500/30 text-blue-400")}>
+                                            {isDecaying || isAtRisk ? (
+                                                <AlertTriangle className={cn("flex-shrink-0 animate-pulse", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                                            ) : (
+                                                <Zap className={cn("flex-shrink-0", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className={cn("font-bold text-white font-mono uppercase tracking-wide break-words", isMobile ? "text-sm" : "text-lg")}>{skill.nome}</p>
+                                            {associatedMeta && (
+                                                <div className={cn("flex items-center gap-1 text-[10px] text-blue-400/50 font-mono mt-0.5")}>
+                                                    <Link2 className="h-3 w-3" />
+                                                    <span className="truncate uppercase">LINK: {associatedMeta.nome}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                     <div className="flex items-center">
+                                     <div className="flex items-center gap-1">
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                     <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-primary", isMobile ? "h-7 w-7" : "h-8 w-8")} aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => spendDungeonCrystal(skill.id)} disabled={(profile?.dungeon_crystals || 0) <= 0}>
-                                                        <KeySquare className={cn("", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
+                                                     <Button variant="ghost" size="icon" className={cn("text-blue-400/50 hover:text-blue-400 hover:bg-blue-500/10 rounded-none h-8 w-8")} aria-label={`Entrar na masmorra de ${skill.nome}`} onClick={() => spendDungeonCrystal(skill.id)} disabled={(profile?.dungeon_crystals || 0) <= 0}>
+                                                        <KeySquare className={cn("", isMobile ? "h-4 w-4" : "h-4 w-4")} />
                                                     </Button>
                                                 </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p className={isMobile ? "text-xs" : ""}>Usar Cristal da Masmorra ({(profile?.dungeon_crystals || 0)})</p>
+                                                <TooltipContent className="bg-black border-blue-500/30 text-xs font-mono">
+                                                    <p>USE DUNGEON KEY ({(profile?.dungeon_crystals || 0)})</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className={cn("text-muted-foreground hover:text-red-400", isMobile ? "h-7 w-7" : "h-8 w-8")} aria-label={`Excluir habilidade ${skill.nome}`}>
-                                                    <Trash2 className={cn("", isMobile ? "h-3.5 w-3.5" : "h-4 w-4")} />
+                                                <Button variant="ghost" size="icon" className={cn("text-red-400/50 hover:text-red-400 hover:bg-red-500/10 rounded-none h-8 w-8")} aria-label={`Excluir habilidade ${skill.nome}`}>
+                                                    <Trash2 className={cn("", isMobile ? "h-4 w-4" : "h-4 w-4")} />
                                                 </Button>
                                             </AlertDialogTrigger>
-                                            <AlertDialogContent>
+                                            <AlertDialogContent className="bg-black/95 border-red-900/50">
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle className={isMobile ? "text-lg" : ""}>Excluir Habilidade?</AlertDialogTitle>
-                                                    <AlertDialogDescription className={isMobile ? "text-sm" : ""}>
-                                                        Tem a certeza que quer excluir a habilidade "{skill.nome}"? Isto irá apenas desvinculá-la da meta associada.
+                                                    <AlertDialogTitle className={isMobile ? "text-lg text-red-500 font-mono" : "text-xl text-red-500 font-mono"}>CONFIRM DELETION</AlertDialogTitle>
+                                                    <AlertDialogDescription className={isMobile ? "text-xs font-mono text-gray-400" : "text-sm font-mono text-gray-400"}>
+                                                        Deleting ability "{skill.nome}" will sever its connection to the associated objective. This action cannot be undone.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-                                                    <AlertDialogCancel className={isMobile ? "h-8 text-sm" : ""}>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)} className={isMobile ? "h-8 text-sm" : ""}>Sim, Excluir</AlertDialogAction>
+                                                    <AlertDialogCancel className="bg-transparent border-gray-700 text-gray-400 hover:bg-gray-800 rounded-none font-mono text-xs">CANCEL</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteSkill(skill.id)} className="bg-red-900/20 border border-red-500/50 text-red-500 hover:bg-red-900/40 rounded-none font-mono text-xs">DELETE</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </div>
                                 </div>
-                                <p className={cn("text-muted-foreground mt-1 break-words", isMobile ? "text-xs" : "text-sm")}>{skill.descricao}</p>
-                                
-                                {associatedMeta && (
-                                    <div className={cn("flex items-center gap-1 mt-2 text-primary/80 bg-primary/20 px-2 py-1 rounded-md max-w-max", isMobile ? "text-xs px-1.5 py-0.5" : "")}>
-                                        <Link2 className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                                        <span className="truncate">Vinculado a: {associatedMeta.nome}</span>
-                                    </div>
-                                )}
+                                <p className={cn("text-gray-400/80 mt-2 font-mono text-xs break-words border-l-2 border-blue-500/20 pl-2", isMobile ? "text-[10px]" : "text-xs")}>{skill.descricao}</p>
 
                                 {stats.length > 0 && (
-                                     <div className={cn("flex flex-wrap items-center gap-2 pt-2 mt-2 border-t border-border/50", isMobile ? "gap-2 pt-1.5 mt-1.5" : "")}>
-                                        <strong className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>Aumenta:</strong>
+                                     <div className={cn("flex flex-wrap items-center gap-2 pt-3 mt-3 border-t border-blue-900/20")}>
+                                        <strong className={cn("text-blue-500/50 font-mono uppercase text-[10px]")}>BUFFS:</strong>
                                         <div className="flex flex-wrap items-center gap-2">
                                         {stats.map((stat: string) => (
-                                            <div key={stat} className={cn("flex items-center gap-1 text-foreground", isMobile ? "gap-1" : "gap-1.5")}>
+                                            <div key={stat} className={cn("flex items-center gap-1.5 px-1.5 py-0.5 bg-blue-950/30 border border-blue-500/20 rounded-none")}>
                                                 {statIcons[stat as keyof typeof statIcons]}
-                                                <span className={cn("capitalize", isMobile ? "text-xs" : "text-xs")}>{stat}</span>
+                                                <span className={cn("capitalize text-blue-300 font-mono text-[10px] uppercase")}>{stat}</span>
                                             </div>
                                         ))}
                                         </div>
                                     </div>
                                 )}
                             </div>
-                            <div className={cn("text-center flex-shrink-0 bg-secondary/30 rounded-md sm:bg-transparent sm:p-0 sm:rounded-none w-full sm:w-24", isMobile ? "p-1.5 w-full sm:w-20" : "p-2 sm:w-28")}>
-                                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>Nível</p>
-                                <p className={cn("font-bold text-primary", isMobile ? "text-xl" : "text-2xl")}>{skill.nivel_atual}</p>
-                                <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-xs")}>Máx {skill.nivel_maximo}</p>
+                            
+                            {/* Level Display - System Style */}
+                            <div className={cn("flex flex-col items-center justify-center border border-blue-500/30 bg-blue-950/10 min-w-[80px] p-2", isMobile ? "w-full flex-row justify-between px-4" : "")}>
+                                <div className={cn("text-center", isMobile ? "text-left" : "")}>
+                                    <p className={cn("text-blue-500/50 text-[10px] font-mono uppercase tracking-widest")}>LEVEL</p>
+                                    <p className={cn("font-bold text-white font-mono text-2xl drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]", isMobile ? "text-xl" : "")}>{skill.nivel_atual}</p>
+                                </div>
+                                <div className={cn("text-center", isMobile ? "text-right" : "mt-2 pt-2 border-t border-blue-500/20 w-full")}>
+                                    <p className={cn("text-blue-500/50 text-[10px] font-mono uppercase tracking-widest")}>MAX</p>
+                                    <p className={cn("font-bold text-blue-300 font-mono text-sm")}>{skill.nivel_maximo}</p>
+                                </div>
                             </div>
                         </div>
+                        
                         {skill.nivel_atual > 0 && (
-                             <div className={cn("mt-2", isMobile ? "mt-2" : "mt-3")}>
-                                <div className={cn("flex justify-between text-xs text-muted-foreground mb-1", isMobile ? "text-xs mb-0.5" : "")}>
-                                    <span>XP da Habilidade</span>
-                                    <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel}</span>
+                             <div className={cn("mt-4")}>
+                                <div className={cn("flex justify-between text-[10px] font-mono text-blue-400/60 mb-1 uppercase")}>
+                                    <span>MASTERY PROGRESS</span>
+                                    <span>{skill.xp_atual} / {skill.xp_para_proximo_nivel} XP</span>
                                 </div>
-                                <div className={cn("w-full bg-secondary rounded-full", isMobile ? "h-2" : "h-2.5")}>
+                                <div className={cn("w-full bg-blue-950/30 h-1.5 border border-blue-900/30")}>
                                     <div className={cn(
-                                        "rounded-full transition-all duration-500 shadow-inner",
-                                        isMobile ? "h-2" : "h-2.5",
-                                        isDecaying ? "bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600" : "bg-gradient-to-r from-primary via-primary/80 to-cyan-400"
+                                        "h-full transition-all duration-500 shadow-[0_0_5px_currentColor]",
+                                        isDecaying ? "bg-purple-500 shadow-purple-500/50" : "bg-blue-500 shadow-blue-500/50"
                                      )} style={{ width: `${skillProgress}%` }}></div>
                                 </div>
                             </div>
@@ -259,37 +278,37 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
             </div>
 
             <Dialog open={showAddDialog} onOpenChange={(isOpen) => { if(!isOpen) { setShowAddDialog(false); setSelectedMetaId(null); } else { setShowAddDialog(true); }}}>
-                <DialogContent className={cn("max-w-lg", isMobile ? "max-w-[95vw] p-4" : "")}>
+                <DialogContent className={cn("bg-black/95 border-blue-500/30 max-w-lg", isMobile ? "max-w-[95vw] p-4" : "")}>
                     <DialogHeader>
-                        <DialogTitle className={cn("flex items-center gap-2 text-primary", isMobile ? "text-lg" : "text-xl")}>
-                            <PlusCircle className={isMobile ? "h-5 w-5" : ""}/>
-                            Adicionar Nova Habilidade
+                        <DialogTitle className={cn("flex items-center gap-2 text-white font-cinzel tracking-wider", isMobile ? "text-lg" : "text-xl")}>
+                            <PlusCircle className="text-blue-500"/>
+                            NEW ABILITY ACQUISITION
                         </DialogTitle>
-                        <DialogDescription className={isMobile ? "text-sm" : ""}>
-                            Escolha uma meta existente para criar e associar uma nova habilidade. A IA irá gerar uma habilidade relevante com base na meta selecionada.
+                        <DialogDescription className={isMobile ? "text-xs font-mono text-gray-400" : "text-sm font-mono text-gray-400"}>
+                            Select a target objective to synthesize a new ability. System AI will generate relevant parameters.
                         </DialogDescription>
                     </DialogHeader>
                     <div className={cn("py-4 space-y-4", isMobile ? "py-2 space-y-3" : "")}>
-                        <Label htmlFor="meta-select" className={isMobile ? "text-sm" : ""}>Meta a Vincular</Label>
+                        <Label htmlFor="meta-select" className={cn("text-blue-400 font-mono text-xs uppercase tracking-widest")}>TARGET OBJECTIVE</Label>
                         <Select onValueChange={(value) => setSelectedMetaId(value)} value={selectedMetaId ? String(selectedMetaId) : ''}>
-                            <SelectTrigger id="meta-select" className={cn("w-full", isMobile ? "h-9 text-sm" : "")}>
-                                <SelectValue placeholder="Selecione uma meta..." />
+                            <SelectTrigger id="meta-select" className={cn("w-full bg-blue-950/20 border-blue-500/30 text-white font-mono text-xs rounded-none focus:ring-blue-500/50", isMobile ? "h-9" : "")}>
+                                <SelectValue placeholder="SELECT DATA SOURCE..." />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-black border-blue-500/30 text-white font-mono text-xs">
                                 {metasWithoutSkills.length > 0 ? (
                                     metasWithoutSkills.map((meta: any) => (
-                                        <SelectItem key={meta.id} value={String(meta.id)} className={isMobile ? "text-sm" : ""}>{meta.nome}</SelectItem>
+                                        <SelectItem key={meta.id} value={String(meta.id)} className="focus:bg-blue-900/20">{meta.nome}</SelectItem>
                                     ))
                                 ) : (
-                                    <SelectItem value="none" disabled className={isMobile ? "text-sm" : ""}>Nenhuma meta disponível para vincular.</SelectItem>
+                                    <SelectItem value="none" disabled>NO VALID DATA SOURCES AVAILABLE</SelectItem>
                                 )}
                             </SelectContent>
                         </Select>
                     </div>
                     <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-                        <Button variant="outline" onClick={() => setShowAddDialog(false)} className={isMobile ? "h-8 text-sm" : ""}>Cancelar</Button>
-                        <Button onClick={handleSaveNewSkill} disabled={isLoading || !selectedMetaId} className={isMobile ? "h-8 text-sm" : ""}>
-                            {isLoading ? (isMobile ? 'A gerar...' : 'A gerar...') : 'Criar e Vincular Habilidade'}
+                        <Button variant="outline" onClick={() => setShowAddDialog(false)} className={cn("border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-white rounded-none font-mono text-xs", isMobile ? "h-8" : "")}>CANCEL</Button>
+                        <Button onClick={handleSaveNewSkill} disabled={isLoading || !selectedMetaId} className={cn("bg-blue-600 hover:bg-blue-500 text-white rounded-none font-mono text-xs", isMobile ? "h-8" : "")}>
+                            {isLoading ? 'ANALYZING...' : 'INITIATE SYNTHESIS'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

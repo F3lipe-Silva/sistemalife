@@ -3,7 +3,7 @@
 
 import { achievements as staticAchievements } from '@/lib/achievements';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { CheckCircle, Award, Book, BarChart, Gem, Shield, Flame, Trophy, BrainCircuit, Star, Swords } from 'lucide-react';
+import { CheckCircle, Award, Book, BarChart, Gem, Shield, Flame, Trophy, BrainCircuit, Star, Swords, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { format, parseISO } from 'date-fns';
@@ -65,11 +65,15 @@ export const AchievementsView = () => {
     };
 
     return (
-        <div className={cn("h-full overflow-y-auto", isMobile ? "p-2" : "p-4 md:p-6")}>
-            <div className={cn("mb-4", isMobile ? "mb-4" : "mb-8")}>
-                <h1 className={cn("font-bold text-primary font-cinzel tracking-wider", isMobile ? "text-2xl" : "text-3xl")}>Conquistas</h1>
-                <p className={cn("text-muted-foreground max-w-3xl", isMobile ? "mt-1 text-sm" : "mt-2")}>
-                    Este é o seu mural de honra, Caçador. Cada conquista representa um marco significativo na sua jornada.
+        <div className={cn("h-full overflow-y-auto relative", isMobile ? "p-2" : "p-4 md:p-6")}>
+             <div className="absolute inset-0 bg-grid-cyan-400/10 [mask-image:linear-gradient(to_bottom,white_5%,transparent_80%)] -z-10"></div>
+
+            <div className={cn("mb-8 flex flex-col gap-2 border-b border-blue-900/30 pb-4")}>
+                <h1 className={cn("font-black text-white font-cinzel tracking-[0.1em] uppercase drop-shadow-md", isMobile ? "text-2xl" : "text-3xl")}>
+                    HALL OF FAME
+                </h1>
+                <p className={cn("text-blue-400/60 font-mono text-xs tracking-widest uppercase")}>
+                    ACHIEVEMENT RECORDS
                 </p>
             </div>
 
@@ -90,57 +94,72 @@ export const AchievementsView = () => {
 
 
                     return (
-                        <Card 
+                        <div 
                             key={achievement.id}
                             className={cn(
-                                "bg-card/60 border-2 flex flex-col transition-all duration-300",
-                                isUnlocked ? 'border-yellow-400/50 shadow-lg shadow-yellow-500/10' : 'border-border/80 opacity-660 hover:opacity-100',
-                                isMobile ? 'p-2' : 'p-0'
+                                "relative group border bg-black/60 transition-all duration-300 overflow-hidden flex flex-col min-h-[180px]",
+                                isUnlocked 
+                                    ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:border-yellow-400 hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]' 
+                                    : 'border-blue-900/30 opacity-80 hover:opacity-100 hover:border-blue-500/30',
+                                isMobile ? 'p-3' : 'p-5'
                             )}
                         >
-                            <CardHeader className={cn("flex flex-row items-center gap-3", isMobile ? "p-3" : "p-4")}>
-                                <div className={cn(
-                                    "rounded-lg flex items-center justify-center flex-shrink-0",
-                                     isUnlocked ? 'bg-yellow-400/20 text-yellow-400' : 'bg-secondary text-muted-foreground',
-                                     isMobile ? 'w-10 h-10' : 'w-12 h-12'
-                                 )}>
-                                    <Icon className={isMobile ? "w-5 h-5" : "w-7 h-7"}/>
-                                </div>
-                                <div className="flex-1">
-                                    <CardTitle className={cn(isUnlocked ? 'text-yellow-400' : 'text-foreground', isMobile ? "text-sm" : "text-base")}>
-                                        {achievement.name}
-                                    </CardTitle>
-                                     {isUnlocked && unlockedDate && (
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger>
-                                                    <p className={cn("text-left", isMobile ? "text-[10px]" : "text-xs text-muted-foreground")}>
-                                                        Desbloqueado em {format(parseISO(unlockedDate), 'dd/MM/yyyy')}
-                                                    </p>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>{format(parseISO(unlockedDate), 'dd/MM/yyyy HH:mm')}</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    )}
-                                </div>
-                            </CardHeader>
-                            <CardContent className={cn("flex-grow", isMobile ? "p-3 pt-0" : "p-6 pt-0")}>
-                                <CardDescription className={cn(isUnlocked ? 'text-muted-foreground' : 'text-muted-foreground/80', isMobile ? "text-xs" : "")}>
-                                    {achievement.description}
-                                </CardDescription>
-                            </CardContent>
-                             {!isUnlocked && (
-                                <div className={cn("pb-3", isMobile ? "px-3" : "px-6")}>
-                                    <div className={cn("flex justify-between items-center mb-1 text-muted-foreground", isMobile ? "text-[10px]" : "text-xs")}>
-                                        <span>Progresso</span>
-                                        <span>{Math.min(current, target)} / {target}</span>
+                            {/* Locked Overlay */}
+                            {!isUnlocked && (
+                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div className="text-center">
+                                        <Lock className="h-8 w-8 text-blue-500/50 mx-auto mb-2" />
+                                        <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">LOCKED</span>
                                     </div>
-                                    <Progress value={progressPercentage} className={isMobile ? "h-1.5" : "h-2"} />
                                 </div>
                             )}
-                        </Card>
+
+                            {/* Background Glow for Unlocked */}
+                            {isUnlocked && (
+                                <div className="absolute -top-10 -right-10 w-24 h-24 bg-yellow-500/10 rounded-full blur-2xl group-hover:bg-yellow-500/20 transition-all duration-500" />
+                            )}
+
+                            <div className="flex items-start gap-4 mb-4 relative z-10">
+                                <div className={cn(
+                                    "flex items-center justify-center flex-shrink-0 border p-3 bg-black",
+                                     isUnlocked ? 'border-yellow-500 text-yellow-400' : 'border-blue-900 text-blue-500/50',
+                                     isMobile ? 'w-12 h-12' : 'w-14 h-14'
+                                 )}>
+                                    <Icon className={isMobile ? "w-6 h-6" : "w-7 h-7"}/>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className={cn("font-bold font-mono uppercase leading-tight line-clamp-2", isUnlocked ? 'text-white' : 'text-gray-500', isMobile ? "text-xs" : "text-sm")}>
+                                        {achievement.name}
+                                    </h3>
+                                     {isUnlocked && unlockedDate && (
+                                        <p className={cn("text-[9px] font-mono text-yellow-500/60 mt-1 uppercase tracking-wider")}>
+                                            UNLOCKED: {format(parseISO(unlockedDate), 'yyyy-MM-dd')}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div className="flex-grow relative z-10">
+                                <p className={cn("font-mono text-xs leading-relaxed line-clamp-3", isUnlocked ? 'text-gray-400' : 'text-gray-600')}>
+                                    {achievement.description}
+                                </p>
+                            </div>
+
+                             {!isUnlocked && (
+                                <div className="mt-4 pt-3 border-t border-blue-900/30 relative z-10">
+                                    <div className="flex justify-between items-center mb-1 text-[10px] font-mono text-blue-500/60 uppercase">
+                                        <span>PROGRESS</span>
+                                        <span>{Math.min(current, target)} / {target}</span>
+                                    </div>
+                                    <div className="h-1 bg-blue-950/50 border border-blue-900/30 w-full">
+                                        <div 
+                                            className="h-full bg-blue-600 shadow-[0_0_5px_#2563eb]" 
+                                            style={{ width: `${progressPercentage}%` }} 
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>

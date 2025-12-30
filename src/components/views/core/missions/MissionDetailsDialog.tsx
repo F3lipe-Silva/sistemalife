@@ -207,118 +207,165 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
 
   const renderViewMode = () => (
     <>
-        <DialogHeader className="text-center px-4 pt-6 pb-4">
-            <DialogTitle className="text-xl md:text-2xl font-bold font-cinzel text-foreground break-words leading-tight text-center">
+        <div className="border-b border-blue-900/50 bg-blue-950/20 px-6 py-4">
+            <div className="flex items-center gap-2 mb-1">
+                <span className="bg-blue-600 text-white text-[10px] font-mono font-bold px-1.5 py-0.5 uppercase tracking-widest">
+                    {editedMission.tipo === 'diaria' ? 'DAILY QUEST' : 'QUEST INFO'}
+                </span>
+                {editedMission.concluido && (
+                    <span className="bg-green-600 text-white text-[10px] font-mono font-bold px-1.5 py-0.5 uppercase tracking-widest">COMPLETE</span>
+                )}
+            </div>
+            <DialogTitle className="text-xl md:text-2xl font-black font-cinzel text-white uppercase tracking-widest drop-shadow-md">
                 {editedMission.nome}
             </DialogTitle>
-             <div className="flex justify-center items-center gap-4 mt-3 text-sm flex-wrap">
-                <div className="flex items-center gap-1.5 text-yellow-400">
-                    <Award className="h-4 w-4"/>
-                    <span className="font-medium">{editedMission.xp_conclusao} XP</span>
+        </div>
+
+        <div className="px-6 py-6 space-y-6">
+            {/* Description */}
+            <div className="bg-black/40 border border-blue-900/30 p-4 relative">
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-blue-500/50" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-blue-500/50" />
+                <p className="text-blue-100/80 font-mono text-sm leading-relaxed">
+                    {editedMission.descricao}
+                </p>
+            </div>
+
+            {/* Rewards */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-950/10 border border-blue-500/20 p-3 flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-blue-500 font-mono uppercase tracking-widest mb-1">REWARD: XP</span>
+                    <div className="flex items-center gap-2 text-blue-300">
+                        <Award className="h-4 w-4"/>
+                        <span className="font-mono font-bold text-lg">{editedMission.xp_conclusao}</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-cyan-400">
-                    <Gem className="h-4 w-4"/>
-                    <span className="font-medium">{editedMission.fragmentos_conclusao} Fragmentos</span>
+                <div className="bg-yellow-950/10 border border-yellow-500/20 p-3 flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-yellow-500 font-mono uppercase tracking-widest mb-1">REWARD: ITEMS</span>
+                    <div className="flex items-center gap-2 text-yellow-300">
+                        <Gem className="h-4 w-4"/>
+                        <span className="font-mono font-bold text-lg">{editedMission.fragmentos_conclusao}</span>
+                    </div>
                 </div>
             </div>
-        </DialogHeader>
-        <CardContent className="px-4 pb-6 space-y-4">
-          <div>
-            <h4 className="font-semibold text-muted-foreground text-sm uppercase mb-3 text-center">Objetivos</h4>
-            <div className="space-y-3 bg-secondary/20 p-3 rounded-md border border-border/30">
-                {(editedMission.subTasks || []).map((task: SubTask, index: number) => {
-                    const isTaskCompleted = (task.current || 0) >= task.target;
-                    return (
-                         <div key={index} className="space-y-2 p-2 rounded border border-border/20 bg-background/50">
-                            <div className="flex items-start justify-between gap-2 text-sm">
-                                <p className={cn("font-medium text-foreground break-words flex-1 leading-relaxed", isTaskCompleted && "line-through text-green-400")}>
-                                    {isTaskCompleted && <span className="text-green-400 mr-1">✓</span>}
-                                    {task.name}
-                                </p>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                    <span className={cn("font-mono text-xs px-2 py-1 rounded bg-secondary/50", isTaskCompleted ? "text-green-400" : "text-muted-foreground")}>
-                                        {task.current || 0}/{task.target} {task.unit || ''}
-                                    </span>
-                                    <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        className="h-6 w-6 text-primary hover:bg-primary/20" 
-                                        onClick={() => setContributionState({ open: true, subTask: task, amount: 1 })}
-                                        disabled={isTaskCompleted}
-                                        aria-label={`Adicionar progresso para ${task.name}`}
-                                    >
-                                        <Plus className="h-3 w-3" />
-                                    </Button>
+
+            {/* Objectives */}
+            <div>
+                <h4 className="font-mono font-bold text-blue-400 text-xs uppercase tracking-widest mb-3 border-b border-blue-900/30 pb-1">
+                    QUEST OBJECTIVES
+                </h4>
+                <div className="space-y-2">
+                    {(editedMission.subTasks || []).map((task: SubTask, index: number) => {
+                        const isTaskCompleted = (task.current || 0) >= task.target;
+                        const progress = Math.min(100, ((task.current || 0) / task.target) * 100);
+                        
+                        return (
+                             <div key={index} className="group relative bg-black/60 border border-blue-900/30 p-2 overflow-hidden">
+                                {/* Progress Bar Background */}
+                                <div 
+                                    className="absolute inset-y-0 left-0 bg-blue-900/20 pointer-events-none transition-all duration-500 ease-out"
+                                    style={{ width: `${progress}%` }}
+                                />
+                                
+                                <div className="flex items-center justify-between gap-3 relative z-10">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <div className={cn("w-4 h-4 border flex items-center justify-center transition-colors", isTaskCompleted ? "bg-blue-500 border-blue-500" : "border-blue-500/50")}>
+                                            {isTaskCompleted && <span className="text-black text-[10px] font-bold">✓</span>}
+                                        </div>
+                                        <p className={cn("font-mono text-sm uppercase truncate", isTaskCompleted ? "text-blue-500 line-through" : "text-gray-300")}>
+                                            {task.name}
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-xs text-blue-400">
+                                            {task.current || 0} <span className="text-blue-500/30">/</span> {task.target} <span className="text-[10px] text-gray-500">{task.unit}</span>
+                                        </span>
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="h-6 w-6 text-blue-400 hover:bg-blue-500 hover:text-black rounded-none" 
+                                            onClick={() => setContributionState({ open: true, subTask: task, amount: 1 })}
+                                            disabled={isTaskCompleted}
+                                        >
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
-                            <Progress value={((task.current || 0) / task.target) * 100} className="h-1"/>
-                        </div>
-                    )
-                })}
+                        )
+                    })}
+                </div>
             </div>
-          </div>
           
            {editedMission.learningResources && editedMission.learningResources.length > 0 && (
             <div>
-                <h5 className="text-sm font-semibold text-muted-foreground mb-2 text-center uppercase">Recursos</h5>
+                <h5 className="font-mono font-bold text-blue-400 text-xs uppercase tracking-widest mb-3 border-b border-blue-900/30 pb-1">
+                    INTEL
+                </h5>
                 <div className="space-y-2">
                     {editedMission.learningResources.map((link: string, index: number) => (
                         <a href={link} target="_blank" rel="noopener noreferrer" key={index} 
-                           className="flex items-center gap-2 text-primary hover:text-primary/80 text-xs p-2 rounded bg-secondary/30 border border-border/20 break-all">
+                           className="flex items-center gap-2 text-blue-300 hover:text-white text-xs p-2 bg-blue-950/20 border border-blue-900/30 hover:border-blue-500/50 transition-colors font-mono">
                             <Link className="h-3 w-3 flex-shrink-0"/>
-                            <span className="break-all">{link}</span>
+                            <span className="truncate">{link}</span>
                         </a>
                     ))}
                 </div>
             </div>
         )}
-        </CardContent>
-        <DialogFooter className="flex-col sm:flex-row px-4 pb-4 gap-2">
-             <Button onClick={() => onAdjustDifficulty(mission!, 'too_hard')} variant="outline" className="text-red-400 border-red-400/50 hover:bg-red-400/10 hover:text-red-300 flex-1">Muito Difícil</Button>
-             <Button onClick={() => onAdjustDifficulty(mission!, 'too_easy')} variant="outline" className="text-green-400 border-green-400/50 hover:bg-green-400/10 hover:text-green-300 flex-1">Muito Fácil</Button>
+        </div>
+        
+        <DialogFooter className="px-6 pb-6 pt-2 gap-3 sm:gap-0 flex-col sm:flex-row bg-black/40 border-t border-blue-900/30">
+             <Button onClick={() => onAdjustDifficulty(mission!, 'too_hard')} variant="outline" className="text-red-400 border-red-900/50 bg-red-950/10 hover:bg-red-900/30 hover:text-red-300 hover:border-red-500/50 rounded-none font-mono text-xs uppercase tracking-wider sm:mr-auto">REPORT DIFFICULTY</Button>
+             <Button onClick={onClose} className="bg-blue-600 hover:bg-blue-500 text-white rounded-none font-mono text-xs uppercase tracking-widest px-8">CLOSE WINDOW</Button>
         </DialogFooter>
     </>
   );
 
   const renderEditMode = () => (
      <>
-        <DialogHeader className="px-4 pt-6 pb-4">
-            <DialogTitle className="text-lg md:text-xl font-bold font-cinzel break-words text-center">{isEditing ? "Editar Missão Manual" : "Criar Missão Manual"}</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground break-words text-center">Crie ou edite uma tarefa que não precisa de estar ligada a uma meta de longo prazo.</DialogDescription>
-        </DialogHeader>
-        <div className="px-4 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="border-b border-blue-900/50 bg-blue-950/20 px-6 py-4">
+            <DialogTitle className="text-lg md:text-xl font-bold font-cinzel text-white uppercase tracking-widest">
+                {isEditing ? "EDIT QUEST PARAMETERS" : "INITIALIZE NEW QUEST"}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-mono text-blue-400/60 uppercase tracking-wide mt-1">
+                MANUAL OVERRIDE PROTOCOL
+            </DialogDescription>
+        </div>
+
+        <div className="px-6 py-6 space-y-5 max-h-[60vh] overflow-y-auto custom-scrollbar">
              <div className="space-y-2">
-                <Label htmlFor="manual-mission-name" className="text-sm font-medium">Nome da Missão</Label>
-                <Input id="manual-mission-name" value={editedMission.nome} onChange={e => handleInputChange('nome', e.target.value)} className="w-full" />
+                <Label htmlFor="manual-mission-name" className="text-xs font-mono text-blue-400 uppercase tracking-widest">QUEST TITLE</Label>
+                <Input id="manual-mission-name" value={editedMission.nome} onChange={e => handleInputChange('nome', e.target.value)} className="bg-black/40 border-blue-900/50 text-white font-mono rounded-none focus-visible:ring-blue-500/50" />
             </div>
              <div className="space-y-2">
-                <Label htmlFor="manual-mission-desc" className="text-sm font-medium">Descrição</Label>
-                <Textarea id="manual-mission-desc" value={editedMission.descricao} onChange={e => handleInputChange('descricao', e.target.value)} className="w-full resize-none" rows={3} />
+                <Label htmlFor="manual-mission-desc" className="text-xs font-mono text-blue-400 uppercase tracking-widest">DESCRIPTION</Label>
+                <Textarea id="manual-mission-desc" value={editedMission.descricao} onChange={e => handleInputChange('descricao', e.target.value)} className="bg-black/40 border-blue-900/50 text-white font-mono rounded-none focus-visible:ring-blue-500/50 resize-none" rows={3} />
             </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <Label htmlFor="manual-mission-xp" className="text-sm font-medium">XP Recompensa</Label>
-                    <Input id="manual-mission-xp" type="number" value={editedMission.xp_conclusao} onChange={e => handleNumericInputChange('xp_conclusao', e.target.value)} className="w-full" />
+                    <Label htmlFor="manual-mission-xp" className="text-xs font-mono text-blue-400 uppercase tracking-widest">XP REWARD</Label>
+                    <Input id="manual-mission-xp" type="number" value={editedMission.xp_conclusao} onChange={e => handleNumericInputChange('xp_conclusao', e.target.value)} className="bg-black/40 border-blue-900/50 text-white font-mono rounded-none" />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="manual-mission-fragments" className="text-sm font-medium">Fragmentos</Label>
-                    <Input id="manual-mission-fragments" type="number" value={editedMission.fragmentos_conclusao} onChange={e => handleNumericInputChange('fragmentos_conclusao', e.target.value)} className="w-full" />
+                    <Label htmlFor="manual-mission-fragments" className="text-xs font-mono text-blue-400 uppercase tracking-widest">ITEM REWARD</Label>
+                    <Input id="manual-mission-fragments" type="number" value={editedMission.fragmentos_conclusao} onChange={e => handleNumericInputChange('fragmentos_conclusao', e.target.value)} className="bg-black/40 border-blue-900/50 text-white font-mono rounded-none" />
                 </div>
             </div>
-             <div className="space-y-2">
-                <Label className="text-sm font-medium">Sub-tarefas</Label>
+             <div className="space-y-2 pt-2 border-t border-blue-900/30">
+                <Label className="text-xs font-mono text-blue-400 uppercase tracking-widest">OBJECTIVES</Label>
                 <SubTaskCreator subTasks={editedMission.subTasks} onSubTasksChange={handleSubTasksChange} />
              </div>
         </div>
-        <DialogFooter className="px-4 pb-4 gap-2 flex-col sm:flex-row">
+        <DialogFooter className="px-6 pb-6 pt-4 gap-3 bg-black/40 border-t border-blue-900/30 flex-col sm:flex-row">
             {isEditing && (
-                 <Button variant="destructive" onClick={handleDelete} className="w-full sm:w-auto mr-auto">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir
+                 <Button variant="destructive" onClick={handleDelete} className="w-full sm:w-auto mr-auto bg-red-900/20 border border-red-500/50 text-red-500 hover:bg-red-900/40 rounded-none font-mono text-xs uppercase tracking-widest">
+                    DELETE QUEST
                 </Button>
             )}
-             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancelar</Button>
-            <Button onClick={handleSave} className="w-full sm:w-auto"><Save className="mr-2 h-4 w-4"/> Salvar</Button>
+             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-none font-mono text-xs uppercase tracking-widest">CANCEL</Button>
+            <Button onClick={handleSave} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white rounded-none font-mono text-xs uppercase tracking-widest">SAVE DATA</Button>
         </DialogFooter>
      </>
   );
@@ -326,28 +373,44 @@ export const MissionDetailsDialog: React.FC<MissionDetailsDialogProps> = ({ isOp
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="bg-card border text-white max-w-2xl w-full mx-4 rounded-lg p-0 max-h-[90vh]"
+        className="bg-black/95 border-2 border-blue-500/50 text-white max-w-2xl w-full mx-4 p-0 shadow-[0_0_30px_rgba(37,99,235,0.3)] backdrop-blur-xl sm:rounded-none overflow-hidden"
+        hideCloseButton={true}
       >
-        <button onClick={onClose} aria-label="Fechar diálogo" className="absolute top-3 right-3 p-1 text-gray-400 hover:text-white rounded-full z-10">
-            <X className="h-4 w-4" />
+        <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-blue-400 z-20" />
+        <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-blue-400 z-20" />
+        <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-blue-400 z-20" />
+        <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-blue-400 z-20" />
+        
+        <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 p-1 text-blue-500/50 hover:text-blue-400 hover:bg-blue-900/20 z-30 transition-colors">
+            <X className="h-5 w-5" />
         </button>
-        <Card className="bg-transparent border-none h-full">
-            <div className="max-h-[86vh] overflow-y-auto">
-                {isManual ? renderEditMode() : renderViewMode()}
-            </div>
-        </Card>
+
+        <div className="max-h-[90vh] overflow-y-auto">
+            {isManual ? renderEditMode() : renderViewMode()}
+        </div>
+
          <Dialog open={contributionState.open} onOpenChange={(isOpen) => setContributionState(prev => ({...prev, open: isOpen}))}>
-            <DialogContent>
+            <DialogContent className="bg-black/95 border border-blue-500/50 text-white sm:rounded-none max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>Registar Progresso: {contributionState.subTask?.name}</DialogTitle>
+                    <DialogTitle className="font-cinzel text-lg text-blue-400 uppercase tracking-widest">LOG PROGRESS</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                    <Label htmlFor="amount">Quantidade</Label>
-                    <Input id="amount" type="number" placeholder="Quantidade" min="1" onChange={e => setContributionState(prev => ({...prev, amount: Number(e.target.value)}))}/>
+                    <p className="text-sm font-mono text-gray-300">Target: <span className="text-white font-bold">{contributionState.subTask?.name}</span></p>
+                    <div className="space-y-2">
+                        <Label htmlFor="amount" className="text-xs font-mono text-blue-500 uppercase">AMOUNT</Label>
+                        <Input 
+                            id="amount" 
+                            type="number" 
+                            placeholder="0" 
+                            min="1" 
+                            className="bg-blue-950/20 border-blue-900/50 text-white font-mono rounded-none h-10 text-lg"
+                            onChange={e => setContributionState(prev => ({...prev, amount: Number(e.target.value)}))}
+                        />
+                    </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setContributionState({open: false, subTask: null, amount: 1})}>Cancelar</Button>
-                    <Button onClick={handleContribute}>Registar</Button>
+                    <Button variant="outline" onClick={() => setContributionState({open: false, subTask: null, amount: 1})} className="border-gray-700 text-gray-400 hover:bg-gray-800 rounded-none font-mono text-xs">CANCEL</Button>
+                    <Button onClick={handleContribute} className="bg-blue-600 hover:bg-blue-500 text-white rounded-none font-mono text-xs uppercase tracking-widest">CONFIRM</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

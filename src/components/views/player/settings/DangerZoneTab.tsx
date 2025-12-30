@@ -22,49 +22,58 @@ export default function DangerZoneTab() {
     };
 
     return (
-        <Card className={cn("border-red-500/30", isMobile ? "p-2" : "")}>
-            <CardHeader className={cn(isMobile ? "p-3" : "p-6")}>
-                <CardTitle className={cn("text-red-400", isMobile ? "text-lg" : "")}>Zona de Perigo</CardTitle>
-                <CardDescription className={isMobile ? "text-xs" : ""}>Ações nesta secção são permanentes e não podem ser desfeitas.</CardDescription>
-            </CardHeader>
-            <CardContent className={isMobile ? "p-3" : ""}>
-                <div className={cn(
-                    "flex items-start justify-between gap-4 rounded-lg border border-red-500/30 p-4",
-                    isMobile ? "flex-col p-2 gap-2" : "flex-row p-4"
-                )}>
-                    <div className={isMobile ? "space-y-1" : ""}>
-                        <p className={cn("font-bold text-foreground", isMobile ? "text-sm" : "")}>Resetar a sua conta</p>
-                        <p className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>Isto irá apagar permanentemente todos os seus dados.</p>
-                    </div>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" disabled={isResetting} className={cn("w-full sm:w-auto", isMobile ? "text-xs py-1 h-8" : "")}>
-                                {isResetting ? <LoaderCircle className={cn("animate-spin", isMobile ? "h-4 w-4" : "")} /> : (isMobile ? "Resetar" : "Resetar Conta")}
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className={isMobile ? "p-4" : ""}>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className={isMobile ? "text-sm" : ""}>Tem a certeza absoluta?</AlertDialogTitle>
-                                <AlertDialogDescription className={isMobile ? "text-xs" : ""}>
-                                    Esta ação é irreversível. Todos os seus dados, incluindo perfil, metas, missões e habilidades, serão apagados permanentemente. Não será possível recuperar a sua conta.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-                                <AlertDialogCancel className={isMobile ? "text-xs py-1 h-8" : ""}>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction 
-                                    onClick={onReset} 
-                                    className={cn(
-                                        "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
-                                        isMobile ? "text-xs py-1 h-8" : ""
-                                    )}
-                                >
-                                    {isMobile ? "Sim, resetar" : "Sim, quero resetar a conta"}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+        <div className={cn("bg-red-950/10 border border-red-500/30 p-6 relative overflow-hidden", isMobile ? "p-4" : "")}>
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-red-500/50" />
+            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-red-500/50" />
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-red-500/50" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-red-500/50" />
+
+            <div className="mb-6 border-b border-red-900/30 pb-2">
+                <h3 className={cn("font-bold font-cinzel text-red-500 uppercase tracking-widest flex items-center gap-2", isMobile ? "text-base" : "text-lg")}>
+                    DANGER ZONE
+                </h3>
+                <p className={cn("font-mono text-red-400/50 text-xs", isMobile ? "text-[10px]" : "")}>IRREVERSIBLE ACTIONS</p>
+            </div>
+
+            <div className={cn(
+                "flex items-start justify-between gap-4 border border-red-500/20 bg-red-950/20 p-4",
+                isMobile ? "flex-col p-3 gap-3" : "flex-row"
+            )}>
+                <div className={isMobile ? "space-y-1" : ""}>
+                    <p className={cn("font-bold text-red-400 font-mono uppercase tracking-wide", isMobile ? "text-sm" : "")}>SYSTEM RESET</p>
+                    <p className={cn("text-red-300/60 font-mono text-xs", isMobile ? "text-[10px]" : "text-xs")}>PERMANENTLY DELETE ALL USER DATA.</p>
                 </div>
-            </CardContent>
-        </Card>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={isResetting} className={cn("bg-red-600 hover:bg-red-500 text-white rounded-none font-mono text-xs uppercase tracking-widest h-9 shadow-[0_0_15px_rgba(220,38,38,0.4)]", isMobile ? "w-full" : "w-auto")}>
+                            {isResetting ? <LoaderCircle className={cn("animate-spin mr-2", isMobile ? "h-3 w-3" : "")} /> : (isMobile ? "RESET" : "INITIATE RESET")}
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-black/95 border-2 border-red-600 shadow-[0_0_50px_rgba(220,38,38,0.4)]">
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(220,38,38,0.05)_10px,rgba(220,38,38,0.05)_20px)] pointer-events-none" />
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="text-red-500 font-mono uppercase tracking-widest text-xl animate-pulse">CRITICAL WARNING</AlertDialogTitle>
+                            <AlertDialogDescription className="text-gray-400 font-mono text-xs">
+                                This action is irreversible. All user data, including profile, objectives, missions, and abilities, will be permanently erased. System recovery will be impossible.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
+                            <AlertDialogCancel className="bg-transparent border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-none font-mono text-xs uppercase tracking-widest">
+                                ABORT SEQUENCE
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                                onClick={onReset} 
+                                className={cn(
+                                    "bg-red-600 hover:bg-red-500 text-white rounded-none font-mono text-xs uppercase tracking-widest border border-red-400 shadow-[0_0_20px_rgba(220,38,38,0.6)]",
+                                    isMobile ? "h-9" : ""
+                                )}
+                            >
+                                CONFIRM DESTRUCTION
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        </div>
     );
 }
