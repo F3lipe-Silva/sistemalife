@@ -7,7 +7,7 @@ import { Flame, Calendar, Shield, Users, Trophy, CheckCircle, Gem, Zap, Clock, T
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { generateTowerChallenge } from '@/ai/flows/generate-tower-challenge';
+import { generateTowerChallenge } from '@/lib/ai-client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,9 +22,10 @@ const challengeTypes = {
 };
 
 const TowerView = () => {
-    const { profile, missions, skills, metas, persistData, checkAndApplyTowerRewards } = usePlayerDataContext();
+    const { profile, missions, skills, metas, persistData, checkAndApplyTowerRewards, setCurrentPage } = usePlayerDataContext();
     const { toast } = useToast();
     const [isLoadingChallenge, setIsLoadingChallenge] = useState(false);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     
     useEffect(() => {
         checkAndApplyTowerRewards();
@@ -128,6 +129,11 @@ const TowerView = () => {
             <div className="flex-shrink-0 p-3 md:p-4 border-b border-purple-500/10 bg-background/95 backdrop-blur-md">
                  <div className="flex justify-between items-center gap-3 max-w-7xl mx-auto w-full">
                     <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                        {isMobile && (
+                            <button onClick={() => setCurrentPage('tower-lobby')} className="p-2 -ml-2 text-purple-400">
+                                <ArrowUpCircle className="h-6 w-6 rotate-[-90deg]" />
+                            </button>
+                        )}
                         <Skull className="h-5 w-5 md:h-6 md:w-6 text-purple-500 flex-shrink-0 animate-pulse" />
                         <div className="min-w-0">
                             <h1 className="text-lg md:text-xl font-black text-white font-cinzel tracking-wider uppercase truncate">DEMON CASTLE</h1>

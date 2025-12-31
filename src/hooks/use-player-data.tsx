@@ -6,14 +6,15 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc, DocumentReference, DocumentData } from "firebase/firestore";
 import { useToast } from './use-toast';
 import * as mockData from '@/lib/data';
-import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
-import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
-import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
+import { generateSystemAdvice } from '@/lib/ai-client';
+import { generateNextDailyMission } from '@/lib/ai-client';
+import { generateSkillExperience } from '@/lib/ai-client';
 import { differenceInCalendarDays, isToday, endOfDay, parseISO } from 'date-fns';
 import { statCategoryMapping } from '@/lib/mappings';
 import { usePlayerNotifications } from './use-player-notifications';
-import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
-import { generateStorySegment } from '@/ai/flows/generate-story-segment';
+import { generateSkillDungeonChallenge } from '@/lib/ai-client';
+import { validateDungeonSubmission } from '@/lib/ai-client';
+import { generateStorySegment } from '@/lib/ai-client';
 import { debounce, AsyncQueue } from '@/lib/ai-utils';
 
 
@@ -36,7 +37,16 @@ interface DailyMission {
     subTasks: SubTask[];
     learningResources?: string[];
     completed_at?: string;
-    isNemesisChallenge?: boolean;
+    isNemesisChallenge?: boolean; // New: Nemesis system
+    isCorrupted?: boolean;        // New: Corrupted missions
+}
+
+interface Profile {
+    id?: string;
+    // ... (rest of profile fields)
+    equipped_items?: string[]; // New: List of item IDs currently active
+    consecutive_failures?: number; // New: AI Monitoring system
+    // ...
 }
 
 interface RankedMission {
@@ -964,7 +974,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({ ...st, current: 0 })),
+                subTasks: result.subTasks.map((st: any) => ({ ...st, current: 0 })),
             };
 
             generationSuccessful = true;
@@ -1072,7 +1082,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 concluido: false,
                 tipo: 'diaria',
                 learningResources: result.learningResources || [],
-                subTasks: result.subTasks.map(st => ({ ...st, current: 0 })),
+                subTasks: result.subTasks.map((st: any) => ({ ...st, current: 0 })),
             };
 
             dispatch({ type: 'ADJUST_DAILY_MISSION', payload: { rankedMissionId, dailyMissionId: dailyMission.id, newDailyMission } });
@@ -1155,16 +1165,19 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                     feedback: feedbackForAI ?? ''
                 });
 
+                const isCorrupted = Math.random() < 0.10; // 10% chance
+
                 const newDailyMission = {
                     id: Date.now() + Math.random(),
-                    nome: result.nextMissionName,
-                    descricao: result.nextMissionDescription,
-                    xp_conclusao: result.xp,
-                    fragmentos_conclusao: result.fragments,
+                    nome: isCorrupted ? `[CORROMPIDO] ${result.nextMissionName}` : result.nextMissionName,
+                    descricao: isCorrupted ? `ALERTA DE NÊMESIS: ${result.nextMissionDescription}` : result.nextMissionDescription,
+                    xp_conclusao: isCorrupted ? result.xp * 3 : result.xp,
+                    fragmentos_conclusao: isCorrupted ? result.fragments * 3 : result.fragments,
                     concluido: false,
                     tipo: 'diaria',
+                    isCorrupted: isCorrupted,
                     learningResources: result.learningResources || [],
-                    subTasks: result.subTasks.map(st => ({ ...st, current: 0 })),
+                    subTasks: result.subTasks.map((st: any) => ({ ...st, current: 0 })),
                 };
 
                 dispatch({ type: 'ADD_DAILY_MISSION', payload: { rankedMissionId: mission.id, newDailyMission } });
@@ -1346,15 +1359,41 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
     }, [state.profile, state.skills, persistData, toast]);
 
 
-    const completeDungeonChallenge = useCallback(async (submission: string) => {
+    const completeDungeonChallenge = useCallback(async (submission: string): Promise<boolean> => {
         if (!state.profile?.dungeon_session || !state.profile.dungeon_session.challenge) {
             toast({ variant: 'destructive', title: 'Erro', description: 'Nenhum desafio ativo na masmorra.' });
-            return;
+            return false;
         }
 
         const { skillId, challenge } = state.profile.dungeon_session;
         const skill = state.skills.find(s => s.id === skillId);
-        if (!skill) return;
+        if (!skill) return false;
+
+        // Inicia validação por IA
+        try {
+            const validation = await validateDungeonSubmission({
+                skillName: skill.nome,
+                challengeName: challenge.challengeName,
+                challengeDescription: challenge.challengeDescription,
+                successCriteria: challenge.successCriteria,
+                userSubmission: submission
+            });
+
+            if (!validation.valid) {
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Desafio não superado', 
+                    description: validation.feedback || 'A sua resposta não satisfaz os critérios do desafio.'
+                });
+                return false;
+            }
+            
+            // Se for válido, continuamos com o ganho de recompensas
+        } catch (error) {
+            console.error("Erro na validação da masmorra:", error);
+            toast({ variant: 'destructive', title: 'Erro de Sistema', description: 'Não foi possível validar sua resposta agora. Tente novamente.' });
+            return false;
+        }
 
         let updatedSkill = { ...skill };
         updatedSkill.xp_atual = (updatedSkill.xp_atual || 0) + challenge.xpReward;
@@ -1392,6 +1431,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         await persistData('profile', updatedProfile);
 
         toast({ title: `Desafio "${challenge.challengeName}" Concluído!`, description: `Você ganhou ${challenge.xpReward} XP para ${skill.nome} e avançou para a sala ${newDungeonSession.roomLevel}.` });
+        return true;
 
     }, [state.profile, state.skills, persistData, toast, handleShowSkillUpNotification]);
 
@@ -1473,6 +1513,50 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         };
         await persistData('profile', updatedProfile);
         toast({ title: 'Cristal Adicionado!', description: 'Você recebeu 1 Cristal da Masmorra.' });
+    }, [state.profile, persistData, toast]);
+
+    const useItem = useCallback(async (itemNome: string) => {
+        if (!state.profile) return;
+        
+        const inventory = [...(state.profile.inventory || [])];
+        const itemIndex = inventory.findIndex(i => i.nome === itemNome);
+        
+        if (itemIndex === -1 || (inventory[itemIndex].quantidade || 0) <= 0) {
+            toast({ variant: 'destructive', title: 'Item não encontrado', description: 'Você não possui este item na bag.' });
+            return;
+        }
+
+        const item = inventory[itemIndex];
+        let updatedProfile = { ...state.profile };
+        let used = false;
+
+        // Lógica de Efeitos baseada no nome/tipo do item
+        if (itemNome.toLowerCase().includes('potion') || itemNome.toLowerCase().includes('poção')) {
+            const maxHP = Math.floor((updatedProfile.estatisticas.constituicao || 5) / 5) * 100;
+            if ((updatedProfile.hp_atual ?? 0) >= maxHP) {
+                toast({ title: 'Vida Cheia', description: 'Você já está com o HP no máximo!' });
+                return;
+            }
+            
+            // Recupera 30% do HP Máximo
+            const healAmount = Math.round(maxHP * 0.3);
+            updatedProfile.hp_atual = Math.min(maxHP, (updatedProfile.hp_atual || 0) + healAmount);
+            toast({ title: 'Item Consumido', description: `Você recuperou ${healAmount} de HP!` });
+            used = true;
+        }
+
+        if (used) {
+            // Reduz quantidade ou remove do inventário
+            if (item.quantidade > 1) {
+                inventory[itemIndex].quantidade -= 1;
+            } else {
+                inventory.splice(itemIndex, 1);
+            }
+            
+            updatedProfile.inventory = inventory;
+            await persistData('profile', updatedProfile);
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate([50, 30, 50]);
+        }
     }, [state.profile, persistData, toast]);
 
     const spendDungeonCrystal = useCallback(async (skillId: string | number) => {
@@ -1575,27 +1659,69 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            // HP Regen Logic
+            // HP Regen Logic - DISABLED (User prefers manual recovery via items)
             const lastHPRegen = updatedProfile.last_hp_regen_date ? new Date(updatedProfile.last_hp_regen_date) : new Date(0);
             if (!isToday(lastHPRegen)) {
-                const maxHP = Math.floor((updatedProfile.estatisticas.constituicao || 5) / 5) * 100;
-                if (updatedProfile.hp_atual < maxHP) {
-                    updatedProfile.hp_atual = maxHP;
-                    toast({ title: 'Vida Restaurada!', description: 'A sua vida foi totalmente restaurada após um bom descanso.' });
-                }
                 updatedProfile.last_hp_regen_date = now.toISOString();
                 profileChanged = true;
             }
 
-            // Daily HP Penalty for Absence
+            // Daily HP Penalty for Absence - Scaled by Percentage (MD3 Practice)
             const lastLogin = new Date(updatedProfile.ultimo_login_em || now);
             const daysSinceLastLogin = differenceInCalendarDays(now, lastLogin);
-            if (daysSinceLastLogin > 1) { // Start penalty after 1 day
+            
+            if (daysSinceLastLogin > 1) { 
                 const penaltyDays = daysSinceLastLogin - 1;
-                const hpToLose = penaltyDays * 10; // 10 HP per day absent
+                const maxHP = Math.floor((updatedProfile.estatisticas.constituicao || 5) / 5) * 100;
+                
+                // Calculate Resistance from Equipped Items
+                let resistanceBonus = 0;
+                if (updatedProfile.equipped_items) {
+                    const shopItems = require('@/lib/shopItems').allShopItems;
+                    updatedProfile.equipped_items.forEach((itemId: string) => {
+                        const item = shopItems.find((i: any) => i.id === itemId);
+                        if (item?.effect?.type === 'resistance_boost') {
+                            resistanceBonus += (item.effect.multiplier || 0);
+                        }
+                    });
+                }
+
+                let hpToLose = Math.round(penaltyDays * (maxHP * 0.10)); 
+                hpToLose = Math.max(0, Math.round(hpToLose * (1 - resistanceBonus))); // Apply resistance
+
+                // Nemesis Gold Theft Penalty
+                const hasUnfinishedCorrupted = state.missions.some(m => m.missoes_diarias.some(dm => dm.isCorrupted && !dm.concluido));
+                if (hasUnfinishedCorrupted) {
+                    const goldStolen = 100;
+                    updatedProfile.moedas = Math.max(0, (updatedProfile.moedas || 0) - goldStolen);
+                    toast({ 
+                        variant: 'destructive', 
+                        title: 'NÊMESIS DETECTADO!', 
+                        description: `Um monstro corrompeu seus arquivos e roubou ${goldStolen} de Ouro enquanto você estava fora!` 
+                    });
+                }
+                
+                if (daysSinceLastLogin > 3) {
+                    updatedProfile.consecutive_failures = (updatedProfile.consecutive_failures || 0) + 1;
+                    
+                    if (updatedProfile.consecutive_failures >= 1) {
+                        generateSystemAdvice({
+                            userName: updatedProfile.nome_utilizador || 'Hunter',
+                            profile: JSON.stringify(updatedProfile),
+                            metas: JSON.stringify(state.metas),
+                            routine: JSON.stringify(state.routine),
+                            missions: JSON.stringify(state.missions.filter(m => !m.concluido)),
+                            query: `O Hunter está ausente há ${daysSinceLastLogin} dias. Como seu Mentor, envie uma mensagem motivacional curta mas firme para que ele retome o treinamento.`,
+                            personality: 'mentor',
+                        }).then(result => {
+                            setSystemAlert({ message: result.response, position: { top: '20%', left: '50%' } });
+                        });
+                    }
+                } else {
+                    updatedProfile.consecutive_failures = 0; // Reset failures on quick return
+                }
+
                 if (hpToLose > 0 && updatedProfile.hp_atual > 0) {
-                    const originalHP = updatedProfile.hp_atual;
-                    updatedProfile.hp_atual = Math.max(0, updatedProfile.hp_atual - hpToLose);
 
                     // Level Down Penalty: If HP reaches 0, lose one level
                     if (updatedProfile.hp_atual === 0 && updatedProfile.nivel > 1) {
@@ -1834,6 +1960,7 @@ export function PlayerDataProvider({ children }: { children: ReactNode }) {
         spendDungeonCrystal,
         generateDungeonChallenge,
         clearDungeonSession,
+        useItem,
         activateTestWorldEvent,
         questNotification, setQuestNotification,
         systemAlert, setSystemAlert,

@@ -24,7 +24,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
-import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
+import { generateNextDailyMission } from '@/lib/ai-client';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Type definitions

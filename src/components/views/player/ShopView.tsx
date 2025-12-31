@@ -9,7 +9,7 @@ import { allShopItems } from '@/lib/shopItems';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
-import { generateShopItems } from '@/ai/flows/generate-shop-items';
+import { generateShopItems } from '@/lib/ai-client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { isToday, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';

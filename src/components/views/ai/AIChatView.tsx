@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Bot, Send, LoaderCircle, Mic, MicOff, Terminal, Cpu } from 'lucide-react';
-import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
+import { generateSystemAdvice } from '@/lib/ai-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';

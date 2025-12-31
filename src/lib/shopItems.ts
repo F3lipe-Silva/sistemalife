@@ -9,7 +9,7 @@ interface ShopItem {
     icon: string; // Changed from LucideIcon to string
     category: 'Consumíveis' | 'Cosméticos' | 'Especiais';
     effect?: {
-        type: 'xp_boost' | 'streak_recovery' | 'skill_xp_boost' | 'mission_reroll' | 'health_potion';
+        type: 'xp_boost' | 'streak_recovery' | 'skill_xp_boost' | 'mission_reroll' | 'health_potion' | 'resistance_boost' | 'luck_boost';
         multiplier?: number;
         duration_hours?: number;
         amount?: number;
@@ -21,55 +21,38 @@ export const allShopItems: ShopItem[] = [
   {
     id: 'potion_health_small',
     name: 'Poção de Vida Pequena',
-    description: 'Restaura 25 pontos da sua Constituição (HP) instantaneamente. Essencial para se recuperar após um desafio falhado na Torre.',
+    description: 'Restaura 30% do seu HP Máximo instantaneamente. Essencial para se recuperar após um debuff de ausência.',
     price: 50,
     icon: 'Heart',
     category: 'Consumíveis',
-    effect: { type: 'health_potion', amount: 25 }
+    effect: { type: 'health_potion', amount: 30 }
   },
   {
-    id: 'potion_double_xp_1h',
-    name: 'Poção de Foco Intenso',
-    description: 'Dobra todo o XP ganho de missões durante 1 hora. O tempo começa a contar a partir do momento em que o item é usado.',
-    price: 150,
-    icon: 'Zap',
-    category: 'Consumíveis',
-    effect: { type: 'xp_boost', multiplier: 2, duration_hours: 1 }
-  },
-  {
-    id: 'amulet_streak_recovery',
-    name: 'Amuleto da Segunda Chance',
-    description: 'Se a sua sequência de missões diárias for quebrada, este amuleto é consumido para a restaurar ao seu valor anterior. Uso único.',
-    price: 300,
-    icon: 'Shield',
-    category: 'Consumíveis',
-    effect: { type: 'streak_recovery' }
-  },
-  {
-    id: 'essence_of_skill',
-    name: 'Essência de Habilidade',
-    description: 'Concede um impulso de 50 XP a uma habilidade à sua escolha. Perfeito para acelerar o progresso numa área específica.',
-    price: 200,
-    icon: 'BookOpen',
-    category: 'Consumíveis',
-    effect: { type: 'skill_xp_boost', amount: 50 }
-  },
-  {
-    id: 'scroll_of_reroll',
-    name: 'Pergaminho do Esquecimento',
-    description: 'Permite-lhe substituir as sub-tarefas de uma missão diária ativa por um novo conjunto gerado pela IA. Uso único.',
-    price: 100,
-    icon: 'Repeat',
-    category: 'Consumíveis',
-    effect: { type: 'mission_reroll' }
-  },
-   {
-    id: 'cosmetic_leather_armor',
-    name: 'Armadura de Couro do Caçador',
-    description: 'Um conjunto de armadura de couro simples, mas resistente. Um visual clássico para qualquer aventureiro.',
+    id: 'armor_leather_scout',
+    name: 'Armadura de Couro de Batedor',
+    description: 'Equipamento leve. Concede +10% de Resistência a Debuffs de ausência.',
     price: 500,
-    icon: 'Shirt',
-    category: 'Cosméticos',
+    icon: 'Shield',
+    category: 'Especiais',
+    effect: { type: 'resistance_boost', multiplier: 0.10 } // Reduz dano de ausência em 10%
+  },
+  {
+    id: 'amulet_system_luck',
+    name: 'Amuleto da Sorte do Sistema',
+    description: 'Aumenta em 15% a chance de encontrar itens raros e cristais em missões.',
+    price: 800,
+    icon: 'Star',
+    category: 'Especiais',
+    effect: { type: 'luck_boost', multiplier: 0.15 }
+  },
+  {
+    id: 'boots_swift_traveler',
+    name: 'Botas do Viajante Veloz',
+    description: 'Aumenta o ganho de XP de missões diárias em 5%.',
+    price: 600,
+    icon: 'Zap',
+    category: 'Especiais',
+    effect: { type: 'xp_boost', multiplier: 1.05 }
   },
   {
     id: 'tower_ticket',
@@ -78,13 +61,5 @@ export const allShopItems: ShopItem[] = [
     price: 250,
     icon: 'Ticket',
     category: 'Especiais',
-  },
-  {
-    id: 'dungeon_crystal',
-    name: 'Cristal da Masmorra',
-    description: 'Um cristal raro que lhe permite forçar a abertura de uma Masmorra de Habilidade à sua escolha.',
-    price: 0,
-    icon: 'KeySquare',
-    category: 'Especiais',
-  },
+  }
 ];

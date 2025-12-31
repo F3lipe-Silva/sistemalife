@@ -48,10 +48,10 @@ function testGenkit() {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     console.log('Testing Genkit with Gemini API...');
-                    return [4 /*yield*/, genkit_1.ai.generate({
-                            prompt: 'Say "Hello, World!" in Portuguese',
-                            model: 'googleai/gemini-2.5-flash',
-                        })];
+        const response = yield genkit_ts_1.ai.generate({
+            model: 'googleai/gemini-2.5-flash',
+            prompt: 'Responda com "OK" se você estiver funcionando corretamente.',
+        });
                 case 1:
                     result = _a.sent();
                     console.log('Success! Response from Gemini API:');

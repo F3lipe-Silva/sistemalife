@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { statCategoryMapping } from '@/lib/mappings';
 import { useToast } from '@/hooks/use-toast';
-import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
+import { generateSkillFromGoal } from '@/lib/ai-client';
 import * as mockData from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';

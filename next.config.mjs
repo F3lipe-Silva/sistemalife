@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export', // Adicionado para Capacitor
+  images: {
+    unoptimized: true, // Necessário para exportação estática
+  },
   webpack: (config, { isServer }) => {
     // Adicionado para corrigir o erro 'require.extensions is not supported by webpack'
     // que vem da dependência 'handlebars' no genkit.

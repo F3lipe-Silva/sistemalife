@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
+import { generateNextDailyMission } from '@/lib/ai-client';
 
 export async function POST(req: NextRequest) {
   try {

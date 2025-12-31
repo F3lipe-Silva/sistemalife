@@ -13,19 +13,27 @@ import { default as MissionsView } from '@/components/views/core/MissionsView';
 import { MetasView } from '@/components/views/core/MetasView';
 import { MetasMobile } from '@/components/views/core/MetasMobile';
 import { SkillsView } from '@/components/views/core/SkillsView';
-import { RoutineView } from '@/components/views/core/RoutineView';
+import { SkillsMobile } from '@/components/views/core/SkillsMobile';
 import { AIChatView } from '@/components/views/ai/AIChatView';
+import { AIChatMobile } from '@/components/views/ai/AIChatMobile';
 import { SettingsView } from '@/components/views/player/settings/SettingsView';
+import { SettingsMobile } from '@/components/views/player/settings/SettingsMobile';
 import { OnboardingGuide } from '@/components/custom/OnboardingGuide';
 import { AchievementsView } from '@/components/views/player/AchievementsView';
+import { AchievementsMobile } from '@/components/views/player/AchievementsMobile';
 import ShopView from '@/components/views/player/ShopView';
+import { ShopMobile } from '@/components/views/player/ShopMobile';
 import { InventoryView } from '@/components/views/player/InventoryView';
+import { InventoryMobile } from '@/components/views/player/InventoryMobile';
 import { ClassView } from '@/components/views/player/ClassView';
+import { ClassMobile } from '@/components/views/player/ClassMobile';
 import { SystemAlert } from '@/components/custom/SystemAlert';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useIsMobile } from '@/hooks/use-mobile';
 import TowerView from '@/components/views/gamification/TowerView';
+import { TowerMobile } from '@/components/views/gamification/TowerMobile';
 import SkillDungeonView from '@/components/views/gamification/SkillDungeonView';
+import { DungeonMobile } from '@/components/views/gamification/DungeonMobile';
 import { DungeonEventPrompt } from '@/components/custom/DungeonEventPrompt';
 import DungeonLobbyView from '@/components/views/gamification/DungeonLobbyView';
 import { TopHeader } from '@/components/layout/TopHeader';
@@ -40,8 +48,11 @@ const PushNotificationPrompt = dynamic(() => import('@/components/custom/PushNot
 
 
 
+import { useRouter } from 'next/navigation';
+
 export default function App() {
   const { authState, logout } = useAuth();
+  const router = useRouter();
   const {
     isDataLoaded,
     questNotification, systemAlert, showOnboarding,
@@ -73,9 +84,9 @@ export default function App() {
   useEffect(() => {
     if (authState === 'unauthenticated') {
       console.log('🔄 Usuário não autenticado, redirecionando para login...');
-      window.location.href = '/login';
+      router.push('/login');
     }
-  }, [authState]);
+  }, [authState, router]);
 
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
   const touchEndRef = useRef<{ x: number, y: number } | null>(null);
@@ -151,21 +162,21 @@ export default function App() {
 
     const views: Record<string, React.ReactNode> = {
       'dashboard': isMobile ? <DashboardMobile /> : <DashboardView />,
-      'metas': <MetasView />,
+      'metas': isMobile ? <MetasMobile /> : <MetasView />,
       'missions': isMobile ? <MissionsMobile /> : <MissionsView />,
-      'skills': <SkillsView onEnterDungeon={handleEnterDungeon} />,
-      'class': <ClassView />,
-      'routine': <RoutineView />,
-      'achievements': <AchievementsView />,
-      'shop': <ShopView />,
-      'inventory': <InventoryView />,
-      'ai-chat': <AIChatView />,
-      'settings': <SettingsView />,
-      'tower': <TowerView />,
-      'dungeon': profile?.dungeon_session ? <SkillDungeonView onExit={() => handleNavigate('dungeon')} /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />,
+      'skills': isMobile ? <SkillsMobile /> : <SkillsView onEnterDungeon={handleEnterDungeon} />,
+      'class': isMobile ? <ClassMobile /> : <ClassView />,
+      'achievements': isMobile ? <AchievementsMobile /> : <AchievementsView />,
+      'shop': isMobile ? <ShopMobile /> : <ShopView />,
+      'inventory': isMobile ? <InventoryMobile /> : <InventoryView />,
+      'ai-chat': isMobile ? <AIChatMobile /> : <AIChatView />,
+      'settings': isMobile ? <SettingsMobile /> : <SettingsView />,
+      'tower': isMobile ? <TowerView /> : <TowerView />,
+      'tower-lobby': <TowerMobile />,
+      'dungeon': profile?.dungeon_session ? <SkillDungeonView onExit={() => handleNavigate('dungeon')} /> : (isMobile ? <DungeonMobile /> : <DungeonLobbyView onNavigateToSkills={() => handleNavigate('skills')} />),
     };
 
-    const isNativeView = isMobile && (currentPage === 'dashboard' || currentPage === 'missions');
+    const isNativeView = isMobile && ['dashboard', 'missions', 'metas', 'skills', 'class', 'achievements', 'shop', 'inventory', 'ai-chat', 'settings', 'tower', 'tower-lobby', 'dungeon'].includes(currentPage);
 
     return (
       <div 
@@ -236,12 +247,6 @@ export default function App() {
       {/* Native App Container with Safe Areas */}
       <div
         className="h-screen bg-background text-foreground flex font-sans overflow-hidden"
-        style={{
-          paddingTop: isMobile ? 'env(safe-area-inset-top)' : '0',
-          paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0',
-          paddingLeft: isMobile ? 'env(safe-area-inset-left)' : '0',
-          paddingRight: isMobile ? 'env(safe-area-inset-right)' : '0'
-        }}
       >
         {!isMobile && (
           <aside className={cn(
@@ -256,7 +261,7 @@ export default function App() {
         )}
 
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          {!(isMobile && (currentPage === 'dashboard' || currentPage === 'missions')) && (
+          {!(isMobile && ['dashboard', 'missions', 'metas', 'skills', 'class', 'achievements', 'shop', 'inventory', 'ai-chat', 'settings', 'tower', 'dungeon', 'tower-lobby'].includes(currentPage)) && (
             <TopHeader
               title={getPageTitle(currentPage)}
               profile={profile}
@@ -268,8 +273,8 @@ export default function App() {
           <main
             className={cn(
               "flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth",
-              isMobile && !(currentPage === 'dashboard' || currentPage === 'missions') && "pb-28",
-              isMobile && (currentPage === 'dashboard' || currentPage === 'missions') && "pb-0 overflow-hidden"
+              isMobile && !['dashboard', 'missions', 'metas', 'skills', 'class', 'achievements', 'shop', 'inventory', 'ai-chat', 'settings', 'tower', 'dungeon', 'tower-lobby'].includes(currentPage) && "pb-28",
+              isMobile && ['dashboard', 'missions', 'metas', 'skills', 'class', 'achievements', 'shop', 'inventory', 'ai-chat', 'settings', 'tower', 'dungeon', 'tower-lobby'].includes(currentPage) && "pb-0 overflow-hidden"
             )}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}

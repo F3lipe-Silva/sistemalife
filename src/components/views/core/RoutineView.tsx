@@ -18,7 +18,7 @@ import {
 import { useState, useEffect, memo, useMemo } from 'react';
 import { PlusCircle, Edit, Trash2, Save, FileDown, BrainCircuit, Sparkles, ChevronsUpDown, Calendar, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
+import { generateRoutineSuggestion } from '@/lib/ai-client';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

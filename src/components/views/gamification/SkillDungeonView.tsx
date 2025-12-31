@@ -46,8 +46,10 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
             return;
         }
         setIsLoading(true);
-        await completeDungeonChallenge(submission);
-        setSubmission('');
+        const success = await completeDungeonChallenge(submission);
+        if (success) {
+            setSubmission('');
+        }
         setIsLoading(false);
     }
 
@@ -60,7 +62,8 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
         );
     }
     
-    const { roomLevel, challenge } = dungeonSession;
+    const { roomLevel = 1, challenge } = dungeonSession;
+    const currentRoom = Number(roomLevel);
 
     return (
         <div className="w-full h-full flex flex-col">
@@ -89,7 +92,7 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
                 ) : challenge ? (
                     <Card className="w-full max-w-2xl">
                         <CardHeader className="text-center p-3 md:p-4 pb-2">
-                             <CardDescription className="text-xs md:text-sm">Sala {roomLevel}</CardDescription>
+                             <CardDescription className="text-xs md:text-sm">Sala {currentRoom}</CardDescription>
                             <CardTitle className="text-base md:text-lg">{challenge.challengeName}</CardTitle>
                              <span className="text-primary font-bold text-xs">+{challenge.xpReward} XP</span>
                         </CardHeader>
@@ -130,11 +133,11 @@ const SkillDungeonView = ({ onExit }: { onExit: () => void }) => {
                 ) : (
                     <div className="text-center">
                         <Trophy className="h-10 w-10 md:h-12 md:w-12 text-yellow-400 mx-auto mb-2" />
-                        <h2 className="text-base md:text-lg font-bold">Sala {roomLevel -1} Concluída!</h2>
+                        <h2 className="text-base md:text-lg font-bold">Sala {currentRoom - 1} Concluída!</h2>
                         <p className="text-muted-foreground mt-1 mb-3 text-xs md:text-sm">Pronto para o próximo desafio</p>
                         <Button size="sm" onClick={handleGenerateChallenge} className="h-8 text-xs">
                             <Sparkles className="mr-1.5 h-3 w-3" />
-                            Sala {roomLevel}
+                            Sala {currentRoom}
                         </Button>
                     </div>
                 )}

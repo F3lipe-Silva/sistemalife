@@ -162,7 +162,6 @@ export const Sidebar = ({ inSheet = false, onNavigate, collapsed = false, onTogg
                 <SectionTitle>PLAYER</SectionTitle>
                 <NavItem icon={BarChart3} label="ABILITIES" page="skills" tooltip="Skills" />
                 <NavItem icon={UserSquare} label="CLASS" page="class" tooltip="Class" />
-                <NavItem icon={Clock} label="ROUTINE" page="routine" tooltip="Routine" />
                 <NavItem icon={Award} label="ACHIEVEMENTS" page="achievements" tooltip="Awards" />
 
                 <SectionTitle>MARKET</SectionTitle>

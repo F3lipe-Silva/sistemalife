@@ -8,9 +8,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { PushNotificationPrompt } from "@/components/custom/PushNotificationPrompt";
 import { PlayerDataSync } from "@/hooks/use-player-data-sync";
-import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { IonicProvider } from "@/components/providers/ionic-provider";
+import { CapacitorProvider } from "@/components/providers/capacitor-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,7 +46,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <IonicProvider>
-            <SessionProvider>
+            <CapacitorProvider>
               <AuthProvider>
                 <PlayerDataProvider>
                   <PlayerDataSync />
@@ -56,7 +56,7 @@ export default function RootLayout({
                   <PushNotificationPrompt />
                 </PlayerDataProvider>
               </AuthProvider>
-            </SessionProvider>
+            </CapacitorProvider>
           </IonicProvider>
         </ThemeProvider>
       </body>

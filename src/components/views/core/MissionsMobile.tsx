@@ -37,15 +37,18 @@ import React, { memo, useState, useMemo, useRef, useEffect, useCallback } from '
 // } from '@ionic/react';
 import { add, funnel, options, refresh, search, filter, checkmarkCircle, time, flame, star, chevronForward } from 'ionicons/icons';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Lock, Play, Star, Zap, Clock, Target, ChevronRight, MoreHorizontal, Edit3, Trash2, Menu, Settings, Search, History, GitMerge, PlusCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle, Lock, Play, Star, Zap, Clock, Target, ChevronRight, MoreHorizontal, Edit3, Trash2, Menu, Settings, Search, History, GitMerge, PlusCircle, RefreshCw, Wand2, Eye, EyeOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MissionDetailsDialog } from './missions/MissionDetailsDialog';
 import { MissionCompletionAnimation } from './missions/MissionCompletionAnimation';
 import { MissionStatsPanel } from './missions/MissionStatsPanel';
+import { endOfDay, differenceInDays, parseISO } from 'date-fns';
 
 // Define RefresherEventDetail locally for now
 interface RefresherEventDetail {
@@ -53,7 +56,7 @@ interface RefresherEventDetail {
 }
 
 const MissionsMobileComponent = () => {
-    const { profile, missions, completeMission, adjustDailyMission } = usePlayerDataContext();
+    const { profile, missions, metas, completeMission, adjustDailyMission, generatePendingDailyMissions, generatingMission, setGeneratingMission, missionFeedback, addDailyMission, persistData } = usePlayerDataContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('active'); // 'active', 'completed'
     const [selectedMission, setSelectedMission] = useState<any>(null);
@@ -67,9 +70,11 @@ const MissionsMobileComponent = () => {
     const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
     const [showProgressionTree, setShowProgressionTree] = useState(false);
     const [selectedGoalMissions, setSelectedGoalMissions] = useState<any[]>([]);
+    const [timeUntilMidnight, setTimeUntilMidnight] = useState('');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const startY = useRef<number>(0);
     const currentY = useRef<number>(0);
+    const { toast } = useToast();
 
     // Animation state
     const [animationState, setAnimationState] = useState({
@@ -81,9 +86,32 @@ const MissionsMobileComponent = () => {
         newLevel: 0
     });
 
+    useEffect(() => {
+        const calculateTimeUntilMidnight = () => {
+            const now = new Date();
+            const midnight = endOfDay(now);
+            const diff = midnight.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeUntilMidnight('00:00:00');
+                return;
+            }
+
+            const hours = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+            const minutes = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+            const seconds = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+            setTimeUntilMidnight(`${hours}:${minutes}:${seconds}`);
+        };
+
+        calculateTimeUntilMidnight();
+        const timerId = setInterval(calculateTimeUntilMidnight, 1000);
+        return () => clearInterval(timerId);
+    }, []);
+
     // Native haptic feedback with enhanced patterns
     const triggerHapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') => {
-        if (navigator.vibrate) {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
             const patterns = { 
                 light: 50, 
                 medium: 100, 
@@ -95,6 +123,135 @@ const MissionsMobileComponent = () => {
             navigator.vibrate(patterns[type]);
         }
     }, []);
+
+    const handleGenerateMissions = async () => {
+        if (generatingMission) return;
+        triggerHapticFeedback('medium');
+        if (generatePendingDailyMissions) {
+            try {
+                await generatePendingDailyMissions();
+                toast({ title: "Protocolo Iniciado", description: "O Sistema está forjando novas missões." });
+            } catch (err) {
+                toast({ variant: 'destructive', title: "Erro de Sistema", description: "Falha ao gerar missões." });
+            }
+        }
+    };
+
+    const handleAddManualMission = () => {
+        triggerHapticFeedback('medium');
+        const newManualMission = {
+            id: `manual_${Date.now()}`,
+            nome: 'Nova Missão Manual',
+            descricao: 'Descreva sua missão...',
+            xp_conclusao: 10,
+            fragmentos_conclusao: 1,
+            concluido: false,
+            rank: 'E',
+            isManual: true,
+            subTasks: []
+        };
+        setSelectedMission(newManualMission);
+        setShowDetails(true);
+    };
+
+    const handleSaveManualMission = (missionData: any) => {
+        const manualMissions = profile.manual_missions || [];
+        let updatedMissions;
+
+        const exists = manualMissions.some((m: any) => m.id === missionData.id);
+
+        if (exists) {
+            updatedMissions = manualMissions.map((m: any) => m.id === missionData.id ? missionData : m);
+        } else {
+            updatedMissions = [...manualMissions, missionData];
+        }
+        
+        persistData('profile', { ...profile, manual_missions: updatedMissions });
+        setShowDetails(false);
+        setSelectedMission(null);
+        toast({ title: 'Missão Salva', description: 'Dados da missão manual atualizados.' });
+    };
+
+    const handleDeleteManualMission = (missionId: string | number) => {
+        const updatedMissions = (profile.manual_missions || []).filter((m: any) => m.id !== missionId);
+        persistData('profile', { ...profile, manual_missions: updatedMissions });
+        setShowDetails(false);
+        setSelectedMission(null);
+        toast({ title: 'Missão Removida', description: 'Missão manual excluída do registro.' });
+    };
+
+    const handleUnlockMission = async (mission: any) => {
+        if (!mission) return;
+        setGeneratingMission(mission.id);
+        try {
+            const meta = metas.find((m: any) => m.nome === mission.meta_associada);
+            const history = mission.missoes_diarias?.filter((d: any) => d.concluido).map((d: any) => `- ${d.nome}`).join('\n') || '';
+
+            let feedbackForAI = missionFeedback?.[mission.id];
+            if (!feedbackForAI) {
+                if (mission.concluido) {
+                    feedbackForAI = `A missão anterior "${mission.nome}" foi concluída, mas a geração da próxima falhou. Gere uma nova missão diária que continue a progressão do Caçador.`;
+                } else {
+                    feedbackForAI = `Esta é uma missão de qualificação para um rank superior. Gere uma missão diária desafiadora, mas alcançável, para provar que o Caçador está pronto para este novo nível de dificuldade.`;
+                }
+            }
+
+            const response = await fetch('/api/generate-mission', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rankedMissionName: mission.nome,
+                    metaName: meta?.nome || "Objetivo geral",
+                    goalDeadline: meta?.prazo,
+                    history: history || `O utilizador está a tentar uma missão de rank superior.`,
+                    userLevel: profile.nivel,
+                    feedback: feedbackForAI,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch from API');
+            }
+
+            const result = await response.json();
+
+            if (!result.nextMissionName || !result.nextMissionDescription || !result.subTasks || result.subTasks.length === 0) {
+                throw new Error('Resposta da API incompleta. Tente novamente.');
+            }
+
+            const validSubTasks = result.subTasks.filter((st: any) =>
+                st.name && st.name.trim().length > 0 &&
+                st.target && st.target > 0
+            );
+
+            if (validSubTasks.length === 0) {
+                throw new Error('Missão gerada sem sub-tarefas válidas. Tente novamente.');
+            }
+
+            const newDailyMission = {
+                id: Date.now(),
+                nome: result.nextMissionName,
+                descricao: result.nextMissionDescription,
+                xp_conclusao: result.xp || 15,
+                fragmentos_conclusao: result.fragments || 2,
+                concluido: false,
+                tipo: 'diaria',
+                learningResources: result.learningResources || [],
+                subTasks: validSubTasks.map((st: any) => ({ ...st, current: 0, unit: st.unit || '' })),
+            };
+
+            addDailyMission({ rankedMissionId: mission.id, newDailyMission });
+            toast({ title: "Desafio Aceite!", description: `A sua missão de qualificação "${newDailyMission.nome}" está pronta.` });
+        } catch (error) {
+            console.error("Unlock Error", error);
+            toast({ variant: 'destructive', title: "Erro de Desbloqueio", description: 'Não foi possível gerar a missão de qualificação.' });
+        } finally {
+            setGeneratingMission(null);
+        }
+    };
 
     // Enhanced toggle with better feedback
     const togglePriority = useCallback((missionId: string | number) => {
@@ -192,39 +349,54 @@ const MissionsMobileComponent = () => {
     const visibleMissions = useMemo(() => {
         if (!missions) return [];
         
-        // Get manual missions from profile
+        const rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+        const activeEpicMissions = new Map<string, any>();
+
+        // Lógica de "Uma por Meta": Pegar apenas a missão de menor rank ativa para cada meta
+        for (const mission of missions) {
+            if (mission.concluido) continue;
+
+            const existingMissionForGoal = activeEpicMissions.get(mission.meta_associada);
+            const currentRankIndex = existingMissionForGoal ? rankOrder.indexOf(existingMissionForGoal.rank) : -1;
+            const newRankIndex = rankOrder.indexOf(mission.rank);
+
+            if (!existingMissionForGoal || newRankIndex < currentRankIndex) {
+                activeEpicMissions.set(mission.meta_associada, mission);
+            }
+        }
+
         const manualMissions = (profile?.manual_missions || []).map((m: any) => ({ ...m, isManual: true, rank: 'M' }));
+        const completedEpicMissions = missions.filter((m: any) => m.concluido);
         
-        // Combine epic missions and manual missions
-        let allMissions = [...missions, ...manualMissions];
-        
-        // Apply status filter
-        let filtered = allMissions;
+        let missionsToDisplay = [];
         if (statusFilter === 'active') {
-            // For active filter, include:
-            // - Non-completed epic missions
-            // - Non-completed manual missions  
-            // - Stuck completed missions (completed but no active daily missions)
             const stuckCompletedMissions = missions.filter((m: any) => 
                 m.concluido && !m.missoes_diarias?.some((dm: any) => !dm.concluido)
             );
-            filtered = [
-                ...allMissions.filter((m: any) => !m.concluido),
-                ...stuckCompletedMissions
-            ];
+            missionsToDisplay = [...Array.from(activeEpicMissions.values()), ...manualMissions.filter((m: any) => !m.concluido), ...stuckCompletedMissions];
         } else if (statusFilter === 'completed') {
-            filtered = allMissions.filter((m: any) => m.concluido);
+            missionsToDisplay = [...completedEpicMissions, ...manualMissions.filter((m: any) => m.concluido)];
+        } else {
+            missionsToDisplay = [...Array.from(activeEpicMissions.values()), ...completedEpicMissions, ...manualMissions];
         }
 
-        // Apply search filter
         if (searchTerm) {
-            filtered = filtered.filter((m: any) => 
+            missionsToDisplay = missionsToDisplay.filter((m: any) => 
                 m.nome.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
 
-        return filtered;
-    }, [missions, profile?.manual_missions, statusFilter, searchTerm]);
+        // Ordenação consistente
+        missionsToDisplay.sort((a, b) => {
+            const aPriority = priorityMissions.has(a.id);
+            const bPriority = priorityMissions.has(b.id);
+            if (aPriority !== bPriority) return aPriority ? -1 : 1;
+            if (a.concluido !== b.concluido) return a.concluido ? 1 : -1;
+            return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
+        });
+
+        return missionsToDisplay;
+    }, [missions, profile?.manual_missions, statusFilter, searchTerm, priorityMissions]);
 
     const getRankColor = (rank: string) => {
         switch (rank) {
@@ -293,83 +465,91 @@ const MissionsMobileComponent = () => {
     }
 
     return (
-        <div className="h-screen bg-background overflow-hidden flex flex-col max-w-full">
-            <header className="bg-gradient-to-b from-background via-background/95 to-background/90 backdrop-blur-xl border-b border-border/10 flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-                <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-4 min-h-[56px] sm:min-h-[64px]">
-                    <button className="text-foreground p-2 sm:p-2.5 rounded-xl hover:bg-muted/10 transition-colors">
-                        <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-
-                    {/* Dynamic Title with Mission Count */}
-                    <div className="flex-1 flex flex-col items-center justify-center">
-                        <h1 className="font-cinzel text-foreground tracking-wider text-lg sm:text-xl font-semibold">
-                            MISSÕES
-                        </h1>
-                        <div className="flex items-center gap-1 mt-0.5">
-                            <div className={cn("h-1.5 w-1.5 rounded-full animate-pulse", isRefreshing ? "bg-blue-500" : "bg-green-500")} />
-                            <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: isRefreshing ? '#3b82f6' : '#22c55e' }}>
-                                {isRefreshing ? 'SYNCING...' : `${visibleMissions.length} MISSIONS`}
-                            </span>
+        <div className="h-screen bg-black overflow-hidden flex flex-col max-w-full relative">
+            {/* Background System Effect */}
+            <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-[0.03] pointer-events-none z-50" />
+            
+            <header className="bg-black/90 backdrop-blur-2xl border-b border-blue-500/20 flex-shrink-0 z-40" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+                <div className="px-4 py-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="font-cinzel text-white tracking-[0.2em] text-xl font-bold drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+                                QUEST LOG
+                            </h1>
+                            <div className="flex items-center gap-2 mt-1">
+                                <div className={cn("h-2 w-2 rounded-full animate-pulse", isRefreshing ? "bg-blue-500" : "bg-blue-400")} />
+                                <span className="text-[10px] font-mono uppercase tracking-widest text-blue-400/80 font-bold">
+                                    {isRefreshing ? 'SYNCING...' : `${visibleMissions.length} MISSIONS`}
+                                </span>
+                                <span className="text-[10px] font-mono text-blue-500/60 mx-1">|</span>
+                                <Clock className="h-3 w-3 text-blue-500" />
+                                <span className="text-[10px] font-mono text-blue-300 tabular-nums">{timeUntilMidnight}</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowStatsPanel(!showStatsPanel)}
+                                className="text-blue-400 p-3 rounded-2xl border-2 border-blue-500/20 bg-blue-500/5 active:bg-blue-500/20 shadow-lg transition-all"
+                            >
+                                {showStatsPanel ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
+                            </button>
+                            <button 
+                                onClick={handleGenerateMissions}
+                                disabled={!!generatingMission}
+                                className={cn(
+                                    "text-blue-400 p-3 rounded-2xl border-2 border-blue-500/20 bg-blue-500/5 active:bg-blue-500/20 shadow-lg transition-all",
+                                    generatingMission && "opacity-50 grayscale animate-pulse"
+                                )}
+                            >
+                                <Wand2 className={cn("h-6 w-6", generatingMission && "animate-spin-slow")} />
+                            </button>
                         </div>
                     </div>
 
-                                                    <button className="text-foreground p-2 sm:p-2.5 rounded-xl hover:bg-muted/10 transition-colors" onClick={() => setShowStatsPanel(true)}>
-                        <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                </div>
+                    <Collapsible open={showStatsPanel} onOpenChange={setShowStatsPanel}>
+                        <CollapsibleContent className="animate-in slide-in-from-top-2 duration-300">
+                            <div className="mb-4">
+                                <MissionStatsPanel />
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
 
-                {/* Native-style search and filter bar */}
-                <div className="bg-gradient-to-b from-background/80 to-background/60 backdrop-blur-xl border-b border-border/5 px-3 sm:px-4 pb-3 sm:pb-4 flex-shrink-0">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    {/* Search Bar - MD3 Style */}
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500/50 h-5 w-5" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            placeholder="Buscar missões..."
-                            className="w-full pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm bg-muted/30 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder:text-muted-foreground/60"
-                            style={{
-                                '--background': 'rgba(255,255,255,0.08)',
-                                '--color': 'var(--foreground)',
-                                '--placeholder-color': 'var(--muted-foreground)',
-                            } as React.CSSProperties}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            spellCheck="false"
-                            aria-label="Buscar missões"
+                            placeholder="Search missions..."
+                            className="w-full pl-12 pr-4 h-14 bg-blue-950/20 border border-blue-500/30 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-mono text-sm text-blue-100 placeholder:text-blue-500/30"
                         />
                     </div>
 
-                    <div className="flex gap-2 mt-3 bg-muted/20 p-1.5 rounded-xl">
+                    <div className="flex gap-2 p-1.5 bg-blue-950/30 border border-blue-500/10 rounded-2xl">
                         <button
                             onClick={() => setStatusFilter('active')}
                             className={cn(
-                                "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all",
+                                "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-mono uppercase tracking-widest transition-all",
                                 statusFilter === 'active' 
-                                    ? "bg-blue-500/25 text-blue-300 border border-blue-500/40 shadow-lg shadow-blue-500/20" 
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                    ? "bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-lg" 
+                                    : "text-blue-500/50 hover:text-blue-400"
                             )}
-                            aria-label="Mostrar missões ativas"
-                            aria-pressed={statusFilter === 'active'}
                         >
-                            <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="hidden xs:inline">Ativas</span>
-                            <span className="xs:hidden">A</span>
+                            <Zap className="h-4 w-4" />
+                            Active
                         </button>
                         <button
                             onClick={() => setStatusFilter('completed')}
                             className={cn(
-                                "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all",
+                                "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-mono uppercase tracking-widest transition-all",
                                 statusFilter === 'completed' 
-                                    ? "bg-green-500/25 text-green-300 border border-green-500/40 shadow-lg shadow-green-500/20" 
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                    ? "bg-green-600/30 text-green-300 border border-green-500/40 shadow-lg" 
+                                    : "text-green-500/50 hover:text-green-400"
                             )}
-                            aria-label="Mostrar missões concluídas"
-                            aria-pressed={statusFilter === 'completed'}
                         >
-                            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="hidden xs:inline">Concluídas</span>
-                            <span className="xs:hidden">C</span>
+                            <CheckCircle className="h-4 w-4" />
+                            Done
                         </button>
                     </div>
                 </div>
@@ -377,253 +557,145 @@ const MissionsMobileComponent = () => {
 
             <main 
                 ref={scrollContainerRef}
-                className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 pb-safe bg-gradient-to-b from-background via-background to-background/95 relative" 
-                style={{ '--padding-bottom': '120px' } as React.CSSProperties}
+                className="flex-1 overflow-y-auto px-4 py-4 pb-safe bg-black relative" 
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
-                {/* Pull-to-refresh indicator */}
-                {isPullToRefresh && (
-                    <div className="absolute top-0 left-0 right-0 flex justify-center items-center pointer-events-none z-10"
-                        style={{ 
-                            transform: `translateY(${pullToRefreshThreshold}px)`,
-                            opacity: pullToRefreshThreshold / 120
-                        }}
-                    >
-                        <div className="bg-blue-500/20 backdrop-blur-sm rounded-full p-3 border border-blue-500/30">
-                            <RefreshCw className={cn(
-                                "h-5 w-5 text-blue-400",
-                                pullToRefreshThreshold > 60 && "animate-spin"
-                            )} />
-                        </div>
-                    </div>
-                )}
-
-                <div className="space-y-3 sm:space-y-4 pt-1 sm:pt-2 animate-fade-in">
-                    
-                    {/* Missions List */}
+                <div className="space-y-4 pb-24">
                     {visibleMissions.length === 0 ? (
-                        <div className="text-center py-12 sm:py-16 opacity-60">
-                            <div className="p-4 sm:p-6 bg-gradient-to-br from-muted/20 to-muted/10 rounded-full w-fit mx-auto mb-4 sm:mb-6 border border-muted/30">
-                                <Target className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
-                            </div>
-                            <h3 className="font-cinzel text-muted-foreground mb-3 text-lg sm:text-xl">NENHUMA MISSÃO</h3>
-                            <p className="text-sm text-muted-foreground/70 max-w-xs mx-auto px-4">Não foram encontradas missões com os filtros atuais.</p>
+                        <div className="text-center py-20 opacity-40 flex flex-col items-center">
+                            <Target className="h-16 w-16 text-blue-500 mb-4" />
+                            <h3 className="font-cinzel text-xl text-blue-100">NO MISSIONS FOUND</h3>
+                            <p className="text-sm font-mono mt-2">Adjust your filters, Hunter.</p>
                         </div>
                     ) : (
                         visibleMissions.map((mission: any, index: number) => {
-                            // Handle different mission types
                             const isManualMission = mission.isManual;
-                            const activeDaily = isManualMission ? null : mission.missoes_diarias?.find((d: any) => !d.concluido);
+                            const activeDaily = isManualMission ? mission : mission.missoes_diarias?.find((d: any) => !d.concluido);
+                            const isPriority = priorityMissions.has(mission.id);
                             
+                            // Check for level lock (only for non-manual missions)
+                            const isLocked = !isManualMission && mission.level_requirement && profile.nivel < mission.level_requirement;
+
+                            if (isLocked) {
+                                return (
+                                    <div key={mission.id} className="relative border border-red-900/30 bg-red-950/10 rounded-[2rem] p-6 flex flex-col items-center text-center opacity-80 overflow-hidden">
+                                        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(220,38,38,0.05)_10px,rgba(220,38,38,0.05)_20px)]" />
+                                        <Lock className="h-8 w-8 text-red-500/60 mb-3 relative z-10" />
+                                        <h3 className="font-mono font-bold text-red-400 uppercase tracking-widest text-sm relative z-10">{mission.nome}</h3>
+                                        <div className="bg-black/40 border border-red-500/20 px-3 py-1 rounded-lg mt-3 relative z-10">
+                                            <span className="text-[10px] font-mono text-red-300">REQ: LEVEL {mission.level_requirement}</span>
+                                        </div>
+                                        <p className="text-red-300/40 text-[10px] mt-2 font-mono uppercase tracking-wide relative z-10">Access Restricted</p>
+                                    </div>
+                                );
+                            }
+
                             return (
                                 <div
                                     key={mission.id}
                                     className={cn(
-                                        "rounded-xl overflow-hidden transition-all duration-300 cursor-pointer transform",
-                                        "bg-gradient-to-br from-black/70 to-black/50 backdrop-blur-md border",
+                                        "relative border-2 rounded-[2rem] transition-all duration-300 active:scale-[0.97] overflow-hidden shadow-xl",
+                                        "bg-gradient-to-br from-blue-950/20 to-black",
                                         mission.concluido
-                                            ? "border-green-900/50 bg-gradient-to-br from-green-950/30 to-green-950/10 hover:scale-[1.02]"
-                                            : "border-blue-900/50 hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-blue-500/10"
+                                            ? "border-green-900/40 opacity-70"
+                                            : isPriority 
+                                                ? "border-yellow-500/60 shadow-yellow-500/10" 
+                                                : "border-blue-900/50"
                                     )}
-                                    style={{
-                                        'boxShadow': mission.concluido ? '0 8px 32px -8px rgba(34, 197, 94, 0.15)' : '0 8px 32px -8px rgba(59, 130, 246, 0.15)',
-                                        'animationDelay': `${index * 50}ms`
-                                    } as React.CSSProperties}
                                     onClick={() => {
                                         triggerHapticFeedback('light');
                                         setSelectedMission(activeDaily || mission);
                                         setShowDetails(true);
                                     }}
-                                    onTouchStart={(e) => {
-                                        startY.current = e.touches[0].clientX;
-                                    }}
-                                    onTouchMove={(e) => {
-                                        const deltaX = e.touches[0].clientX - startY.current;
-                                        if (Math.abs(deltaX) > 50) {
-                                            setSwipeDirection(deltaX > 0 ? 'right' : 'left');
-                                        }
-                                    }}
-                                    onTouchEnd={() => {
-                                        if (swipeDirection) {
-                                            handleMissionSwipe(mission, swipeDirection);
-                                        }
-                                    }}
                                 >
-                                    {/* Swipe indicators */}
-                                    {swipeDirection && (
-                                        <div className="absolute inset-0 pointer-events-none z-10">
-                                            {swipeDirection === 'right' && (
-                                                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-yellow-500/20 backdrop-blur-sm rounded-full p-2 border border-yellow-500/30">
-                                                    <Star className="h-4 w-4 text-yellow-400" />
-                                                </div>
-                                            )}
-                                            {swipeDirection === 'left' && (
-                                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500/20 backdrop-blur-sm rounded-full p-2 border border-blue-500/30">
-                                                    <ChevronRight className="h-4 w-4 text-blue-400" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div className="p-0">
-                                        <div className="flex">
-                                            {/* Status Indicator */}
+                                    <div className="flex flex-col p-5">
+                                        <div className="flex gap-4 items-start mb-4">
+                                            {/* Rank Badge - MD3 Style but System Theme */}
                                             <div className={cn(
-                                                "w-2 flex-shrink-0 rounded-r-lg",
-                                                mission.concluido ? "bg-gradient-to-b from-green-400 via-green-500 to-green-600" : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600"
-                                            )} />
-
-                                            <div className="p-3 sm:p-4 flex-1">
-                                                {/* Header */}
-                                                <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-2">
-                                                        <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground leading-tight truncate">
-                                                            {mission.nome}
-                                                        </h3>
-                                                        <div className="flex items-center gap-1 sm:gap-1.5 mt-1 flex-wrap">
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="text-[8px] sm:text-[9px] border-muted-foreground/30 text-muted-foreground px-1 sm:px-1.5 py-0.5 bg-muted/10 max-w-[100px] sm:max-w-[120px] truncate"
-                                                            >
-                                                                {mission.meta_associada || "GERAL"}
-                                                            </Badge>
-                                                            {mission.concluido && (
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="text-[8px] sm:text-[9px] border-green-500/40 text-green-300 px-1 sm:px-1.5 py-0.5 bg-green-500/10 flex-shrink-0"
-                                                                >
-                                                                    <CheckCircle className="h-1.5 w-1.5 sm:h-2 sm:w-2 mr-1" />
-                                                                    <span className="hidden xs:inline">CONCLUÍDA</span>
-                                                                    <span className="xs:hidden">✓</span>
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={cn(
-                                                        "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl border-2 font-black font-cinzel text-xs sm:text-sm flex-shrink-0 shadow-lg ml-1 sm:ml-2",
-                                                        getRankColor(mission.rank)
-                                                    )}>
-                                                        {mission.rank}
-                                                    </div>
-                                                </div>
-
-                                                {/* Mission Content */}
-                                                {isManualMission ? (
-                                                    /* Manual Mission Content */
-                                                    <div className="bg-gradient-to-br from-slate-500/10 to-slate-500/5 p-3 sm:p-4 rounded-xl border border-slate-500/20 shadow-inner">
-                                                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-slate-500/20 to-slate-500/10 rounded-xl border border-slate-500/30">
-                                                                <Edit3 className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400" />
-                                                            </div>
-                                                            <span className="text-xs sm:text-sm font-bold text-slate-300 uppercase tracking-wide">Missão Manual</span>
-                                                        </div>
-                                                        <p className="text-xs sm:text-sm text-foreground/95 leading-snug mb-3 sm:mb-4">{mission.descricao}</p>
-
-                                                        {/* Manual Mission Progress */}
-                                                        {mission.subTasks && mission.subTasks.length > 0 && (
-                                                            <div className="space-y-2 sm:space-y-3">
-                                                                {mission.subTasks.map((st: any, i: number) => (
-                                                                    <div key={i} className="space-y-1.5 sm:space-y-2">
-                                                                        <div className="flex justify-between text-[9px] sm:text-[11px] text-muted-foreground/80">
-                                                                            <span className="truncate pr-2 font-medium">{st.name}</span>
-                                                                            <span className="font-mono text-foreground/60">{st.current || 0}/{st.target}</span>
-                                                                        </div>
-                                                                        <div className="h-1.5 sm:h-2 bg-muted/30 rounded-full overflow-hidden">
-                                                                            <div
-                                                                                className="h-full bg-gradient-to-r from-slate-400 via-slate-400 to-slate-300 transition-all duration-700 ease-out rounded-full shadow-sm"
-                                                                                style={{ width: `${Math.min(100, ((st.current || 0) / st.target) * 100)}%` }}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : activeDaily ? (
-                                                    /* Epic Mission with Active Daily */
-                                                    <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 p-3 sm:p-4 rounded-xl border border-yellow-500/20 shadow-inner">
-                                                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 rounded-xl border border-yellow-500/30">
-                                                                <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400" />
-                                                            </div>
-                                                            <span className="text-xs sm:text-sm font-bold text-yellow-300 uppercase tracking-wide">Missão Ativa</span>
-                                                        </div>
-                                                        <p className="text-xs sm:text-sm text-foreground/95 leading-snug mb-3 sm:mb-4">{activeDaily.nome}</p>
-
-                                                        {/* Enhanced Progress Bars */}
-                                                        <div className="space-y-2 sm:space-y-3">
-                                                            {activeDaily.subTasks?.map((st: any, i: number) => (
-                                                                <div key={i} className="space-y-1.5 sm:space-y-2">
-                                                                    <div className="flex justify-between text-[9px] sm:text-[11px] text-muted-foreground/80">
-                                                                        <span className="truncate pr-2 font-medium">{st.name}</span>
-                                                                        <span className="font-mono text-foreground/60">{st.current || 0}/{st.target}</span>
-                                                                    </div>
-                                                                    <div className="h-1.5 sm:h-2 bg-muted/30 rounded-full overflow-hidden">
-                                                                        <div
-                                                                            className="h-full bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-300 transition-all duration-700 ease-out rounded-full shadow-sm"
-                                                                            style={{ width: `${Math.min(100, ((st.current || 0) / st.target) * 100)}%` }}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    /* Epic Mission - No Active Daily */
-                                                    <div className="flex items-center gap-3 sm:gap-4 text-muted-foreground bg-gradient-to-br from-muted/20 to-muted/10 p-3 sm:p-4 rounded-xl border border-muted/20">
-                                                        <div className="p-2 sm:p-3 bg-gradient-to-br from-muted/30 to-muted/20 rounded-xl border border-muted/30">
-                                                            <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <p className="text-xs sm:text-sm font-medium text-foreground/80">Aguardando Missão</p>
-                                                            <p className="text-[10px] sm:text-xs opacity-60 mt-1">Nova missão será gerada em breve</p>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                "flex-shrink-0 w-14 h-14 rounded-2xl border-2 flex flex-col items-center justify-center bg-black/80 shadow-inner",
+                                                getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500')
+                                            )}>
+                                                <span className={cn("font-cinzel font-black text-2xl leading-none", getRankColor(mission.rank))}>
+                                                    {mission.rank}
+                                                </span>
+                                                <span className="text-[8px] font-mono text-gray-500 uppercase mt-1 font-bold">RANK</span>
                                             </div>
 
-                                            {/* Action Indicator */}
-                                            <div className="pr-3 sm:pr-4 flex items-center">
-                                                {/* Action Buttons */}
-                                                <div className="flex items-center gap-1 mr-2">
-                                                    {/* Priority Button */}
-                                                    <button
-                                                        className={cn(
-                                                            "p-1.5 rounded-lg transition-colors",
-                                                            priorityMissions.has(mission.id) 
-                                                                ? "text-yellow-400 bg-yellow-500/20" 
-                                                                : "text-muted-foreground/60 hover:text-yellow-400 hover:bg-muted/10"
-                                                        )}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            togglePriority(mission.id);
-                                                        }}
-                                                        aria-label={priorityMissions.has(mission.id) ? "Remover prioridade" : "Adicionar prioridade"}
-                                                        aria-pressed={priorityMissions.has(mission.id)}
-                                                    >
-                                                        <Star className={cn("h-3 w-3 sm:h-4 sm:w-4", priorityMissions.has(mission.id) && "fill-yellow-400")} />
-                                                    </button>
-
-                                                    {/* Progression Button - Only for non-manual missions */}
-                                                    {!isManualMission && (
-                                                        <button
-                                                            className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-blue-400 hover:bg-muted/10 transition-colors"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleShowProgression(mission);
-                                                            }}
-                                                            aria-label="Ver árvore de progressão"
-                                                        >
-                                                            <GitMerge className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                        </button>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-mono font-bold text-base text-blue-50 text-wrap leading-tight">
+                                                    {mission.nome}
+                                                </h3>
+                                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                    <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-mono text-blue-400 font-bold uppercase">
+                                                        {mission.meta_associada || "GENERAL"}
+                                                    </span>
+                                                    {mission.concluido && (
+                                                        <span className="text-[10px] font-mono text-green-400 uppercase font-bold flex items-center gap-1">
+                                                            <CheckCircle className="h-3 w-3" /> VERIFIED
+                                                        </span>
                                                     )}
                                                 </div>
-                                                
-                                                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground/40 transition-transform group-hover:translate-x-1" />
                                             </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <button 
+                                                    className={cn("p-2 transition-transform active:scale-125", isPriority ? "text-yellow-500" : "text-blue-500/30")}
+                                                    onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
+                                                >
+                                                    <Star className={cn("h-5 w-5", isPriority && "fill-yellow-500")} />
+                                                </button>
+                                                {!isManualMission && (
+                                                    <button 
+                                                        className="p-2 text-blue-500/30 hover:text-blue-400 transition-colors"
+                                                        onClick={(e) => { e.stopPropagation(); handleShowProgression(mission); }}
+                                                    >
+                                                        <GitMerge className="h-5 w-5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Active Content HUD */}
+                                        {activeDaily && !mission.concluido && (
+                                            <div className="mt-2 bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 space-y-4 shadow-inner">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-mono text-blue-400 uppercase tracking-tighter font-bold flex items-center gap-2">
+                                                        <Zap className="h-4 w-4" /> CURRENT_TASK
+                                                    </span>
+                                                    <span className="text-xs font-mono text-blue-200 bg-blue-500/10 px-2 py-1 rounded-lg">{activeDaily.nome}</span>
+                                                </div>
+                                                
+                                                {/* Progress Bars - Thick MD3 Style */}
+                                                <div className="space-y-3">
+                                                    {activeDaily.subTasks?.map((st: any, i: number) => (
+                                                        <div key={i} className="space-y-2">
+                                                            <div className="flex justify-between text-xs font-mono text-blue-100/70">
+                                                                <span className="truncate pr-4 font-bold uppercase">{st.name}</span>
+                                                                <span className="text-blue-400">{st.current || 0}/{st.target} {st.unit}</span>
+                                                            </div>
+                                                            <div className="h-3 bg-blue-950/40 rounded-full overflow-hidden border border-blue-500/20">
+                                                                <div
+                                                                    className="h-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out"
+                                                                    style={{ width: `${Math.min(100, ((st.current || 0) / st.target) * 100)}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!activeDaily && !mission.concluido && (
+                                            <div className="mt-2 border-2 border-dashed border-blue-500/20 rounded-2xl p-6 flex flex-col items-center gap-2 opacity-60">
+                                                <Clock className="h-8 w-8 text-blue-500/40 animate-pulse" />
+                                                <span className="text-xs font-mono text-blue-500/60 uppercase font-bold tracking-widest">Awaiting system update...</span>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="mt-4 flex items-center justify-end text-blue-500/40 text-xs font-mono gap-1 group-active:text-blue-400 transition-colors font-bold">
+                                            TAP TO EXPAND <ChevronRight className="h-4 w-4" />
                                         </div>
                                     </div>
                                 </div>
@@ -647,11 +719,18 @@ const MissionsMobileComponent = () => {
                         isOpen={showDetails}
                         onClose={() => setShowDetails(false)}
                         mission={selectedMission}
-                        isManual={false} // Simplification for now
+                        isManual={!!selectedMission.isManual}
                         onContribute={async (subTask, amount, mission) => {
                              // Logic would go here or be passed
-                             const rankedMission = missions.find((rm: any) => rm.missoes_diarias.some((dm: any) => dm.id === mission.id));
-                             if (rankedMission) {
+                             const rankedMission = missions.find((rm: any) => rm.missoes_diarias?.some((dm: any) => dm.id === mission.id));
+                             const isManual = mission.isManual;
+                             
+                             if (isManual) {
+                                // Manual mission update logic needs to be handled here or via context
+                                // For now, assuming completeMission handles it if passed correctly, 
+                                // but completeMission expects rankedMissionId
+                                console.log("Manual mission update", mission);
+                             } else if (rankedMission) {
                                 await completeMission({
                                     rankedMissionId: rankedMission.id,
                                     dailyMissionId: mission.id,
@@ -661,108 +740,65 @@ const MissionsMobileComponent = () => {
                                 });
                              }
                         }}
-                        onSave={() => {}}
-                        onDelete={() => {}}
+                        onSave={handleSaveManualMission}
+                        onDelete={handleDeleteManualMission}
                         onAdjustDifficulty={(mission, feedback) => {
-                             // Adjust logic
+                             const rankedMission = missions.find((rm: any) => rm.missoes_diarias?.some((dm: any) => dm.id === mission.id));
+                             if (rankedMission) {
+                                adjustDailyMission(rankedMission.id, mission.id, feedback);
+                             }
                         }}
                     />
                 )}
             </main>
 
-            {/* Progression Tree Dialog */}
+            {/* FAB for Manual Missions */}
+            <button
+                onClick={handleAddManualMission}
+                className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 border-2 border-blue-400 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all active:scale-90 active:bg-blue-500 flex items-center justify-center rounded-full z-40"
+                style={{ bottom: 'calc(96px + env(safe-area-inset-bottom))' }}
+            >
+                <PlusCircle className="h-6 w-6" />
+            </button>
+
+            {/* Progression Tree Dialog - MD3 Full Width Style */}
             <Dialog open={showProgressionTree} onOpenChange={setShowProgressionTree}>
-                <DialogContent className="max-w-[95vw] w-full max-h-[80vh] overflow-hidden">
-                    <DialogHeader>
-                        <DialogTitle className="text-primary text-lg">Árvore de Progressão da Missão</DialogTitle>
-                        <DialogDescription className="text-sm">
-                            Esta é a sequência de missões épicas para a meta "{selectedGoalMissions[0]?.meta_associada}".
+                <DialogContent className={cn("bg-black/95 border-2 border-blue-500/50 max-w-[95vw] w-full p-0 shadow-[0_0_30px_rgba(37,99,235,0.3)] backdrop-blur-xl sm:rounded-none overflow-hidden")}>
+                    <DialogHeader className="p-6 border-b border-blue-900/50 bg-blue-950/20">
+                        <DialogTitle className="text-white font-cinzel tracking-widest text-lg uppercase font-bold flex items-center gap-2">
+                            <GitMerge className="h-5 w-5 text-blue-400" />
+                            Progression Tree
+                        </DialogTitle>
+                        <DialogDescription className="text-blue-400/60 font-mono text-[10px] uppercase font-bold mt-1">
+                            {selectedGoalMissions[0]?.meta_associada || 'Mission Sequence'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="mt-2 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                        {selectedGoalMissions.map((m: any, index: number) => (
-                            <div key={m.id} className="relative">
-                                {/* Connection line */}
-                                {index < selectedGoalMissions.length - 1 && (
-                                    <div className="absolute left-4 top-8 w-0.5 h-8 bg-gradient-to-b from-primary/30 to-muted/30" />
-                                )}
-                                
+                    
+                    <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                        {selectedGoalMissions.map((m: any, i: number) => (
+                            <div key={m.id} className={cn(
+                                "relative border-l-2 pl-4 py-2",
+                                m.concluido ? "border-green-500/50" : "border-blue-500/30"
+                            )}>
                                 <div className={cn(
-                                    `rounded-lg border-l-4 overflow-hidden relative bg-gradient-to-r`,
-                                    m.concluido 
-                                        ? 'border-green-500 from-green-950/20 to-transparent' 
-                                        : 'border-primary from-primary/20 to-transparent',
-                                    "p-3 shadow-sm"
+                                    "absolute -left-[5px] top-3 w-2.5 h-2.5 rounded-full border-2",
+                                    m.concluido ? "bg-black border-green-500" : "bg-black border-blue-500"
+                                )} />
+                                <div className={cn(
+                                    "p-3 rounded-xl border",
+                                    m.concluido ? "bg-green-950/10 border-green-500/20" : "bg-blue-950/10 border-blue-500/20"
                                 )}>
-                                    {/* Progress indicator */}
-                                    <div className="absolute top-2 right-2">
-                                        {m.concluido ? (
-                                            <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                        ) : (
-                                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                        )}
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-mono text-xs font-bold text-white">{m.nome}</span>
+                                        <Badge variant="outline" className={cn("text-[10px]", getRankColor(m.rank))}>{m.rank}</Badge>
                                     </div>
-                                    
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1 min-w-0">
-                                            <p className={cn(
-                                                `${m.concluido ? 'text-muted-foreground line-through' : 'text-foreground'}`,
-                                                "font-bold text-sm leading-tight"
-                                            )}>
-                                                {m.nome}
-                                            </p>
-                                            <p className="text-muted-foreground text-xs mt-1 line-clamp-2">
-                                                {m.descricao}
-                                            </p>
-                                        </div>
-                                        <span className={cn(
-                                            `text-xs font-bold px-2 py-1 rounded-full ml-2 flex-shrink-0`,
-                                            getRankColor(m.rank)
-                                        )}>
-                                            {m.rank}
-                                        </span>
-                                    </div>
-                                    
-                                    {/* Status indicator */}
-                                    <div className="flex items-center mt-2">
-                                        {m.concluido ? (
-                                            <div className="flex items-center text-green-400">
-                                                <CheckCircle className="mr-1 h-3 w-3" />
-                                                <span className="text-xs font-medium">Concluída</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center text-blue-400">
-                                                <Zap className="mr-1 h-3 w-3" />
-                                                <span className="text-xs font-medium">Em Progresso</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <p className="text-[10px] text-blue-200/60 font-mono leading-tight">{m.descricao}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </DialogContent>
             </Dialog>
-
-            {/* Floating Action Button for Manual Missions */}
-            <button
-                onClick={() => {
-                    triggerHapticFeedback('medium');
-                    setSelectedMission(null);
-                    setShowDetails(true);
-                }}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center group z-40 active:scale-95"
-                style={{ 
-                    bottom: 'calc(6px + env(safe-area-inset-bottom))',
-                    right: 'calc(6px + env(safe-area-inset-right))'
-                }}
-                aria-label="Criar nova missão manual"
-                role="button"
-                tabIndex={0}
-            >
-                <PlusCircle className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                <div className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </button>
         </div>
     );
 };
