@@ -346,20 +346,6 @@ const MetasMobileComponent = () => {
                         </div>
                     </div>
                 );
-            case 'detailed':
-                return (
-                    <div className="h-full">
-                        <SmartGoalWizard
-                            onClose={handleCloseWizard}
-                            onSave={(meta) => {
-                                console.log("Saving detailed meta", meta);
-                                handleCloseWizard();
-                            }}
-                            metaToEdit={null}
-                            profile={profile}
-                        />
-                    </div>
-                );
             case 'simple':
                 return (
                     <div className="p-6 space-y-6">
@@ -692,24 +678,34 @@ const MetasMobileComponent = () => {
                  </Dialog>
             )}
 
-            {showWizard && (
+            {showWizard && wizardMode === 'detailed' && (
+                <SmartGoalWizard
+                    onClose={handleCloseWizard}
+                    onSave={(meta) => {
+                        handleSaveMeta(meta);
+                    }}
+                    metaToEdit={null}
+                    profile={profile}
+                    initialGoalName={quickGoalData.name}
+                />
+            )}
+
+            {showWizard && wizardMode !== 'detailed' && (
                 <Dialog open={showWizard} onOpenChange={setShowWizard}>
                     <DialogContent className={cn(
                         "bg-black/95 border-2 border-blue-500/30 p-0 overflow-hidden shadow-2xl",
-                        wizardMode === 'detailed' ? "max-w-[100vw] w-screen h-screen rounded-none" : "max-w-[95vw] w-[95vw] rounded-[2.5rem]"
+                        "max-w-[95vw] w-[95vw] rounded-[2.5rem]"
                     )}>
-                        {wizardMode !== 'detailed' && (
-                            <DialogHeader className="p-6 border-b border-blue-500/20 bg-blue-950/20">
-                                <DialogTitle className="text-white font-cinzel tracking-widest text-xl uppercase font-bold text-center">
-                                    OBJECTIVE_PROTOCOL
-                                </DialogTitle>
-                                <DialogDescription className="text-blue-400/60 font-mono text-[10px] uppercase font-bold text-center mt-1">
-                                    SELECT CONFIGURATION MODE
-                                </DialogDescription>
-                            </DialogHeader>
-                        )}
+                        <DialogHeader className="p-6 border-b border-blue-500/20 bg-blue-950/20">
+                            <DialogTitle className="text-white font-cinzel tracking-widest text-xl uppercase font-bold text-center">
+                                OBJECTIVE_PROTOCOL
+                            </DialogTitle>
+                            <DialogDescription className="text-blue-400/60 font-mono text-[10px] uppercase font-bold text-center mt-1">
+                                SELECT CONFIGURATION MODE
+                            </DialogDescription>
+                        </DialogHeader>
                         
-                        <div className={cn(wizardMode === 'detailed' ? "h-full overflow-y-auto" : "")}>
+                        <div>
                             {renderWizardContent()}
                         </div>
                         

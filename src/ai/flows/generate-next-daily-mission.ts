@@ -26,6 +26,8 @@ const GenerateNextDailyMissionInputSchema = z.object({
   goalDeadline: z.string().nullable().optional().describe("A data final para a meta (prazo), no formato YYYY-MM-DD."),
   history: z.string().describe("O histórico das últimas missões diárias concluídas para dar contexto."),
   userLevel: z.number().describe("O nível atual do utilizador para ajustar a dificuldade."),
+  userStats: z.record(z.string(), z.number()).optional().describe("Estatísticas do jogador (Força, Inteligência, etc.) para personalizar o tipo de desafio."),
+  timeOfDay: z.string().optional().describe("O período do dia atual (ex: 'morning', 'afternoon', 'night') para evitar sugerir tarefas inadequadas."),
   feedback: z.string().optional().describe("Feedback do utilizador sobre a missão anterior (ex: 'muito fácil', 'muito difícil', ou um texto descritivo) para calibrar a próxima."),
 });
 export type GenerateNextDailyMissionInput = z.infer<typeof GenerateNextDailyMissionInputSchema>;
@@ -48,11 +50,11 @@ export async function generateNextDailyMission(
     : 'Esta é a primeira missão para este objetivo.';
 
   const feedbackPrompt = input.feedback
-      ? `DIRETIVA DE FEEDBACK (MAIS IMPORTANTE): O utilizador deu um feedback sobre a última missão: "${input.feedback}". Leve isto em consideração como a principal diretriz para a dificuldade.
-- Se o feedback for 'muito fácil', aumente a complexidade ou a quantidade nas sub-tarefas significativamente. Considere criar uma tarefa que já contribua para a próxima Missão Épica, acelerando a progressão.
-- Se o feedback for 'muito difícil', reduza drasticamente a complexidade. Crie uma missão mais simples ou quebre a tarefa anterior num passo ainda menor.
-- Se o feedback for 'perfeito' ou descritivo, mantenha uma progressão natural e lógica.`
-      : 'Nenhum feedback foi dado. Prossiga with uma progressão natural.';
+      ? `DIRETIVA DE FEEDBACK (CRÍTICO): O utilizador relatou: "${input.feedback}".
+- Se 'muito fácil': Aumente a dificuldade, volume ou complexidade IMEDIATAMENTE.
+- Se 'muito difícil': Reduza a carga ou quebre a tarefa em passos menores.
+- Se 'perfeito': Mantenha o ritmo atual.`
+      : 'Nenhum feedback recente. Mantenha a progressão padrão.';
 
   let deadlinePrompt = '';
   if (input.goalDeadline) {
@@ -63,31 +65,43 @@ export async function generateNextDailyMission(
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
       if (diffDays >= 0) {
-          deadlinePrompt = `DIRETIVA DE PRAZO: A data de hoje é ${today.toLocaleDateString()}. A meta final tem um prazo. Faltam ${diffDays} dias. Se o tempo for curto (menos de 14 dias), sugira uma missão um pouco mais ambiciosa ou impactante para garantir que o objetivo seja alcançado a tempo. Se o prazo estiver confortável (mais de 30 dias), mantenha um ritmo sustentável.`;
+          deadlinePrompt = `STATUS DO PRAZO: Faltam ${diffDays} dias. ${diffDays < 14 ? 'URGÊNCIA ALTA: Aumente a intensidade para garantir a conclusão.' : 'Ritmo: Sustentável.'}`;
       }
   }
 
+  const statsPrompt = input.userStats 
+    ? `ATRIBUTOS DO JOGADOR: ${JSON.stringify(input.userStats)}. Use isso para personalizar o desafio (ex: Alta Força -> Desafios físicos mais intensos; Alta Inteligência -> Tarefas de estudo mais complexas).`
+    : '';
 
-  const finalPrompt = `Você é o 'Sistema' de um RPG da vida real. O utilizador (Nível ${input.userLevel}) está na missão épica "${input.rankedMissionName}", para a meta "${input.metaName}". ${historyPrompt} ${feedbackPrompt} ${deadlinePrompt}
-Sua tarefa é criar a PRÓXIMA missão diária. A missão deve ser uma lista de objetivos claros e mensuráveis.
+  const timePrompt = input.timeOfDay
+    ? `HORA ATUAL: ${input.timeOfDay}. Ajuste a natureza da tarefa (ex: Evite exercícios intensos ou barulhentos tarde da noite ('night'); Foco mental é melhor pela manhã ('morning')).`
+    : '';
 
-**DIRETIVA DE DIFICULDADE (MUITO IMPORTANTE):** A dificuldade da missão DEVE escalar com o nível do utilizador. Um Caçador de nível ${input.userLevel} precisa de um desafio maior do que um de nível 1. Ajuste a complexidade e a quantidade (target) das sub-tarefas para serem apropriadas para este nível.
+  const finalPrompt = `
+IDENTITY: Você é o 'SISTEMA' (como em Solo Leveling). Você é frio, objetivo, autoritário, mas focado na evolução máxima do "JOGADOR" (o utilizador).
+CONTEXTO: JOGADOR Nível ${input.userLevel}. Missão Épica: "${input.rankedMissionName}". Meta Principal: "${input.metaName}".
+${historyPrompt}
+${feedbackPrompt}
+${deadlinePrompt}
+${statsPrompt}
+${timePrompt}
 
-**REGRAS GERAIS:**
-1.  **Nome da Missão:** Crie um nome geral e inspirador para a missão diária.
-2.  **Descrição da Missão:** Escreva uma breve descrição (1-2 frases) que explique o propósito da missão diária.
-3.  **Sub-tarefas (O MAIS IMPORTANTE):** Crie de 1 a 5 sub-tarefas. ESTAS são as ações que o utilizador irá realizar.
-    *   O **NOME** da sub-tarefa deve ser a ação concreta (ex: "Caminhada leve", "Escrever código de teste").
-    *   Defina um **'target'** numérico claro para cada sub-tarefa.
-    *   Defina uma **'unit'** (unidade) quando apropriado (ex: "minutos", "repetições", "páginas", "problemas").
-4.  **Recursos de Aprendizagem (Opcional e IMPORTANTE):** Se a missão envolver conhecimento técnico, forneça até 2 **RECURSOS TEXTUAIS** como documentação oficial, artigos ou guias. NUNCA sugira vídeos, tutoriais do YouTube ou conteúdo em vídeo.
+OBJETIVO: Gere a PRÓXIMA MISSÃO DIÁRIA. Ela deve ser um passo lógico, acionável e desafiador em direção à Meta Principal.
 
-Gere a resposta em JSON:
+DIRETIVAS DE GERAÇÃO:
+1. **Nome da Missão:** Use linguagem de RPG/Sistema. Imperativo. (ex: "Executar Protocolo de Estudo", "Iniciar Treino de Hipertrofia").
+2. **Adaptação:** Se for 'noite', sugira tarefas de preparação, revisão ou relaxamento ativo, a menos que o utilizador tenha hábitos noturnos claros.
+3. **Escalabilidade:** Para Nível ${input.userLevel}, as tarefas não podem ser triviais. Devem exigir esforço real.
+4. **Sub-tarefas:**
+    - Devem ser QUANTIFICÁVEIS (Target numérico obrigatório).
+    - Devem ser ATÔMICAS (Uma ação clara).
+
+Gere a resposta em JSON estrito:
 {
-  "nextMissionName": "...",
-  "nextMissionDescription": "...",
-  "learningResources": ["..."],
-  "subTasks": [{"name": "...", "target": 10, "unit": "..."}]
+  "nextMissionName": "Nome Gamificado da Missão",
+  "nextMissionDescription": "Descrição direta e motivadora do Sistema.",
+  "learningResources": ["URL ou Nome de Livro (apenas se for tarefa de estudo)"],
+  "subTasks": [{"name": "Ação específica", "target": 10, "unit": "minutos/reps/páginas", "current": 0}]
 }
 `;
 
