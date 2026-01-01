@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que transforma uma meta simples numa meta SMART completa.
- *
- * - generateSimpleSmartGoal - Gera uma meta SMART a partir de um nome.
- * - GenerateSimpleSmartGoalInput - O tipo de entrada para a função.
- * - GenerateSimpleSmartGoalOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que gera uma versão SMART simplificada de uma meta com base em respostas.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -35,6 +30,7 @@ export type GenerateSimpleSmartGoalOutput = z.infer<typeof GenerateSimpleSmartGo
 export async function generateSimpleSmartGoal(
   input: GenerateSimpleSmartGoalInput
 ): Promise<GenerateSimpleSmartGoalOutput> {
+  console.log("🚀 Server Action generateSimpleSmartGoal started", input);
   try {
     const prompt = `Você é um coach de produtividade de elite, mestre em transformar ideias em metas acionáveis.
 Sua tarefa é pegar o nome de uma meta fornecida pelo utilizador e expandi-la para uma meta SMART completa.
@@ -55,12 +51,14 @@ Responda em formato JSON seguindo este esquema exato para o objeto refinedGoal:
   "timeBound": "..."
 }
 `;
+    console.log("📝 Generating Prompt...", prompt.substring(0, 50) + "...");
     const response = await retryWithBackoff(
       async () => await generateWithAppwriteAI<any>(prompt, true),
       3,
       1000,
       'Generate Simple SMART Goal'
     );
+    console.log("✅ AI Response received:", response ? "Success" : "Empty");
 
     // Se o retorno for { refinedGoal: { ... } }, extraímos. Se for direto { ... }, usamos.
     const refinedData = response.refinedGoal || response;
@@ -75,8 +73,9 @@ Responda em formato JSON seguindo este esquema exato para o objeto refinedGoal:
     };
 
     return { refinedGoal, fallback: false };
-  } catch (error) {
-    console.error("Falha ao gerar meta SMART, acionando fallback:", error);
+  } catch (error: any) {
+    console.error("❌ Critical Error in generateSimpleSmartGoal:", error);
+    console.error("Stack Trace:", error.stack);
     
     const fallbackGoal = {
         name: input.goalName,

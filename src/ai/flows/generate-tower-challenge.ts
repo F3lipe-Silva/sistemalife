@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que gera um desafio para a Torre dos Desafios.
- *
- * - generateTowerChallenge - Gera um desafio com base no andar e no perfil do utilizador.
- * - GenerateTowerChallengeInput - O tipo de entrada para a função.
- * - GenerateTowerChallengeOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que gera desafios épicos para a Torre de Desafios.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -25,63 +20,80 @@ const ChallengeRewardsSchema = z.object({
 });
 
 const GenerateTowerChallengeInputSchema = z.object({
-    floorNumber: z.number().describe('O número do andar para o qual gerar o desafio. Este é o principal fator de dificuldade.'),
-    userProfile: z.string().describe('O perfil do utilizador como uma string JSON, incluindo nível, estatísticas e streak.'),
-    userSkills: z.string().describe('As habilidades do utilizador como uma string JSON, incluindo níveis e categorias.'),
+    floorNumber: z.number().describe('O número do andar para o qual gerar o desafio.'),
+    userProfile: z.string().describe('O perfil do utilizador como uma string JSON.'),
+    userSkills: z.string().describe('As habilidades do utilizador como uma string JSON.'),
     activeGoals: z.string().describe('As metas ativas do utilizador como uma string JSON.'),
-    recentChallenges: z.array(z.string()).optional().describe('Uma lista de títulos de desafios recentes para evitar repetição.'),
+    currentActiveMission: z.string().optional().describe('A missão diária que o utilizador está a realizar no momento para ser intensificada.'),
+    recentChallenges: z.array(z.string()).optional().describe('Uma lista de títulos de desafios recentes.'),
 });
 export type GenerateTowerChallengeInput = z.infer<typeof GenerateTowerChallengeInputSchema>;
-
-
-const GenerateTowerChallengeOutputSchema = z.object({
-  id: z.string().describe("Um ID único para o desafio (ex: 'floor50_daily_1')."),
-  floor: z.number().describe("O número do andar a que este desafio pertence."),
-  title: z.string().describe("O título épico e temático para o desafio."),
-  description: z.string().describe("Uma breve descrição do que é necessário para completar o desafio."),
-  type: z.enum(['daily', 'weekly', 'special', 'class', 'skill']).describe("O tipo de desafio a ser gerado."),
-  difficulty: z.enum(['beginner', 'intermediate', 'advanced', 'expert', 'master', 'infinite']).describe("A dificuldade do desafio, baseada no andar."),
-  requirements: z.array(ChallengeRequirementSchema).describe("Os requisitos específicos e mensuráveis para completar o desafio."),
-  rewards: ChallengeRewardsSchema.describe("As recompensas a serem concedidas após a conclusão."),
-  timeLimit: z.number().optional().describe("O limite de tempo em horas, se aplicável (ex: 24 para diário, 168 para semanal)."),
-});
-export type GenerateTowerChallengeOutput = z.infer<typeof GenerateTowerChallengeOutputSchema>;
 
 export async function generateTowerChallenge(
   input: GenerateTowerChallengeInput
 ): Promise<GenerateTowerChallengeOutput> {
   const prompt = `
-    Você é a "Arquiteta da Torre", uma IA especializada em criar desafios progressivos e personalizados para um RPG da vida real.
+    Você é a "Arquiteta da Torre" do Demon Castle.
+    Sua tarefa é pegar a MISSÃO ATUAL do Caçador e INTENSIFICÁ-LA para um desafio de Andar.
 
-    A sua tarefa é criar um novo desafio para um Caçador na Torre dos Desafios.
+    **CONTEXTO DO DESAFIO:**
+    - Andar da Torre: ${input.floorNumber}
+    - Missão Base (A intensificar): ${input.currentActiveMission || 'Nenhuma missão ativa. Use as Metas como base.'}
+    - Metas do Caçador: ${input.activeGoals}
 
-    **DADOS DO CAÇADOR E DO CONTEXTO:**
-    - Andar Atual: ${input.floorNumber}
-    - Perfil do Caçador: ${input.userProfile}
-    - Habilidades do Caçador: ${input.userSkills}
-    - Metas Ativas do Caçador: ${input.activeGoals}
-    - Desafios Recentes (a evitar): ${input.recentChallenges?.join(', ') || 'Nenhum'}
+    **DIRETRIZES DE INTENSIFICAÇÃO:**
+    1. **Não seja genérico:** Se a missão base é "10 flexões", o desafio deve ser algo como "Prova de Sangue: 25 Flexões Explosivas".
+    2. **Multiplicador de Dificuldade:** Aumente os alvos (targets) das sub-tarefas em pelo menos 2x a 3x, dependendo do andar.
+    3. **Lore Corrompido:** Use termos como "Sombra", "Demonic", "Punição", "Sobrevivência".
+    4. **Unicidade:** O desafio deve parecer uma versão de elite do que o Caçador já faz.
 
-    **DIRETIVAS:**
-    1. Escala de Dificuldade proporcional ao andar (${input.floorNumber}).
-    2. Personalização baseada nos dados do Caçador.
-    3. Requisitos claros e mensuráveis.
-
-    Responda em formato JSON seguindo este esquema:
+    Responda em JSON seguindo o esquema:
     {
       "id": "...",
       "floor": ${input.floorNumber},
       "title": "...",
       "description": "...",
-      "type": "daily",
-      "difficulty": "beginner/intermediate/advanced/expert/master/infinite",
-      "requirements": [{ "type": "...", "value": "...", "target": 10 }],
-      "rewards": { "xp": 100, "fragments": 10 },
-      "timeLimit": 24
+      "type": "special",
+      "difficulty": "advanced",
+      "requirements": [{ "type": "skill_level_reached", "value": "Nome da Tarefa Intensificada", "target": 20 }],
+      "rewards": { "xp": 150, "fragments": 20 }
     }
   `;
 
-  return await generateWithAppwriteAI<GenerateTowerChallengeOutput>(prompt, true);
+  try {
+    return await generateWithAppwriteAI<GenerateTowerChallengeOutput>(prompt, true);
+  } catch (error) {
+    console.error("Erro na Arquiteta da Torre, ativando Protocolo de Emergência:", error);
+    
+    // Tenta extrair dados da missão base para intensificar manualmente no fallback
+    let fallbackTitle = `Desafio do Andar ${input.floorNumber}`;
+    let fallbackTarget = 20;
+    
+    if (input.currentActiveMission) {
+        try {
+            const base = JSON.parse(input.currentActiveMission);
+            fallbackTitle = `[CORROMPIDO] ${base.nome}`;
+            if (base.subTasks && base.subTasks[0]) {
+                fallbackTarget = base.subTasks[0].target * 2;
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    return {
+      id: `fallback_floor_${input.floorNumber}`,
+      floor: input.floorNumber,
+      title: fallbackTitle,
+      description: "O Sistema detectou uma falha de conexão e aplicou um multiplicador de dificuldade manual. Sobreviva.",
+      type: "special",
+      difficulty: "advanced",
+      requirements: [{ 
+          type: "missions_completed", 
+          value: "Intensificação de Base", 
+          target: fallbackTarget 
+      }],
+      rewards: { xp: 100, fragments: 10 }
+    };
+  }
 }
 
 

@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Um agente de IA que calcula o ganho de experiência para uma habilidade.
  *

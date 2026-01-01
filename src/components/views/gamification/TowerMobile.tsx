@@ -1,13 +1,18 @@
 "use client";
 
-import React, { memo, useRef } from 'react';
+import React, { memo, useRef, useState } from 'react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { cn } from '@/lib/utils';
-import { Skull, Swords, Zap, Star, Trophy, Flame, Sparkles, Menu, ChevronRight, Map, ShieldAlert } from 'lucide-react';
+import { Skull, Swords, Zap, Star, Trophy, Flame, Sparkles, Menu, ChevronRight, Map, ShieldAlert, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { generateTowerChallenge } from '@/ai/flows/generate-tower-challenge';
 
 const TowerMobileComponent = () => {
-    const { profile, setCurrentPage } = usePlayerDataContext();
+    const { profile, missions, metas, skills, persistData, setCurrentPage } = usePlayerDataContext();
+    const { toast } = useToast();
+    const [isGenerating, setIsGenerating] = useState(false);
+
     const triggerHapticFeedback = (type: 'light' | 'medium' | 'heavy' = 'light') => {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
             const patterns = { light: 50, medium: 100, heavy: 200 };
@@ -15,9 +20,84 @@ const TowerMobileComponent = () => {
         }
     };
 
-    const handleEnterTower = () => {
+    const handleEnterTower = async () => {
+        if (isGenerating) return;
+        
         triggerHapticFeedback('heavy');
-        setCurrentPage('tower');
+        setIsGenerating(true);
+
+        try {
+            const floor = profile.tower_floor || 1;
+            
+            // Buscar a missão diária ativa de maior prioridade (ou a primeira disponível)
+            const activeMissions = missions.flatMap((m: any) => m.missoes_diarias || [])
+                                          .filter((d: any) => !d.concluido);
+            
+            const baseMission = activeMissions.length > 0 
+                ? JSON.stringify(activeMissions[0]) 
+                : "Nenhuma missão diária ativa encontrada.";
+
+            // 1. Gerar o desafio via IA intensificando a missão base
+            const challenge = await generateTowerChallenge({
+                floorNumber: floor,
+                userProfile: JSON.stringify(profile),
+                userSkills: JSON.stringify(skills),
+                activeGoals: JSON.stringify(metas.filter((m: any) => !m.concluida)),
+                currentActiveMission: baseMission
+            });
+
+            // 2. Transformar o desafio em uma Missão de Demon Castle
+            const newDemonCastleMission = {
+                id: `tower_${floor}_${Date.now()}`,
+                nome: `ANDAR ${floor}: ${challenge.title}`,
+                descricao: challenge.description,
+                concluido: false,
+                rank: floor > 10 ? 'S' : floor > 5 ? 'A' : 'B',
+                level_requirement: floor,
+                meta_associada: 'DEMON CASTLE',
+                total_missoes_diarias: 1,
+                ultima_missao_concluida_em: null,
+                tipo: 'demon_castle',
+                is_epic: true,
+                missoes_diarias: [{
+                    id: Date.now() + 1,
+                    nome: "Prova de Ascensão",
+                    descricao: challenge.description,
+                    xp_conclusao: challenge.rewards.xp,
+                    fragmentos_conclusao: challenge.rewards.fragments,
+                    concluido: false,
+                    tipo: 'diaria',
+                    subTasks: challenge.requirements.map(req => ({
+                        name: req.value.toString(),
+                        target: req.target,
+                        unit: req.type.replace('_', ' '),
+                        current: 0
+                    }))
+                }]
+            };
+
+            // 3. Persistir no banco de dados
+            await persistData('missions', [...missions, newDemonCastleMission]);
+            
+            toast({ 
+                title: "DESAFIO GERADO", 
+                description: `A missão do ${floor}º andar foi adicionada ao seu Quest Log.`,
+                variant: "destructive"
+            });
+
+            // Opcional: Redirecionar para as missões para ver o desafio
+            setTimeout(() => setCurrentPage('missions'), 1500);
+
+        } catch (error) {
+            console.error("Erro ao gerar andar da torre:", error);
+            toast({ 
+                variant: 'destructive', 
+                title: "FALHA NO SISTEMA", 
+                description: "Não foi possível sincronizar com o Demon Castle." 
+            });
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     if (!profile) return null;
@@ -26,7 +106,7 @@ const TowerMobileComponent = () => {
         <div className="h-screen bg-black overflow-hidden flex flex-col max-w-full relative">
             <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-[0.03] pointer-events-none z-50" />
             
-            <header className="bg-black/90 backdrop-blur-2xl border-b border-red-500/20 flex-shrink-0 z-40" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+            <header className="bg-black/90 backdrop-blur-2xl border-b border-red-500/20 flex-shrink-0 z-40 pt-safe">
                 <div className="flex items-center justify-between bg-red-950/40 border-b border-red-900/30 py-2.5 px-4">
                     <div className="flex items-center gap-3">
                         <ShieldAlert className="h-4 w-4 text-red-500 animate-pulse" />
@@ -67,6 +147,7 @@ const TowerMobileComponent = () => {
                         {[5, 4, 3, 2, 1].map((floor) => {
                             const isCurrentFloor = floor === (profile.tower_floor || 1);
                             const isLocked = floor > (profile.tower_floor || 1);
+                            const isAlreadyGenerated = missions.some(m => m.id === `tower_${floor}_` || m.nome.startsWith(`ANDAR ${floor}`));
                             
                             return (
                                 <div 
@@ -102,9 +183,10 @@ const TowerMobileComponent = () => {
                                         {isCurrentFloor ? (
                                             <button 
                                                 onClick={handleEnterTower}
-                                                className="bg-red-600 hover:bg-red-500 text-white font-mono text-[10px] font-bold px-4 py-2 rounded-xl border-2 border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse active:scale-90 transition-all"
+                                                disabled={isGenerating}
+                                                className="bg-red-600 hover:bg-red-500 text-white font-mono text-[10px] font-bold px-4 py-2 rounded-xl border-2 border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse active:scale-90 transition-all disabled:opacity-50"
                                             >
-                                                ENTER
+                                                {isGenerating ? <Loader2 className="animate-spin h-4 w-4" /> : "ENTER"}
                                             </button>
                                         ) : isLocked ? (
                                             <Skull className="h-6 w-6 text-white/10" />

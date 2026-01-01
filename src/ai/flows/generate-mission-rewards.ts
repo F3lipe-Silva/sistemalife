@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Um agente de IA que calcula o valor de XP e recompensas para uma missão.
  *

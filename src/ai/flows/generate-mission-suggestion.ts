@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Um agente de IA que fornece sugestões para missões.
  *

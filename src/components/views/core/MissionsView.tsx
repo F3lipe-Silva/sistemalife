@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2, Star, Zap, TrendingUp as TrendingUpIcon, Filter, SortAsc, CalendarClock, Target as TargetIcon, Activity } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2, Star, Zap, TrendingUp as TrendingUpIcon, Filter, SortAsc, CalendarClock, Target as TargetIcon, Activity, Flame } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -75,6 +75,8 @@ interface RankedMission {
     missoes_diarias: DailyMission[];
     isManual?: boolean;
     subTasks?: SubTask[];
+    tipo?: string;
+    is_epic?: boolean;
 }
 
 interface Meta {
@@ -816,14 +818,19 @@ const MissionsView = () => {
 
         // Apply sorting
         missionsToDisplay.sort((a, b) => {
-            // Priority missions first
+            // 1. Demon Castle vem primeiro (Destaque absoluto)
+            const aDemon = a.tipo === 'demon_castle';
+            const bDemon = b.tipo === 'demon_castle';
+            if (aDemon !== bDemon) return aDemon ? -1 : 1;
+
+            // 2. Priority missions second
             const aPriority = priorityMissions.has(a.id);
             const bPriority = priorityMissions.has(b.id);
             if (aPriority !== bPriority) {
                 return aPriority ? -1 : 1;
             }
 
-            // Then by completion status
+            // 3. Then by completion status
             if (a.concluido !== b.concluido) {
                 return a.concluido ? 1 : -1;
             }
@@ -866,21 +873,34 @@ const MissionsView = () => {
 
         if (activeDailyMission) {
             return (
-                <div className={cn("animate-in fade-in-50 slide-in-from-top-4 duration-500 bg-black/40 border-l-2 border-blue-500 relative overflow-hidden", isMobile ? "p-3" : "p-4")}>
+                <div className={cn("animate-in fade-in-50 slide-in-from-top-4 duration-500 border-l-2 relative overflow-hidden", 
+                    isMobile ? "p-3" : "p-4",
+                    mission.tipo === 'demon_castle' ? "bg-red-950/30 border-red-500" : "bg-black/40 border-blue-500"
+                )}>
                     {/* Active Quest Marker */}
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-blue-600 text-white text-[10px] font-mono font-bold tracking-widest uppercase">
+                    <div className={cn("absolute top-0 right-0 px-2 py-0.5 text-white text-[10px] font-mono font-bold tracking-widest uppercase",
+                        mission.tipo === 'demon_castle' ? "bg-red-600" : "bg-blue-600"
+                    )}>
                         ACTIVE
                     </div>
 
                     <div className={cn("flex flex-col gap-3", isMobile ? "md:flex-row md:items-start" : "md:flex-row md:items-start")}>
                         <div className="flex-grow min-w-0">
                             <div className="flex items-start gap-3">
-                                <div className="p-1.5 bg-blue-500/10 border border-blue-500/30 mt-1">
-                                    <Zap className={cn("text-blue-400", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                                <div className={cn("p-1.5 border mt-1",
+                                    mission.tipo === 'demon_castle' ? "bg-red-500/10 border-red-500/30" : "bg-blue-500/10 border-blue-500/30"
+                                )}>
+                                    <Zap className={cn(isMobile ? "h-3 w-3" : "h-4 w-4", mission.tipo === 'demon_castle' ? "text-red-400" : "text-blue-400")} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className={cn("font-bold text-white font-cinzel tracking-wide", isMobile ? "text-base" : "text-lg")}>{activeDailyMission.nome}</p>
-                                    <p className={cn("text-blue-200/60 mt-1 font-mono", isMobile ? "text-xs" : "text-sm")}>{activeDailyMission.descricao}</p>
+                                    <p className={cn("font-bold font-cinzel tracking-wide", 
+                                        isMobile ? "text-base" : "text-lg",
+                                        mission.tipo === 'demon_castle' ? "text-red-50" : "text-white"
+                                    )}>{activeDailyMission.nome}</p>
+                                    <p className={cn("mt-1 font-mono", 
+                                        isMobile ? "text-xs" : "text-sm",
+                                        mission.tipo === 'demon_castle' ? "text-red-200/60" : "text-blue-200/60"
+                                    )}>{activeDailyMission.descricao}</p>
                                 </div>
                             </div>
                         </div>
@@ -888,8 +908,10 @@ const MissionsView = () => {
                         <div className={cn("flex items-center gap-2 self-end md:self-start", isMobile ? "w-full justify-between md:w-auto" : "")}>
                              <div className="flex gap-2">
                                 {activeDailyMission && 'xp_conclusao' in activeDailyMission && (
-                                    <div className="px-2 py-1 bg-blue-900/20 border border-blue-500/30 flex items-center gap-1.5">
-                                        <span className="text-[10px] font-bold text-blue-400 font-mono">XP</span>
+                                    <div className={cn("px-2 py-1 border flex items-center gap-1.5",
+                                        mission.tipo === 'demon_castle' ? "bg-red-900/20 border-red-500/30" : "bg-blue-900/20 border-blue-500/30"
+                                    )}>
+                                        <span className={cn("text-[10px] font-bold font-mono", mission.tipo === 'demon_castle' ? "text-red-400" : "text-blue-400")}>XP</span>
                                         <span className="text-sm font-bold text-white font-mono">{activeDailyMission.xp_conclusao}</span>
                                     </div>
                                 )}
@@ -916,36 +938,58 @@ const MissionsView = () => {
                     </div>
 
                     {/* Subtasks - System Style */}
-                    <div className={cn("mt-4 space-y-2 border-t border-blue-500/20 pt-3")}>
-                        <div className="text-[10px] font-mono text-blue-500 uppercase tracking-widest mb-2">OBJECTIVES</div>
+                    <div className={cn("mt-4 space-y-2 border-t pt-3",
+                        mission.tipo === 'demon_castle' ? "border-red-500/20" : "border-blue-500/20"
+                    )}>
+                        <div className={cn("text-[10px] font-mono uppercase tracking-widest mb-2",
+                            mission.tipo === 'demon_castle' ? "text-red-500" : "text-blue-500"
+                        )}>OBJECTIVES</div>
                         {activeDailyMission.subTasks?.map((st: SubTask, index: number) => {
                             const isCompleted = (st.current || 0) >= st.target;
                             const progress = Math.min(100, ((st.current || 0) / st.target) * 100);
                             return (
-                                <div key={index} className={cn("relative bg-black/60 border border-blue-900/50 p-2 group hover:border-blue-500/50 transition-colors")}>
+                                <div key={index} className={cn("relative bg-black/60 border p-2 group transition-colors",
+                                    mission.tipo === 'demon_castle' 
+                                        ? "border-red-900/50 hover:border-red-500/50" 
+                                        : "border-blue-900/50 hover:border-blue-500/50"
+                                )}>
                                     {/* Progress Bar Background */}
                                     <div 
-                                        className="absolute inset-0 bg-blue-900/10 pointer-events-none transition-all duration-500 ease-out origin-left"
+                                        className={cn("absolute inset-0 pointer-events-none transition-all duration-500 ease-out origin-left",
+                                            mission.tipo === 'demon_castle' ? "bg-red-900/20" : "bg-blue-900/10"
+                                        )}
                                         style={{ transform: `scaleX(${progress / 100})` }}
                                     />
                                     
                                     <div className={cn("flex justify-between items-center gap-2 relative z-10")}>
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <div className={cn("w-3 h-3 border border-blue-500/50 flex items-center justify-center", isCompleted ? "bg-blue-500" : "")}>
-                                                {isCompleted && <CheckCircle className="h-3 w-3 text-black" />}
+                                            <div className={cn("w-3 h-3 border flex items-center justify-center", 
+                                                mission.tipo === 'demon_castle' 
+                                                    ? (isCompleted ? "bg-red-500 border-red-500/50" : "border-red-500/50")
+                                                    : (isCompleted ? "bg-blue-500 border-blue-500/50" : "border-blue-500/50")
+                                            )}>
+                                                {isCompleted && <CheckCircle className={cn("h-3 w-3", mission.tipo === 'demon_castle' ? "text-white" : "text-black")} />}
                                             </div>
-                                            <span className={cn("font-mono text-sm text-blue-100 truncate", isCompleted && "text-blue-500 line-through")}>
+                                            <span className={cn("font-mono text-sm truncate", 
+                                                isCompleted 
+                                                    ? (mission.tipo === 'demon_castle' ? "text-red-500 line-through" : "text-blue-500 line-through")
+                                                    : (mission.tipo === 'demon_castle' ? "text-red-100" : "text-blue-100")
+                                            )}>
                                                 {st.name}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <span className="font-mono text-xs text-blue-300">
-                                                {st.current || 0} <span className="text-blue-500/50">/</span> {st.target} <span className="text-[10px] text-blue-500/50 uppercase">{st.unit}</span>
+                                            <span className={cn("font-mono text-xs", mission.tipo === 'demon_castle' ? "text-red-300" : "text-blue-300")}>
+                                                {st.current || 0} <span className={mission.tipo === 'demon_castle' ? "text-red-500/50" : "text-blue-500/50"}>/</span> {st.target} <span className={cn("text-[10px] uppercase", mission.tipo === 'demon_castle' ? "text-red-500/50" : "text-blue-500/50")}>{st.unit}</span>
                                             </span>
                                             <Button
                                                 size="icon"
                                                 variant="outline"
-                                                className={cn("h-6 w-6 rounded-none border-blue-500/30 hover:bg-blue-500 hover:text-white hover:border-blue-500 bg-transparent text-blue-400")}
+                                                className={cn("h-6 w-6 rounded-none bg-transparent transition-all",
+                                                    mission.tipo === 'demon_castle'
+                                                        ? "border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500"
+                                                        : "border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white hover:border-blue-500"
+                                                )}
                                                 onClick={() => setContributionModalState({ open: true, subTask: st, mission: activeDailyMission as DailyMission })}
                                                 disabled={isCompleted}
                                             >
@@ -1153,6 +1197,9 @@ const MissionsView = () => {
 
                         const activeDailyMission = isManualMission ? mission : mission.missoes_diarias?.find((d: DailyMission) => !d.concluido);
 
+                        const isDemonCastle = mission.tipo === 'demon_castle';
+                        const isEpic = !!mission.is_epic;
+
                         const TriggerWrapper: React.FC<TriggerWrapperProps> = ({ children }) => {
                             if (missionViewStyle === 'inline' || isManualMission) {
                                 return <AccordionTrigger className="flex-1 hover:no-underline text-left p-0 w-full">{children}</AccordionTrigger>;
@@ -1166,12 +1213,18 @@ const MissionsView = () => {
                                 key={mission.id} 
                                 className={cn(
                                     "relative border rounded-sm overflow-hidden transition-all duration-300 group",
-                                    "bg-black/60 backdrop-blur-sm",
-                                    priorityMissions.has(mission.id) ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]" : "border-blue-900/40 hover:border-blue-500/50",
+                                    isDemonCastle 
+                                        ? "border-red-600/50 bg-red-950/20 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20" 
+                                        : "bg-black/60 backdrop-blur-sm",
+                                    priorityMissions.has(mission.id) && !isDemonCastle ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]" : "border-blue-900/40 hover:border-blue-500/50",
                                     "data-[state=open]:border-blue-500 data-[state=open]:bg-blue-950/10"
                                 )}
                             >
-                                {priorityMissions.has(mission.id) && (
+                                {isDemonCastle && (
+                                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse" />
+                                )}
+                                
+                                {priorityMissions.has(mission.id) && !isDemonCastle && (
                                     <div className="absolute top-0 right-0 w-0 h-0 border-t-[30px] border-r-[30px] border-t-transparent border-r-yellow-500/80 z-20 pointer-events-none" />
                                 )}
                                 
@@ -1183,10 +1236,12 @@ const MissionsView = () => {
                                                     {/* Rank Badge - System Style */}
                                                     <div className={cn(
                                                         "flex-shrink-0 flex items-center justify-center font-cinzel font-black border-2 bg-black shadow-lg relative group-hover:scale-105 transition-transform",
-                                                        getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500'),
+                                                        isDemonCastle 
+                                                            ? "border-red-500 text-red-500 shadow-red-900/50" 
+                                                            : getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500'),
                                                         isMobile ? "w-12 h-12 text-2xl" : "w-14 h-14 text-3xl"
                                                     )}>
-                                                        <span className={cn(getRankColor(mission.rank), "drop-shadow-[0_0_5px_currentColor]")}>
+                                                        <span className={cn(isDemonCastle ? "text-red-500" : getRankColor(mission.rank), "drop-shadow-[0_0_5px_currentColor]")}>
                                                             {mission.rank}
                                                         </span>
                                                         <span className="absolute bottom-0.5 text-[8px] font-mono text-gray-500 uppercase tracking-wider">RANK</span>
@@ -1194,9 +1249,19 @@ const MissionsView = () => {
 
                                                     <div className="flex-1 min-w-0 overflow-x-hidden space-y-1">
                                                         <div className="flex justify-between items-start gap-2">
-                                                            <p className={cn("font-bold text-white uppercase tracking-wider font-mono truncate", isMobile ? "text-sm" : "text-base")}>
-                                                                {mission.nome}
-                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className={cn("font-bold uppercase tracking-wider font-mono truncate", 
+                                                                    isMobile ? "text-sm" : "text-base",
+                                                                    isDemonCastle ? "text-red-50" : "text-white"
+                                                                )}>
+                                                                    {mission.nome}
+                                                                </p>
+                                                                {isEpic && (
+                                                                    <span className="px-2 py-0.5 bg-red-600 border border-red-400 rounded-none text-[8px] font-mono text-white font-black animate-pulse">
+                                                                        EPIC
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             {!isManualMission && daysRemaining !== null && (
                                                                 <span className={cn("text-[10px] font-bold font-mono px-1.5 py-0.5 border flex items-center gap-1 uppercase tracking-wider whitespace-nowrap",
                                                                     daysRemaining < 7 ? "border-red-500/50 text-red-400 bg-red-950/20" :
@@ -1207,18 +1272,34 @@ const MissionsView = () => {
                                                             )}
                                                         </div>
                                                         
-                                                        {associatedMeta && !isManualMission && (
-                                                            <div className={cn("flex items-center gap-1 text-blue-400/60 text-[10px] font-mono uppercase tracking-wide")}>
-                                                                <Link className="h-3 w-3" />
-                                                                <span className="truncate">{associatedMeta.nome}</span>
-                                                            </div>
-                                                        )}
+                                                        <div className="flex items-center gap-2">
+                                                            {associatedMeta && !isManualMission && (
+                                                                <div className={cn("flex items-center gap-1 text-[10px] font-mono uppercase tracking-wide",
+                                                                    isDemonCastle ? "text-red-400/60" : "text-blue-400/60"
+                                                                )}>
+                                                                    <Link className="h-3 w-3" />
+                                                                    <span className="truncate">{associatedMeta.nome}</span>
+                                                                </div>
+                                                            )}
+                                                            {isDemonCastle && (
+                                                                <div className="flex items-center gap-1 text-[10px] font-mono text-red-500 font-bold uppercase tracking-tighter">
+                                                                    <Flame className="h-3 w-3 animate-pulse" />
+                                                                    <span>Demon Castle Event</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         
                                                         {/* Progress Bar - System Style */}
                                                         {!isManualMission && (
-                                                            <div className="relative h-1.5 bg-blue-950/50 border border-blue-900/30 mt-2 w-full max-w-[200px]">
+                                                            <div className={cn("relative h-1.5 border mt-2 w-full max-w-[200px]",
+                                                                isDemonCastle ? "bg-red-950/50 border-red-900/30" : "bg-blue-950/50 border-blue-900/30"
+                                                            )}>
                                                                 <div 
-                                                                    className="absolute inset-y-0 left-0 bg-blue-500 shadow-[0_0_5px_#3b82f6]" 
+                                                                    className={cn("absolute inset-y-0 left-0 transition-all duration-1000",
+                                                                        isDemonCastle 
+                                                                            ? "bg-red-500 shadow-[0_0_8px_#ef4444]" 
+                                                                            : "bg-blue-500 shadow-[0_0_5px_#3b82f6]"
+                                                                    )}
                                                                     style={{ width: `${missionProgress}%` }}
                                                                 />
                                                             </div>

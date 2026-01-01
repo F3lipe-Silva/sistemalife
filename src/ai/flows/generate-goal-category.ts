@@ -1,10 +1,5 @@
-'use server';
 /**
- * @fileOverview Um agente de IA que sugere uma categoria para uma meta.
- *
- * - generateGoalCategory - Uma função que analisa o nome de uma meta e sugere uma categoria a partir de uma lista.
- * - GenerateGoalCategoryInput - O tipo de entrada para a função.
- * - GenerateGoalCategoryOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que categoriza uma nova meta.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';

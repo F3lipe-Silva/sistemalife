@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Um agente de IA que gera a próxima missão diária com base no progresso.
  *

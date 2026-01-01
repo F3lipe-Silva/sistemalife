@@ -39,7 +39,27 @@ import { add, funnel, options, refresh, search, filter, checkmarkCircle, time, f
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Lock, Play, Star, Zap, Clock, Target, ChevronRight, MoreHorizontal, Edit3, Trash2, Menu, Settings, Search, History, GitMerge, PlusCircle, RefreshCw, Wand2, Eye, EyeOff } from 'lucide-react';
+import { 
+    Target, 
+    Zap, 
+    Star, 
+    Clock, 
+    Lock, 
+    ChevronRight, 
+    Eye, 
+    EyeOff, 
+    RefreshCw, 
+    History, 
+    CheckCircle, 
+    Loader2, 
+    GitMerge, 
+    Wand2, 
+    Search,
+    Flame,
+    ShieldAlert,
+    PlusCircle,
+    LoaderCircle
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -388,10 +408,20 @@ const MissionsMobileComponent = () => {
 
         // Ordenação consistente
         missionsToDisplay.sort((a, b) => {
+            // 1. Demon Castle vem primeiro (Destaque absoluto)
+            const aDemon = a.tipo === 'demon_castle';
+            const bDemon = b.tipo === 'demon_castle';
+            if (aDemon !== bDemon) return aDemon ? -1 : 1;
+
+            // 2. Prioridade manual do usuário
             const aPriority = priorityMissions.has(a.id);
             const bPriority = priorityMissions.has(b.id);
             if (aPriority !== bPriority) return aPriority ? -1 : 1;
+            
+            // 3. Status de conclusão
             if (a.concluido !== b.concluido) return a.concluido ? 1 : -1;
+            
+            // 4. Rank
             return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
         });
 
@@ -469,7 +499,7 @@ const MissionsMobileComponent = () => {
             {/* Background System Effect */}
             <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-[0.03] pointer-events-none z-50" />
             
-            <header className="bg-black/90 backdrop-blur-2xl border-b border-blue-500/20 flex-shrink-0 z-40" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+            <header className="bg-black/90 backdrop-blur-2xl border-b border-blue-500/20 flex-shrink-0 z-40 pt-safe">
                 <div className="px-4 py-5 space-y-4">
                     <div className="flex items-center justify-between">
                         <div>
@@ -575,6 +605,10 @@ const MissionsMobileComponent = () => {
                             const activeDaily = isManualMission ? mission : mission.missoes_diarias?.find((d: any) => !d.concluido);
                             const isPriority = priorityMissions.has(mission.id);
                             
+                            // Lógica de destaque Demon Castle - Somente se o tipo for explicitamente esse
+                            const isDemonCastle = mission.tipo === 'demon_castle';
+                            const isEpic = !!mission.is_epic;
+
                             // Check for level lock (only for non-manual missions)
                             const isLocked = !isManualMission && mission.level_requirement && profile.nivel < mission.level_requirement;
 
@@ -597,12 +631,14 @@ const MissionsMobileComponent = () => {
                                     key={mission.id}
                                     className={cn(
                                         "relative border-2 rounded-[2rem] transition-all duration-300 active:scale-[0.97] overflow-hidden shadow-xl",
-                                        "bg-gradient-to-br from-blue-950/20 to-black",
-                                        mission.concluido
-                                            ? "border-green-900/40 opacity-70"
-                                            : isPriority 
-                                                ? "border-yellow-500/60 shadow-yellow-500/10" 
-                                                : "border-blue-900/50"
+                                        isDemonCastle 
+                                            ? "border-red-600/50 from-red-950/40 via-black to-black shadow-red-900/40 bg-gradient-to-br ring-1 ring-red-500/20" 
+                                            : mission.concluido
+                                                ? "border-green-900/40 opacity-70"
+                                                : isPriority 
+                                                    ? "border-yellow-500/60 shadow-yellow-500/10" 
+                                                    : "border-blue-900/50",
+                                        !isDemonCastle && "bg-gradient-to-br from-blue-950/20 to-black"
                                     )}
                                     onClick={() => {
                                         triggerHapticFeedback('light');
@@ -610,27 +646,51 @@ const MissionsMobileComponent = () => {
                                         setShowDetails(true);
                                     }}
                                 >
+                                    {isDemonCastle && (
+                                        <div className="absolute top-0 right-0 p-3 flex gap-1 z-20">
+                                            <Flame className="w-4 h-4 text-red-500 animate-pulse" />
+                                            <span className="text-[8px] font-mono text-red-400 uppercase tracking-tighter font-bold">DEMON CASTLE EVENT</span>
+                                        </div>
+                                    )}
                                     <div className="flex flex-col p-5">
                                         <div className="flex gap-4 items-start mb-4">
                                             {/* Rank Badge - MD3 Style but System Theme */}
                                             <div className={cn(
                                                 "flex-shrink-0 w-14 h-14 rounded-2xl border-2 flex flex-col items-center justify-center bg-black/80 shadow-inner",
-                                                getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500')
+                                                isDemonCastle 
+                                                    ? "border-red-500 shadow-red-900/50" 
+                                                    : getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500')
                                             )}>
-                                                <span className={cn("font-cinzel font-black text-2xl leading-none", getRankColor(mission.rank))}>
+                                                <span className={cn(
+                                                    "font-cinzel font-black text-2xl leading-none", 
+                                                    isDemonCastle ? "text-red-500" : getRankColor(mission.rank)
+                                                )}>
                                                     {mission.rank}
                                                 </span>
                                                 <span className="text-[8px] font-mono text-gray-500 uppercase mt-1 font-bold">RANK</span>
                                             </div>
 
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="font-mono font-bold text-base text-blue-50 text-wrap leading-tight">
+                                                <h3 className={cn(
+                                                    "font-mono font-bold text-base text-wrap leading-tight",
+                                                    isDemonCastle ? "text-red-50" : "text-blue-50"
+                                                )}>
                                                     {mission.nome}
                                                 </h3>
                                                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                    <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-mono text-blue-400 font-bold uppercase">
+                                                    <span className={cn(
+                                                        "px-2 py-0.5 border rounded-full text-[10px] font-mono font-bold uppercase",
+                                                        isDemonCastle 
+                                                            ? "bg-red-500/10 border-red-500/40 text-red-400" 
+                                                            : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                                                    )}>
                                                         {mission.meta_associada || "GENERAL"}
                                                     </span>
+                                                    {isEpic && (
+                                                        <span className="px-2 py-0.5 bg-red-600 border border-red-400 rounded-full text-[8px] font-mono text-white font-black animate-pulse">
+                                                            EPIC
+                                                        </span>
+                                                    )}
                                                     {mission.concluido && (
                                                         <span className="text-[10px] font-mono text-green-400 uppercase font-bold flex items-center gap-1">
                                                             <CheckCircle className="h-3 w-3" /> VERIFIED
@@ -641,14 +701,20 @@ const MissionsMobileComponent = () => {
 
                                             <div className="flex flex-col gap-1">
                                                 <button 
-                                                    className={cn("p-2 transition-transform active:scale-125", isPriority ? "text-yellow-500" : "text-blue-500/30")}
+                                                    className={cn(
+                                                        "p-2 transition-transform active:scale-125", 
+                                                        isPriority ? "text-yellow-500" : (isDemonCastle ? "text-red-500/30" : "text-blue-500/30")
+                                                    )}
                                                     onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
                                                 >
                                                     <Star className={cn("h-5 w-5", isPriority && "fill-yellow-500")} />
                                                 </button>
                                                 {!isManualMission && (
                                                     <button 
-                                                        className="p-2 text-blue-500/30 hover:text-blue-400 transition-colors"
+                                                        className={cn(
+                                                            "p-2 transition-colors",
+                                                            isDemonCastle ? "text-red-500/30 hover:text-red-400" : "text-blue-500/30 hover:text-blue-400"
+                                                        )}
                                                         onClick={(e) => { e.stopPropagation(); handleShowProgression(mission); }}
                                                     >
                                                         <GitMerge className="h-5 w-5" />
@@ -659,12 +725,23 @@ const MissionsMobileComponent = () => {
 
                                         {/* Active Content HUD */}
                                         {activeDaily && !mission.concluido && (
-                                            <div className="mt-2 bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 space-y-4 shadow-inner">
+                                            <div className={cn(
+                                                "mt-2 border rounded-2xl p-4 space-y-4 shadow-inner",
+                                                isDemonCastle 
+                                                    ? "bg-red-500/10 border-red-500/20" 
+                                                    : "bg-blue-500/5 border-blue-500/10"
+                                            )}>
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-xs font-mono text-blue-400 uppercase tracking-tighter font-bold flex items-center gap-2">
-                                                        <Zap className="h-4 w-4" /> CURRENT_TASK
+                                                    <span className={cn(
+                                                        "text-xs font-mono uppercase tracking-tighter font-bold flex items-center gap-2",
+                                                        isDemonCastle ? "text-red-400" : "text-blue-400"
+                                                    )}>
+                                                        <Zap className="h-4 w-4" /> {isDemonCastle ? 'DEMON_CHALLENGE' : 'CURRENT_TASK'}
                                                     </span>
-                                                    <span className="text-xs font-mono text-blue-200 bg-blue-500/10 px-2 py-1 rounded-lg">{activeDaily.nome}</span>
+                                                    <span className={cn(
+                                                        "text-xs font-mono px-2 py-1 rounded-lg",
+                                                        isDemonCastle ? "text-red-200 bg-red-500/20" : "text-blue-200 bg-blue-500/10"
+                                                    )}>{activeDaily.nome}</span>
                                                 </div>
                                                 
                                                 {/* Progress Bars - Thick MD3 Style */}
@@ -673,11 +750,21 @@ const MissionsMobileComponent = () => {
                                                         <div key={i} className="space-y-2">
                                                             <div className="flex justify-between text-xs font-mono text-blue-100/70">
                                                                 <span className="truncate pr-4 font-bold uppercase">{st.name}</span>
-                                                                <span className="text-blue-400">{st.current || 0}/{st.target} {st.unit}</span>
+                                                                <span className={isDemonCastle ? "text-red-400" : "text-blue-400"}>
+                                                                    {st.current || 0}/{st.target} {st.unit}
+                                                                </span>
                                                             </div>
-                                                            <div className="h-3 bg-blue-950/40 rounded-full overflow-hidden border border-blue-500/20">
+                                                            <div className={cn(
+                                                                "h-3 rounded-full overflow-hidden border",
+                                                                isDemonCastle ? "bg-red-950/40 border-red-500/20" : "bg-blue-950/40 border-blue-500/20"
+                                                            )}>
                                                                 <div
-                                                                    className="h-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out"
+                                                                    className={cn(
+                                                                        "h-full transition-all duration-1000 ease-out",
+                                                                        isDemonCastle 
+                                                                            ? "bg-gradient-to-r from-red-600 to-orange-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" 
+                                                                            : "bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                                                    )}
                                                                     style={{ width: `${Math.min(100, ((st.current || 0) / st.target) * 100)}%` }}
                                                                 />
                                                             </div>

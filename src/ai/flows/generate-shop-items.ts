@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que gera uma seleção de itens de loja personalizados.
- *
- * - generateShopItems - Analisa o perfil do utilizador e seleciona itens relevantes da loja.
- * - GenerateShopItemsInput - O tipo de entrada para a função.
- * - GenerateShopItemsOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que gera novos itens temáticos para a loja do Sistema.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -62,6 +57,32 @@ export async function generateShopItems(
       }
   `;
 
-  return await generateWithAppwriteAI<GenerateShopItemsOutput>(prompt, true);
+  try {
+    return await generateWithAppwriteAI<GenerateShopItemsOutput>(prompt, true);
+  } catch (error) {
+    console.error("Erro no Mercador da Loja, usando estoque de emergência:", error);
+    // Fallback: Retorna os primeiros 3 itens do catálogo ou itens padrão fixos
+    const defaultItems = input.allItems.slice(0, 3).map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      reasoning: "Estoque de emergência do Sistema."
+    }));
+
+    return {
+      recommendedItems: defaultItems.length > 0 ? defaultItems : [
+        {
+          id: "potion_heal_small",
+          name: "Poção de Cura Menor",
+          description: "Restaura 20 HP imediatamente.",
+          price: 50,
+          category: "Consumíveis",
+          reasoning: "Item essencial para sobrevivência."
+        }
+      ]
+    };
+  }
 }
 

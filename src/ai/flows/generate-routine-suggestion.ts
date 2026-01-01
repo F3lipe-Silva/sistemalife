@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que sugere o melhor horário para uma missão com base na rotina do utilizador para um dia específico.
- *
- * - generateRoutineSuggestion - Analisa a rotina e a missão para encontrar um horário.
- * - GenerateRoutineSuggestionInput - O tipo de entrada para a função.
- * - GenerateRoutineSuggestionOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que sugere uma rotina diária equilibrada.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';

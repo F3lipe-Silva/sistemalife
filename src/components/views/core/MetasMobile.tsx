@@ -4,7 +4,7 @@ import React, { memo, useState, useMemo, useRef } from 'react';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { cn } from '@/lib/utils';
 import { SmartGoalWizard } from './metas/SmartGoalWizard';
-import { CheckCircle, Calendar as CalendarIcon, Target, Search, Menu, Milestone, PlusCircle, ChevronRight, Clock, Wand2, Feather, Zap as ZapIcon, Map as MapIcon, Edit, Trash2, LoaderCircle } from 'lucide-react';
+import { CheckCircle, Calendar as CalendarIcon, Target, Search, Menu, Milestone, PlusCircle, ChevronRight, Clock, Wand2, Feather, Zap as ZapIcon, Map as MapIcon, Edit, Trash2, LoaderCircle, Flame, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -18,11 +18,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-import { generateSimpleSmartGoal, generateGoalRoadmap } from '@/lib/ai-client';
-import { generateGoalSuggestion } from '@/lib/ai-client';
-import { generateSkillFromGoal } from '@/lib/ai-client';
-import { generateInitialEpicMission } from '@/lib/ai-client';
-import { generateUserAchievements } from '@/lib/ai-client';
+import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
+import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
+import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
+import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
+import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
+import { generateUserAchievements } from '@/ai/flows/generate-user-achievements';
 import * as mockData from '@/lib/data';
 
 const MetasMobileComponent = () => {
@@ -30,7 +31,7 @@ const MetasMobileComponent = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showWizard, setShowWizard] = useState(false);
     const [wizardMode, setWizardMode] = useState<'selection' | 'simple' | 'detailed'>('selection');
-    const [quickGoalData, setQuickGoalData] = useState({ name: '', prazo: null });
+    const [quickGoalData, setQuickGoalData] = useState<{ name: string; prazo: string | null }>({ name: '', prazo: null });
     const [isLoading, setIsLoading] = useState(false);
     
     // Roadmap State
@@ -52,6 +53,10 @@ const MetasMobileComponent = () => {
     const currentY = useRef<number>(0);
     const { toast } = useToast();
 
+    // Delete State
+    const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [metaToDelete, setMetaToDelete] = useState<any>(null);
+
     const triggerHapticFeedback = (type: 'light' | 'medium' | 'heavy' = 'light') => {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
             const patterns = { light: 50, medium: 100, heavy: 200 };
@@ -59,9 +64,60 @@ const MetasMobileComponent = () => {
         }
     };
 
+    const handleConfirmDelete = async () => {
+        if (!metaToDelete) return;
+        
+        triggerHapticFeedback('heavy');
+        
+        const hasDemonCastleMission = missions.some((m: any) => 
+            m.meta_associada === metaToDelete.nome && m.tipo === 'demon_castle'
+        );
+
+        if (hasDemonCastleMission) {
+            // Punição Severa: Perda de 40 HP
+            const currentHP = profile.hp_atual || 100;
+            const newHP = Math.max(0, currentHP - 40);
+            
+            const updatedProfile = {
+                ...profile,
+                hp_atual: newHP
+            };
+            
+            await persistData('profile', updatedProfile);
+            toast({ 
+                variant: 'destructive', 
+                title: "PUNIÇÃO DO SISTEMA", 
+                description: `Você abandonou um desafio épico. Dano recebido: -40 HP.`,
+            });
+        }
+
+        await persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome));
+        await persistData('metas', metas.filter((m: any) => m.id !== metaToDelete.id));
+        
+        if (metaToDelete.habilidade_associada_id) {
+            await persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id));
+        }
+
+        setShowDeleteAlert(false);
+        setMetaToDelete(null);
+        toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" foi removida.` });
+    };
+
+    const handleDeleteClick = (meta: any) => {
+        setMetaToDelete(meta);
+        setShowDeleteAlert(true);
+    };
+
     const handleGetRoadmap = async (meta: any) => {
         triggerHapticFeedback('medium');
         setRoadmapMeta(meta);
+        
+        // Se a meta já tem um roadmap salvo, usa ele e não chama a API
+        if (meta.roadmap && meta.roadmap.length > 0) {
+            setRoadmap(meta.roadmap);
+            return;
+        }
+
         setIsLoadingRoadmap(true);
         setRoadmap(null);
         try {
@@ -71,6 +127,13 @@ const MetasMobileComponent = () => {
                 userLevel: profile.nivel,
             });
             setRoadmap(result.roadmap);
+            
+            // Opcional: Salvar o roadmap gerado na meta para a próxima vez
+            const updatedMetas = metas.map((m: any) => 
+                m.id === meta.id ? { ...m, roadmap: result.roadmap } : m
+            );
+            await persistData('metas', updatedMetas);
+            
         } catch(error: any) {
             toast({ variant: 'destructive', title: "Erro de Estratégia", description: "Não foi possível gerar o roadmap." });
             setRoadmapMeta(null);
@@ -173,6 +236,24 @@ const MetasMobileComponent = () => {
                     goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
                     userLevel: profile.nivel,
                 });
+                
+                // Gerar Roadmap Estratégico (Não bloqueante)
+                let roadmapData: any[] = [];
+                try {
+                    const roadmapResult = await generateGoalRoadmap({
+                        goalName: newMetaWithId.nome,
+                        goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
+                        userLevel: profile.nivel,
+                    });
+                    roadmapData = roadmapResult.roadmap;
+                } catch (roadmapErr) {
+                    console.warn("Falha ao gerar roadmap inicial, a meta será criada sem ele.");
+                }
+
+                const newMetaWithRoadmap = {
+                    ...newMetaWithId,
+                    roadmap: roadmapData
+                };
 
                 const newMissions = (initialMissionResult.progression || []).map((epicMission: any, index: number) => {
                     const isFirstMission = index === 0;
@@ -186,6 +267,8 @@ const MetasMobileComponent = () => {
                         meta_associada: newMetaWithId.nome,
                         total_missoes_diarias: 10, 
                         ultima_missao_concluida_em: null,
+                        is_epic: true, // Mantemos como épica, mas não é Demon Castle ainda
+                        tipo: 'comum', // Tipo padrão
                         missoes_diarias: isFirstMission ? [{
                             id: Date.now() + (initialMissionResult.progression?.length || 0) + 3,
                             nome: initialMissionResult.firstDailyMissionName,
@@ -200,7 +283,7 @@ const MetasMobileComponent = () => {
                 });
                 
                 await persistData('skills', [...skills, newSkill]);
-                await persistData('metas', [...metas, newMetaWithId]);
+                await persistData('metas', [...metas, newMetaWithRoadmap]);
                 await persistData('missions', [...missions, ...newMissions]);
                 
                 toast({ title: "Meta Forjada!", description: "Seu novo objetivo e missão inicial estão prontos." });
@@ -220,9 +303,10 @@ const MetasMobileComponent = () => {
         setShowSuggestions(true);
         try {
             const result = await generateGoalSuggestion({
-                userLevel: profile.nivel,
-                existingGoals: metas.map((m: any) => m.nome),
-                userInterests: profile.interests || []
+                profile: JSON.stringify(profile),
+                skills: JSON.stringify(skills),
+                completedGoals: JSON.stringify(metas.filter((m: any) => m.concluida).map((m: any) => m.nome)),
+                existingCategories: mockData.categoriasMetas
             });
             setSuggestions(result.suggestions || []);
         } catch (error: any) {
@@ -360,6 +444,29 @@ const MetasMobileComponent = () => {
                                     disabled={isLoading}
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-mono text-cyan-500 uppercase tracking-widest font-bold ml-2">DEADLINE (OPTIONAL)</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className="w-full justify-start text-left font-normal bg-black/60 border-cyan-900/50 text-white hover:bg-cyan-950/30 hover:text-cyan-400 rounded-2xl h-14 font-mono uppercase"
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {quickGoalData.prazo ? format(new Date(quickGoalData.prazo), "PPP") : <span>SELECT DATE</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 bg-black border border-cyan-500/50">
+                                        <Calendar
+                                            mode="single"
+                                            selected={quickGoalData.prazo ? new Date(quickGoalData.prazo) : undefined}
+                                            onSelect={(date) => setQuickGoalData(prev => ({...prev, prazo: date ? date.toISOString().split('T')[0] : null}))}
+                                            initialFocus
+                                            className="text-white"
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                             <button 
                                 className="w-full py-4 bg-cyan-600 text-white font-mono font-bold rounded-2xl shadow-lg border-2 border-cyan-400 active:scale-95 transition-all uppercase tracking-widest disabled:opacity-50"
                                 onClick={handleCreateSimpleGoal}
@@ -380,7 +487,7 @@ const MetasMobileComponent = () => {
             {/* Background System Effect */}
             <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-[0.03] pointer-events-none z-50" />
             
-            <header className="bg-black/90 backdrop-blur-2xl border-b border-blue-500/20 flex-shrink-0 z-40" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+            <header className="bg-black/90 backdrop-blur-2xl border-b border-blue-500/20 flex-shrink-0 z-40 pt-safe">
                 {/* System Alert Bar */}
                 <div className="flex items-center justify-between bg-blue-950/40 border-b border-blue-900/30 py-2.5 px-4">
                     <div className="flex items-center gap-3">
@@ -522,25 +629,12 @@ const MetasMobileComponent = () => {
                                                 <button onClick={() => handleOpenEditDialog(meta)} className="text-blue-400 p-2 rounded-xl border border-blue-500/20 active:bg-blue-500/20">
                                                     <Edit className="h-4 w-4" />
                                                 </button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <button className="text-red-400 p-2 rounded-xl border border-red-500/20 active:bg-red-500/20">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent className="bg-black/95 border-red-900/50 max-w-[95vw] rounded-2xl">
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle className="text-red-500 font-mono uppercase">WARNING: DELETION IMMINENT</AlertDialogTitle>
-                                                            <AlertDialogDescription className="text-gray-400 font-mono text-xs">
-                                                                This action cannot be undone. Target objective and associated quest data will be permanently erased.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel className="bg-transparent border-gray-700 text-gray-400">CANCEL</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(meta.id)} className="bg-red-900/20 border border-red-500/50 text-red-500">CONFIRM</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <button 
+                                                    onClick={() => handleDeleteClick(meta)} 
+                                                    className="text-red-400 p-2 rounded-xl border border-red-500/20 active:bg-red-500/20"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -556,7 +650,7 @@ const MetasMobileComponent = () => {
                 onClick={handleOpenWizard}
                 className="fixed bottom-8 right-6 w-20 h-20 bg-blue-600 border-4 border-blue-400 text-white shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all active:scale-90 active:bg-blue-500 flex items-center justify-center group z-40 rounded-[2rem]"
                 style={{ 
-                    bottom: 'calc(32px + env(safe-area-inset-bottom))',
+                    bottom: 'calc(100px + env(safe-area-inset-bottom))',
                     right: '24px'
                 }}
             >
@@ -761,6 +855,50 @@ const MetasMobileComponent = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Alert */}
+            <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+                <AlertDialogContent className="bg-black/95 border-2 border-red-600/50 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.2)] max-w-[90vw] w-[90vw]">
+                    <AlertDialogHeader>
+                        <div className="w-16 h-16 rounded-2xl bg-red-600/10 border-2 border-red-600/30 flex items-center justify-center mx-auto mb-4">
+                            <Trash2 className="text-red-500 w-8 h-8 animate-pulse" />
+                        </div>
+                        <AlertDialogTitle className="text-center font-cinzel text-lg text-red-500 uppercase tracking-widest font-bold">
+                            AVISO DO SISTEMA
+                        </AlertDialogTitle>
+                        <AlertDialogDescription asChild className="text-center font-mono text-xs text-red-200/70 pt-2">
+                            <div className="space-y-4">
+                                <p>Você está prestes a abandonar esta Meta permanentemente.</p>
+                                
+                                {metaToDelete && missions.some((m: any) => m.meta_associada === metaToDelete.nome && m.tipo === 'demon_castle') && (
+                                    <div className="p-4 bg-red-600/10 border border-red-600/30 rounded-2xl space-y-2 mt-4 text-left">
+                                        <p className="text-red-500 font-black uppercase text-[10px] flex items-center gap-2">
+                                            <ZapIcon className="w-3 h-3" /> PENALIDADE CRÍTICA DETECTADA
+                                        </p>
+                                        <p className="text-[10px] leading-tight text-red-300/90">
+                                            Esta meta sustenta um evento do <span className="text-red-400 font-black">DEMON CASTLE</span>. 
+                                            O abandono resultará em perda imediata de <span className="text-white font-black bg-red-600 px-1">-40 HP</span>.
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                <p className="text-[9px] mt-4 uppercase font-bold tracking-tighter opacity-50">ESTA AÇÃO É IRREVERSÍVEL. CONFIRMAR?</p>
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex flex-row gap-2 mt-6">
+                        <AlertDialogCancel className="flex-1 bg-transparent border-gray-800 text-gray-500 font-mono text-[10px] h-12 rounded-2xl">
+                            RECUAR
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleConfirmDelete}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black font-mono text-[10px] h-12 rounded-2xl border-b-4 border-red-800"
+                        >
+                            ABANDONAR
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

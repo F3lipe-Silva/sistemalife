@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que gera desafios práticos para uma Masmorra de Habilidade.
- *
- * - generateSkillDungeonChallenge - Gera um desafio com base na habilidade e no nível da sala.
- * - GenerateSkillDungeonChallengeInput - O tipo de entrada para a função.
- * - GenerateSkillDungeonChallengeOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que gera desafios personalizados para Dungeons de Habilidades.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';

@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que gera uma árvore de progressão de missões épicas com base na nova meta do utilizador.
- *
- * - generateInitialEpicMission - Gera uma sequência de missões ranqueadas e a primeira missão diária.
- * - GenerateInitialEpicMissionInput - O tipo de entrada para a função.
- * - GenerateInitialEpicMissionOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que gera a primeira missão épica para uma nova meta.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -126,9 +121,14 @@ Responda em formato JSON seguindo este esquema:
         level_requirement: 1,
     }];
 
-    const fallbackDailyMissionName = `Começar a jornada: ${input.goalName}`;
-    const fallbackDailyMissionDescription = 'Completar o primeiro passo para alcançar a sua meta.';
-    const fallbackDailyMissionSubTasks = [{ name: 'Completar o primeiro passo', target: 1, unit: 'tarefa', current: 0 }];
+    const fallbackDailyMissionName = `Início: ${input.goalName}`;
+    const fallbackDailyMissionDescription = `Dê o primeiro passo prático na sua jornada de ${input.goalName}.`;
+    const fallbackDailyMissionSubTasks = [{ 
+        name: `Primeira sessão de ${input.goalName}`, 
+        target: 1, 
+        unit: 'unidade', 
+        current: 0 
+    }];
     const missionText = `${fallbackDailyMissionName}: Completar o primeiro passo`;
     const {xp, fragments} = await generateMissionRewards({ missionText, userLevel: input.userLevel });
 

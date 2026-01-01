@@ -1,94 +1,48 @@
+import { generateAnalyticsInsights } from '@/ai/flows/generate-analytics-insights';
+import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
+import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
+import { generateMissionRewards } from '@/ai/flows/generate-mission-rewards';
+import { generateNextDailyMission } from '@/ai/flows/generate-next-daily-mission';
+import { generateRoutineSuggestion } from '@/ai/flows/generate-routine-suggestion';
+import { generateShopItems } from '@/ai/flows/generate-shop-items';
+import { generateSkillDungeonChallenge } from '@/ai/flows/generate-skill-dungeon-challenge';
+import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
+import { generateTowerChallenge } from '@/ai/flows/generate-tower-challenge';
+import { generateUserAchievements } from '@/ai/flows/generate-user-achievements';
+import { validateDungeonSubmission } from '@/ai/flows/validate-dungeon-submission';
+import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
+import { generateStorySegment } from '@/ai/flows/generate-story-segment';
+import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
+import { generateSkillExperience } from '@/ai/flows/generate-skill-experience';
+import { generateMissionSuggestion } from '@/ai/flows/generate-mission-suggestion';
+import { generateSystemAdvice } from '@/ai/flows/generate-personalized-advice';
+import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
+import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
 
-// Client-side shim for AI flows to avoid 'use server' issues with Static Export (Capacitor)
-// These functions should eventually point to a backend API (e.g. Firebase Functions)
-
-const notImplemented = async (name: string) => {
-  console.warn(`AI Flow '${name}' called on client, but no backend is connected.`);
-  return Promise.reject(new Error(`AI Flow '${name}' not implemented on client.`));
+export {
+  generateAnalyticsInsights,
+  generateGoalCategory,
+  generateGoalSuggestion,
+  generateMissionRewards,
+  generateNextDailyMission,
+  generateRoutineSuggestion,
+  generateShopItems,
+  generateSkillDungeonChallenge,
+  generateSkillFromGoal,
+  generateTowerChallenge,
+  generateUserAchievements,
+  validateDungeonSubmission,
+  generateSmartGoalQuestion,
+  generateStorySegment,
+  generateSimpleSmartGoal,
+  generateSkillExperience,
+  generateMissionSuggestion,
+  generateSystemAdvice,
+  generateInitialEpicMission,
+  generateGoalRoadmap
 };
-
-export async function generateAnalyticsInsights(input: any): Promise<any> {
-  return notImplemented('generateAnalyticsInsights');
-}
-
-export async function generateGoalCategory(input: any): Promise<any> {
-  return notImplemented('generateGoalCategory');
-}
-
-export async function generateGoalSuggestion(input: any): Promise<any> {
-  return notImplemented('generateGoalSuggestion');
-}
 
 export async function generateHunterAvatar(input: any): Promise<any> {
     console.log("Mocking generateHunterAvatar for UI testing");
-    // Return a dummy base64 or URL if needed to prevent UI crashes immediately
     return { avatarDataUri: "" };
-}
-
-export async function generateMissionRewards(input: any): Promise<any> {
-  return notImplemented('generateMissionRewards');
-}
-
-export async function generateNextDailyMission(input: any): Promise<any> {
-  return notImplemented('generateNextDailyMission');
-}
-
-export async function generateRoutineSuggestion(input: any): Promise<any> {
-  return notImplemented('generateRoutineSuggestion');
-}
-
-export async function generateShopItems(input: any): Promise<any> {
-  return notImplemented('generateShopItems');
-}
-
-export async function generateSkillDungeonChallenge(input: any): Promise<any> {
-  return notImplemented('generateSkillDungeonChallenge');
-}
-
-export async function generateSkillFromGoal(input: any): Promise<any> {
-  return notImplemented('generateSkillFromGoal');
-}
-
-export async function generateTowerChallenge(input: any): Promise<any> {
-  return notImplemented('generateTowerChallenge');
-}
-
-export async function generateUserAchievements(input: any): Promise<any> {
-  return notImplemented('generateUserAchievements');
-}
-
-export async function validateDungeonSubmission(input: any): Promise<any> {
-  return notImplemented('validateDungeonSubmission');
-}
-
-export async function generateSmartGoalQuestion(input: any): Promise<any> {
-  return notImplemented('generateSmartGoalQuestion');
-}
-
-export async function generateStorySegment(input: any): Promise<any> {
-  return notImplemented('generateStorySegment');
-}
-
-export async function generateSimpleSmartGoal(input: any): Promise<any> {
-  return notImplemented('generateSimpleSmartGoal');
-}
-
-export async function generateSkillExperience(input: any): Promise<any> {
-  return notImplemented('generateSkillExperience');
-}
-
-export async function generateMissionSuggestion(input: any): Promise<any> {
-  return notImplemented('generateMissionSuggestion');
-}
-
-export async function generateSystemAdvice(input: any): Promise<any> {
-  return notImplemented('generateSystemAdvice');
-}
-
-export async function generateInitialEpicMission(input: any): Promise<any> {
-  return notImplemented('generateInitialEpicMission');
-}
-
-export async function generateGoalRoadmap(input: any): Promise<any> {
-  return notImplemented('generateGoalRoadmap');
 }

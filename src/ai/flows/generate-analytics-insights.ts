@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que analisa os dados de progresso de um utilizador e gera insights.
- *
- * - generateAnalyticsInsights - Analisa dados e fornece conselhos estratégicos.
- * - GenerateAnalyticsInsightsInput - O tipo de entrada para a função.
- * - GenerateAnalyticsInsightsOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que analisa os dados de progresso e gera insights.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useCallback, useEffect, memo } from 'react';
-import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone, Skull } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, X, Feather, ZapIcon, Swords, Brain, Zap, ShieldCheck, Star, BookOpen, Wand2, Calendar as CalendarIcon, CheckCircle, Info, Map as MapIcon, LoaderCircle, Milestone, Skull, Flame, ShieldAlert, ChevronRight } from 'lucide-react';
 import { format } from "date-fns";
 import * as mockData from '@/lib/data';
-import { generateGoalCategory } from '@/lib/ai-client';
-import { generateSmartGoalQuestion } from '@/lib/ai-client';
-import { generateSimpleSmartGoal } from '@/lib/ai-client';
-import { generateInitialEpicMission } from '@/lib/ai-client';
-import { generateSkillFromGoal } from '@/lib/ai-client';
-import { generateGoalSuggestion } from '@/lib/ai-client';
-import { generateGoalRoadmap } from '@/lib/ai-client';
-import { generateUserAchievements } from '@/lib/ai-client';
+import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
+import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
+import { generateSimpleSmartGoal } from '@/ai/flows/generate-simple-smart-goal';
+import { generateInitialEpicMission } from '@/ai/flows/generate-initial-epic-mission';
+import { generateSkillFromGoal } from '@/ai/flows/generate-skill-from-goal';
+import { generateGoalSuggestion } from '@/ai/flows/generate-goal-suggestion';
+import { generateGoalRoadmap } from '@/ai/flows/generate-goal-roadmap';
+import { generateUserAchievements } from '@/ai/flows/generate-user-achievements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -110,6 +110,13 @@ const MetasViewComponent = () => {
     
     const handleGetRoadmap = async (meta: any) => {
         setRoadmapMeta(meta);
+        
+        // Se a meta já tem um roadmap salvo, usa ele e não chama a API
+        if (meta.roadmap && meta.roadmap.length > 0) {
+            setRoadmap(meta.roadmap);
+            return;
+        }
+
         setIsLoadingRoadmap(true);
         setRoadmap(null);
         try {
@@ -119,6 +126,13 @@ const MetasViewComponent = () => {
                 userLevel: profile.nivel,
             });
             setRoadmap(result.roadmap);
+
+            // Opcional: Salvar o roadmap gerado na meta para a próxima vez
+            const updatedMetas = metas.map((m: any) => 
+                m.id === meta.id ? { ...m, roadmap: result.roadmap } : m
+            );
+            await persistData('metas', updatedMetas);
+
         } catch(error: any) {
             handleToastError(error, "Não foi possível gerar a estratégia.");
             setRoadmapMeta(null);
@@ -228,54 +242,73 @@ const MetasViewComponent = () => {
                     .map((m: any) => `- Meta Concluída: ${m.nome}`)
                     .join('\n');
                 
-                const initialMissionResult = await generateInitialEpicMission({
-                    goalName: newMetaWithId.nome,
-                    goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
-                    userLevel: profile.nivel,
-                });
-
-                if (initialMissionResult.fallback) {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Sistema Sobrecarregado',
-                        description: 'Uma missão inicial simples foi criada. Tente editar a meta mais tarde para gerar uma árvore de progressão completa.',
-                    });
-                }
+                                const initialMissionResult = await generateInitialEpicMission({
+                                    goalName: newMetaWithId.nome,
+                                    goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
+                                    userLevel: profile.nivel,
+                                });
                 
-                const newMissions = (initialMissionResult.progression || []).map((epicMission: any, index: number) => {
-                    const isFirstMission = index === 0;
-                    return {
-                        id: Date.now() + index + 2,
-                        nome: epicMission.epicMissionName,
-                        descricao: epicMission.epicMissionDescription,
-                        concluido: false,
-                        rank: epicMission.rank,
-                        level_requirement: 1, 
-                        meta_associada: newMetaWithId.nome,
-                        total_missoes_diarias: 10, 
-                        ultima_missao_concluida_em: null,
-                        missoes_diarias: isFirstMission ? [{
-                            id: Date.now() + (initialMissionResult.progression?.length || 0) + 3,
-                            nome: initialMissionResult.firstDailyMissionName,
-                            descricao: initialMissionResult.firstDailyMissionDescription,
-                            xp_conclusao: initialMissionResult.firstDailyMissionXp,
-                            fragmentos_conclusao: initialMissionResult.firstDailyMissionFragments,
-                            concluido: false,
-                            tipo: 'diaria',
-                            learningResources: initialMissionResult.firstDailyMissionLearningResources,
-                            subTasks: initialMissionResult.firstDailyMissionSubTasks,
-                        }] : [],
-                    };
-                });
+                                // Gerar Roadmap Estratégico (Não bloqueante)
+                                let roadmapData: any[] = [];
+                                try {
+                                    const roadmapResult = await generateGoalRoadmap({
+                                        goalName: newMetaWithId.nome,
+                                        goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
+                                        userLevel: profile.nivel,
+                                    });
+                                    roadmapData = roadmapResult.roadmap;
+                                } catch (roadmapErr) {
+                                    console.warn("Falha ao gerar roadmap inicial na versão desktop.");
+                                }
                 
-                const updatedSkills = [...skills, newSkill];
-                const updatedMetas = [...metas, newMetaWithId];
-                const updatedMissions = [...missions, ...newMissions];
-
-                persistData('skills', updatedSkills);
-                persistData('metas', updatedMetas);
-                persistData('missions', updatedMissions);
+                                const newMetaWithRoadmap = {
+                                    ...newMetaWithId,
+                                    roadmap: roadmapData
+                                };
+                                
+                                if (initialMissionResult.fallback) {
+                                    toast({
+                                        variant: 'destructive',
+                                        title: 'Sistema Sobrecarregado',
+                                        description: 'Uma missão inicial simples foi criada. Tente editar a meta mais tarde para gerar uma árvore de progressão completa.',
+                                    });
+                                }
+                                
+                                const newMissions = (initialMissionResult.progression || []).map((epicMission: any, index: number) => {
+                                    const isFirstMission = index === 0;
+                                    return {
+                                        id: Date.now() + index + 2,
+                                        nome: epicMission.epicMissionName,
+                                        descricao: epicMission.epicMissionDescription,
+                                        concluido: false,
+                                        rank: epicMission.rank,
+                                        level_requirement: 1, 
+                                        meta_associada: newMetaWithId.nome,
+                                        total_missoes_diarias: 10, 
+                                        ultima_missao_concluida_em: null,
+                                        is_epic: true,
+                                        tipo: 'comum',
+                                        missoes_diarias: isFirstMission ? [{
+                                            id: Date.now() + (initialMissionResult.progression?.length || 0) + 3,
+                                            nome: initialMissionResult.firstDailyMissionName,
+                                            descricao: initialMissionResult.firstDailyMissionDescription,
+                                            xp_conclusao: initialMissionResult.firstDailyMissionXp,
+                                            fragmentos_conclusao: initialMissionResult.firstDailyMissionFragments,
+                                            concluido: false,
+                                            tipo: 'diaria',
+                                            learningResources: initialMissionResult.firstDailyMissionLearningResources,
+                                            subTasks: initialMissionResult.firstDailyMissionSubTasks,
+                                        }] : [],
+                                    };
+                                });
+                                
+                                const updatedSkills = [...skills, newSkill];
+                                const updatedMetas = [...metas, newMetaWithRoadmap];
+                                const updatedMissions = [...missions, ...newMissions];
                 
+                                persistData('skills', updatedSkills);
+                                persistData('metas', updatedMetas);
+                                persistData('missions', updatedMissions);                
                 // Gerar conquistas após salvar a meta
                 try {
                     const achievementResult = await generateUserAchievements({
@@ -307,6 +340,51 @@ const MetasViewComponent = () => {
         }
     };
     
+    const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [metaToDelete, setMetaToDelete] = useState<any>(null);
+
+    const handleConfirmDelete = async () => {
+        if (!metaToDelete) return;
+        
+        const hasDemonCastleMission = missions.some((m: any) => 
+            m.meta_associada === metaToDelete.nome && m.tipo === 'demon_castle'
+        );
+
+        if (hasDemonCastleMission) {
+            // Punição Severa: Perda de 40 HP
+            const currentHP = profile.hp_atual || 100;
+            const newHP = Math.max(0, currentHP - 40);
+            
+            const updatedProfile = {
+                ...profile,
+                hp_atual: newHP
+            };
+            
+            await persistData('profile', updatedProfile);
+            toast({ 
+                variant: 'destructive', 
+                title: "PUNIÇÃO DO SISTEMA", 
+                description: `Você abandonou um desafio épico. Dano recebido: -40 HP.`,
+            });
+        }
+
+        await persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome));
+        await persistData('metas', metas.filter((m: any) => m.id !== metaToDelete.id));
+        
+        if (metaToDelete.habilidade_associada_id) {
+            await persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id));
+        }
+
+        setShowDeleteAlert(false);
+        setMetaToDelete(null);
+        toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" foi removida.` });
+    };
+
+    const handleDeleteClick = (meta: any) => {
+        setMetaToDelete(meta);
+        setShowDeleteAlert(true);
+    };
+
     const handleCreateSimpleGoal = async () => {
         if (!quickGoalData.name.trim()) return;
         setIsLoadingSimpleGoal(true);
@@ -339,17 +417,7 @@ const MetasViewComponent = () => {
     };
 
 
-    const handleDelete = async (id: number) => {
-        const metaToDelete = metas.find((m: any) => m.id === id);
-        if (metaToDelete) {
-            persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome));
-            persistData('metas', metas.filter((m: any) => m.id !== id));
-            if (metaToDelete.habilidade_associada_id) {
-                persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id));
-            }
-            toast({ title: "Meta Eliminada", description: `A meta "${metaToDelete.nome}" e seus componentes foram removidos.` });
-        }
-    };
+
 
     const renderWizardContent = () => {
         switch (wizardMode) {
@@ -539,25 +607,9 @@ const MetasViewComponent = () => {
                                         <Button onClick={() => handleOpenEditDialog(meta)} variant="ghost" size="icon" className={cn("text-blue-400/50 hover:text-blue-400 hover:bg-transparent rounded-none", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label={`Editar meta ${meta.nome}`}>
                                             <Edit className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
                                         </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className={cn("text-red-400/50 hover:text-red-400 hover:bg-transparent rounded-none", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label={`Excluir meta ${meta.nome}`}>
-                                                    <Trash2 className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent className="bg-black/95 border-red-900/50">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle className={cn("text-red-500 font-mono uppercase", isMobile ? "text-lg" : "")}>WARNING: DELETION IMMINENT</AlertDialogTitle>
-                                                    <AlertDialogDescription className={cn("text-gray-400 font-mono text-xs", isMobile ? "text-xs" : "")}>
-                                                        This action cannot be undone. Target objective and associated quest data will be permanently erased.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter className={isMobile ? "flex-col gap-2" : ""}>
-                                                    <AlertDialogCancel className="bg-transparent border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-white rounded-none font-mono text-xs">CANCEL</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(meta.id)} className="bg-red-900/20 border border-red-500/50 text-red-500 hover:bg-red-900/40 rounded-none font-mono text-xs">CONFIRM DELETION</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <Button onClick={() => handleDeleteClick(meta)} variant="ghost" size="icon" className={cn("text-red-400/50 hover:text-red-400 hover:bg-transparent rounded-none", isMobile ? "h-6 w-6" : "h-8 w-8")} aria-label={`Excluir meta ${meta.nome}`}>
+                                            <Trash2 className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -879,12 +931,53 @@ const MetasViewComponent = () => {
                      <DialogFooter className={cn("px-6 pb-6 pt-4 bg-black/40 border-t border-blue-900/30", isMobile ? "px-4 pb-4 flex-col" : "sm:justify-end")}>
                         <Button variant="outline" onClick={() => setRoadmapMeta(null)} className={cn("border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-none font-mono text-xs uppercase tracking-widest w-full sm:w-auto", isMobile ? "h-9" : "")}>CLOSE STRATEGY</Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-        </div>
-    );
-};
+                                </DialogContent>
+                            </Dialog>
+                
+                            {/* Delete Confirmation Alert */}
+                            <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+                                <AlertDialogContent className="bg-black/95 border-2 border-red-600/50 shadow-[0_0_50px_rgba(220,38,38,0.2)]">
+                                    <AlertDialogHeader>
+                                        <div className="w-16 h-16 rounded-none bg-red-600/10 border-2 border-red-600/30 flex items-center justify-center mx-auto mb-4">
+                                            <Trash2 className="text-red-500 w-8 h-8 animate-pulse" />
+                                        </div>
+                                        <AlertDialogTitle className="text-center font-cinzel text-2xl text-red-500 uppercase tracking-widest font-black">
+                                            AVISO DO SISTEMA
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription className="text-center font-mono text-sm text-red-200/70 space-y-4 pt-2">
+                                            <p className="uppercase font-bold tracking-wider text-white">INTERRUPÇÃO DE PROTOCOLO DETECTADA</p>
+                                            
+                                            {metaToDelete && missions.some((m: any) => m.meta_associada === metaToDelete.nome && m.tipo === 'demon_castle') && (
+                                                <div className="p-5 bg-red-600/10 border border-red-600/30 rounded-none space-y-3 mt-4 text-left border-l-4 border-l-red-600">
+                                                    <p className="text-red-500 font-black uppercase text-xs flex items-center gap-2">
+                                                        <ZapIcon className="w-4 h-4" /> PENALIDADE POR ABANDONO ÉPICO
+                                                    </p>
+                                                    <p className="text-xs leading-relaxed text-red-300">
+                                                        A meta selecionada está vinculada a um evento do <span className="text-red-400 font-black tracking-widest">DEMON CASTLE</span>. 
+                                                        A desistência de um desafio desta magnitude resultará em dano imediato de <span className="text-white font-black bg-red-600 px-2">-40 HP</span> e falha no contrato.
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            <p className="text-[10px] mt-6 uppercase opacity-50 font-bold">VOCÊ ESTÁ PREPARADO PARA AS CONSEQUÊNCIAS?</p>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="flex gap-4 mt-8">
+                                        <AlertDialogCancel className="flex-1 bg-transparent border-gray-800 text-gray-500 font-mono text-xs hover:text-white hover:border-gray-600 rounded-none">
+                                            RECUAR
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction 
+                                            onClick={handleConfirmDelete}
+                                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black font-mono text-xs rounded-none border-b-4 border-red-900"
+                                        >
+                                            CONFIRMAR ABANDONO
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    );
+                };
 
 export const MetasView = memo(MetasViewComponent);
 

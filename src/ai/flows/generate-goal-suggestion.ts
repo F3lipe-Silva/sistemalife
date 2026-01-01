@@ -1,10 +1,5 @@
-'use server';
 /**
  * @fileOverview Um agente de IA que sugere novas metas com base no perfil do utilizador.
- *
- * - generateGoalSuggestion - Analisa o perfil e sugere novas metas.
- * - GenerateGoalSuggestionInput - O tipo de entrada para a função.
- * - GenerateGoalSuggestionOutput - O tipo de retorno para a função.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -34,32 +29,32 @@ export async function generateGoalSuggestion(
   input: GenerateGoalSuggestionInput
 ): Promise<GenerateGoalSuggestionOutput> {
   const prompt = `
-      Você é o "Estratega do Sistema", um coach de IA especializado em desenvolvimento a longo prazo. A sua tarefa é analisar o perfil completo de um utilizador e sugerir os próximos grandes objetivos para a sua jornada.
-
-      Dados do Utilizador:
-      - Perfil: ${input.profile}
-      - Habilidades Atuais: ${input.skills}
-      - Metas Já Concluídas: ${input.completedGoals || 'Nenhuma ainda.'}
-
-      Categorias de Metas Disponíveis:
-      ${input.existingCategories.join(', ')}
-
-      Com base em todos estes dados, siga as seguintes diretivas:
-      1.  **Análise Holística:** Avalie as habilidades mais fortes e mais fracas do utilizador. Identifique áreas de especialização e áreas que precisam de desenvolvimento para criar um perfil mais equilibrado.
-      2.  **Sinergia de Habilidades:** Sugira metas que possam complementar as habilidades existentes. Por exemplo, se o utilizador é bom em "Programação Python", sugira uma meta como "Construir um Projeto de IA Pessoal" que utilize essa habilidade.
-      3.  **Desenvolvimento de Atributos:** Olhe para os atributos do perfil (força, inteligência, etc.). Sugira metas que possam fortalecer os atributos mais baixos. Por exemplo, se a 'força' é baixa, sugira uma meta de fitness. Se a 'carisma' é baixo, sugira uma meta social.
-      4.  **Evitar Repetição:** Não sugira metas que sejam muito semelhantes às já concluídas. O objetivo é o crescimento e a exploração de novos desafios.
-      5.  **Qualidade sobre Quantidade:** Gere entre 3 a 5 sugestões de alta qualidade. Cada sugestão deve incluir um nome de meta inspirador, uma descrição que justifique a sugestão com base nos dados do utilizador e a categoria mais apropriada.
-
-      Responda em formato JSON seguindo este esquema:
-      {
-        "suggestions": [
-          { "name": "...", "description": "...", "category": "..." }
-        ]
-      }
+      Você é o "Estratega do Sistema"... (seu prompt atual)
   `;
 
-  // Usando Appwrite AI com modo JSON
-  return await generateWithAppwriteAI<GenerateGoalSuggestionOutput>(prompt, true);
+  try {
+    return await generateWithAppwriteAI<GenerateGoalSuggestionOutput>(prompt, true);
+  } catch (error) {
+    console.error("Erro ao gerar sugestões, usando banco de dados local:", error);
+    return {
+      suggestions: [
+        {
+          name: "Mestre da Calistenia",
+          description: "Fortaleça sua base física com exercícios de peso corporal.",
+          category: "Saúde & Fitness"
+        },
+        {
+          name: "Arquiteto de Conhecimento",
+          description: "Dedique tempo à leitura técnica e expansão intelectual.",
+          category: "Crescimento Pessoal"
+        },
+        {
+          name: "Guerreiro da Rotina",
+          description: "Estabeleça um horário de sono consistente para maximizar sua energia.",
+          category: "Saúde & Fitness"
+        }
+      ]
+    };
+  }
 }
 

@@ -11,7 +11,7 @@
             "scopes": [],
             "events": [],
             "schedule": "",
-            "timeout": 15,
+            "timeout": 60,
             "entrypoint": "src/main.js",
             "commands": "",
             "specification": "s-1vcpu-512mb",

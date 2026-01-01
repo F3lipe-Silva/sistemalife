@@ -1,10 +1,5 @@
-'use server';
 /**
  * @fileOverview Um agente de IA que cria uma nova habilidade com base numa meta do utilizador.
- *
- * - generateSkillFromGoal - Gera um nome, descrição e categoria para uma habilidade.
- * - GenerateSkillFromGoalInput - O tipo de entrada para a função.
- * - GenerateSkillFromGoalOutput - O tipo de retorno para a função.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -44,6 +39,15 @@ export async function generateSkillFromGoal(
       }
   `;
 
-  return await generateWithAppwriteAI<GenerateSkillFromGoalOutput>(prompt, true);
+  try {
+    return await generateWithAppwriteAI<GenerateSkillFromGoalOutput>(prompt, true);
+  } catch (error) {
+    console.error("Erro ao gerar habilidade, usando fallback:", error);
+    return {
+      skillName: `Maestria em ${input.goalName}`,
+      skillDescription: `Habilidade desenvolvida através da dedicação à meta: ${input.goalName}.`,
+      skillCategory: input.existingCategories[0] || "Desenvolvimento Pessoal"
+    };
+  }
 }
 

@@ -1,12 +1,11 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que ajuda a definir metas SMART de forma conversacional.
- *
- * - generateSmartGoalQuestion - Faz a próxima pergunta para refinar uma meta.
- * - GenerateSmartGoalQuestionInput - O tipo de entrada para a função.
- * - GenerateSmartGoalQuestionOutput - O tipo de retorno para a função.
+
+ * @fileOverview Um agente de IA que gera as 5 perguntas de ouro para transformar uma meta simples em SMART.
+
  */
+
+
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
 import { z } from 'zod';

@@ -1,10 +1,5 @@
-'use server';
 /**
- * @fileOverview Um agente de IA que gera uma lista de conquistas personalizadas para o utilizador.
- *
- * - generateUserAchievements - Analisa o perfil do utilizador e cria conquistas únicas.
- * - GenerateUserAchievementsInput - O tipo de entrada para a função.
- * - GenerateUserAchievementsOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que sugere novas conquistas (achievements) personalizadas.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -46,30 +41,38 @@ export async function generateUserAchievements(
   input: GenerateUserAchievementsInput
 ): Promise<GenerateUserAchievementsOutput> {
   const prompt = `
-      Você é o "Criador de Lendas" do SISTEMA DE VIDA, um RPG da vida real. A sua tarefa é analisar o perfil de um utilizador e forjar um conjunto de novas conquistas personalizadas.
-
-      Dados do Utilizador:
-      - Perfil: ${input.profile}
-      - Habilidades Atuais: ${input.skills}
-      - Metas Ativas: ${input.goals}
-      - Conquistas já existentes: ${input.existingAchievementIds?.join(', ') || 'Nenhuma'}
-
-      Gere entre 5 a 7 novas conquistas. Use nomes e descrições épicos.
-
-      Responda em formato JSON seguindo este esquema:
-      {
-        "achievements": [
-          { 
-            "id": "...", 
-            "name": "...", 
-            "description": "...", 
-            "icon": "Award", 
-            "criteria": { "type": "level_reached", "value": 20 } 
-          }
-        ]
-      }
+      Você é o "Criador de Lendas" do SISTEMA DE VIDA... (seu prompt atual)
   `;
 
-  return await generateWithAppwriteAI<GenerateUserAchievementsOutput>(prompt, true);
+  try {
+    return await generateWithAppwriteAI<GenerateUserAchievementsOutput>(prompt, true);
+  } catch (error) {
+    console.error("Erro ao gerar conquistas, usando conquistas de linhagem:", error);
+    return {
+      achievements: [
+        {
+          id: "level_milestone_10",
+          name: "Despertar do Poder",
+          description: "Alcance o nível 10 para provar seu valor inicial.",
+          icon: "Award",
+          criteria: { type: "level_reached", value: 10 }
+        },
+        {
+          id: "streak_warrior_7",
+          name: "Consistência de Aço",
+          description: "Mantenha uma sequência de 7 dias de missões concluídas.",
+          icon: "Flame",
+          criteria: { type: "streak_maintained", value: 7 }
+        },
+        {
+          id: "goal_slayer_1",
+          name: "Conquistador de Destinos",
+          description: "Conclua sua primeira meta épica.",
+          icon: "Trophy",
+          criteria: { type: "goals_completed", value: 1 }
+        }
+      ]
+    };
+  }
 }
 

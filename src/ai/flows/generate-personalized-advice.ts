@@ -1,11 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que fornece conselhos personalizados como o 'Sistema'.
- *
- * - generateSystemAdvice - Uma função que lida com a geração de conselhos personalizados.
- * - GenerateSystemAdviceInput - O tipo de entrada para a função.
- * - GenerateSystemAdviceOutput - O tipo de retorno para a função.
+ * @fileOverview Um agente de IA que fornece conselhos personalizados do "Sistema".
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
@@ -88,8 +83,14 @@ export async function generateSystemAdvice(
   `;
 
   // Usando Appwrite AI para gerar a resposta
-  const response = await generateWithAppwriteAI(generalPrompt);
-
-  return { response };
+  try {
+    const response = await generateWithAppwriteAI(generalPrompt);
+    return { response };
+  } catch (error) {
+    console.error("Erro no Chat do Sistema, usando resposta de segurança:", error);
+    return {
+      response: "AVISO: Falha na conexão com o núcleo do Sistema. O modo de segurança foi ativado. As funções analíticas profundas estão temporariamente indisponíveis devido a uma sobrecarga de mana. Execute as missões atuais para manter a integridade do seu perfil enquanto a conexão é restabelecida."
+    };
+  }
 }
 

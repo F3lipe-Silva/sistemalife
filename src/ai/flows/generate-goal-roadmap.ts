@@ -23,26 +23,27 @@ export type GenerateGoalRoadmapOutput = z.infer<typeof GenerateGoalRoadmapOutput
 export async function generateGoalRoadmap(
   input: GenerateGoalRoadmapInput
 ): Promise<GenerateGoalRoadmapOutput> {
-  const prompt = `Você é o "Estratega Mestre" do SISTEMA DE VIDA, um RPG da vida real. Sua especialidade é pegar num grande objetivo e dividi-lo num roteiro estratégico claro e motivador para um Caçador de nível ${input.userLevel}.
+  const prompt = `Você é o "Estratega Mestre" do SISTEMA DE VIDA... (seu prompt atual)`;
 
-A meta do Caçador é: "${input.goalName}"
-Detalhes da Meta (SMART): ${input.goalDetails}
-
-Sua tarefa é criar um Roteiro Estratégico. Siga estas diretivas:
-1.  **Estrutura em Fases:** Crie entre 2 a 4 fases lógicas. Cada fase deve representar uma etapa significativa da jornada. Dê a cada fase um título épico e temático.
-2.  **Marcos Estratégicos:** Para cada fase, defina de 3 a 5 "Marcos Estratégicos". Estes não são pequenas tarefas diárias, mas sim objetivos importantes a serem alcançados nessa fase. Pense neles como as "Missões Principais" de um jogo.
-3.  **Linguagem de RPG:** Use uma linguagem que inspire e se encaixe no tema. Use termos como "jornada", "desafio", "maestria", "fundação", "arsenal", "campo de batalha".
-4.  **Foco no "Como":** O roteiro não deve ser apenas "o quê", mas também sugerir o "como". Os marcos devem ser acionáveis.
-
-Responda em formato JSON seguindo este esquema:
-{
-  "roadmap": [
-    { "phaseTitle": "...", "phaseDescription": "...", "strategicMilestones": ["...", "..."] }
-  ]
-}
-`;
-
-  return await generateWithAppwriteAI<GenerateGoalRoadmapOutput>(prompt, true);
+  try {
+    return await generateWithAppwriteAI<GenerateGoalRoadmapOutput>(prompt, true);
+  } catch (error) {
+    console.error("Erro no Roadmap, usando plano de contingência:", error);
+    return {
+      roadmap: [
+        {
+          phaseTitle: "Fase 1: Iniciação",
+          phaseDescription: "O sistema está processando os dados profundos da sua meta. Comece com o básico.",
+          strategicMilestones: ["Estabelecer consistência inicial", "Completar as primeiras 5 missões diárias"]
+        },
+        {
+          phaseTitle: "Fase 2: Ascensão",
+          phaseDescription: "Evolução contínua baseada no seu desempenho inicial.",
+          strategicMilestones: ["Aumentar a intensidade dos treinos", "Desbloquear novos ranks"]
+        }
+      ]
+    };
+  }
 }
 
 

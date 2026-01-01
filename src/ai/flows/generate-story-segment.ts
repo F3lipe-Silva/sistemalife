@@ -1,4 +1,6 @@
-'use server';
+/**
+ * @fileOverview Um agente de IA que gera segmentos de história (lore) personalizados.
+ */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';
 import { z } from 'zod';

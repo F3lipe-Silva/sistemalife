@@ -1,7 +1,6 @@
 
-'use server';
 /**
- * @fileOverview Um agente de IA que valida as submissões dos Caçadores na Masmorra.
+ * @fileOverview Um agente de IA que valida as submissões de prova de conclusão de Dungeons.
  */
 
 import { generateWithAppwriteAI } from '@/lib/appwrite-ai';

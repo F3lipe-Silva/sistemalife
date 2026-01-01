@@ -3,8 +3,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Feather, Zap, ZapIcon, Wand2, Calendar as CalendarIcon, X } from 'lucide-react';
 import { format } from "date-fns";
-import { generateGoalCategory } from '@/lib/ai-client';
-import { generateSmartGoalQuestion } from '@/lib/ai-client';
+import { generateGoalCategory } from '@/ai/flows/generate-goal-category';
+import { generateSmartGoalQuestion } from '@/ai/flows/generate-smart-goal-questions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
