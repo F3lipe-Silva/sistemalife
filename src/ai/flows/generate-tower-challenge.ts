@@ -19,6 +19,19 @@ const ChallengeRewardsSchema = z.object({
   premiumFragments: z.number().optional().describe("O número de fragmentos premium ganhos (mais raro)."),
 });
 
+const GenerateTowerChallengeOutputSchema = z.object({
+    id: z.string(),
+    floor: z.number(),
+    title: z.string(),
+    description: z.string(),
+    type: z.enum(['daily', 'weekly', 'special', 'class', 'skill']),
+    difficulty: z.enum(['normal', 'advanced', 'expert', 'elite']),
+    requirements: z.array(ChallengeRequirementSchema),
+    rewards: ChallengeRewardsSchema,
+});
+
+export type GenerateTowerChallengeOutput = z.infer<typeof GenerateTowerChallengeOutputSchema>;
+
 const GenerateTowerChallengeInputSchema = z.object({
     floorNumber: z.number().describe('O número do andar para o qual gerar o desafio.'),
     userProfile: z.string().describe('O perfil do utilizador como uma string JSON.'),
@@ -34,33 +47,40 @@ export async function generateTowerChallenge(
 ): Promise<GenerateTowerChallengeOutput> {
   const prompt = `
     Você é a "Arquiteta da Torre" do Demon Castle.
-    Sua tarefa é pegar a MISSÃO ATUAL do Caçador e INTENSIFICÁ-LA para um desafio de Andar.
+    Sua tarefa é intensificar a MISSÃO ATUAL do Caçador para um desafio de elite.
 
-    **CONTEXTO DO DESAFIO:**
-    - Andar da Torre: ${input.floorNumber}
-    - Missão Base (A intensificar): ${input.currentActiveMission || 'Nenhuma missão ativa. Use as Metas como base.'}
-    - Metas do Caçador: ${input.activeGoals}
+    **MISSÃO BASE:** ${input.currentActiveMission || 'Use as metas como base'}
+    **METAS ATIVAS:** ${input.activeGoals}
+    **ANDAR:** ${input.floorNumber}
 
-    **DIRETRIZES DE INTENSIFICAÇÃO:**
-    1. **Não seja genérico:** Se a missão base é "10 flexões", o desafio deve ser algo como "Prova de Sangue: 25 Flexões Explosivas".
-    2. **Multiplicador de Dificuldade:** Aumente os alvos (targets) das sub-tarefas em pelo menos 2x a 3x, dependendo do andar.
-    3. **Lore Corrompido:** Use termos como "Sombra", "Demonic", "Punição", "Sobrevivência".
-    4. **Unicidade:** O desafio deve parecer uma versão de elite do que o Caçador já faz.
+    **REGRAS DE OURO:**
+    1. **Descrição Breve e Prática:** O texto deve ser curto (max 2 parágrafos).
+       - Intro: Uma frase de lore sombrio.
+       - Guia: Explique CLARAMENTE o que o Caçador deve fazer para cada objetivo técnico.
+    2. **Objetivos Reais:** Não invente números absurdos. Multiplique a missão base por 2x ou 3x no máximo.
+    3. **Nomenclatura:** Os nomes dos requisitos (requirements.value) devem ser descritivos (ex: "Linhas de Código Limpo", "Minutos de Corrida Intensa").
 
-    Responda em JSON seguindo o esquema:
+    **ESTRUTURA DA DESCRIÇÃO:**
+    [Lore Sombrio Curto]
+    
+    **O TESTE:**
+    - [Explicação do Objetivo 1]
+    - [Explicação do Objetivo 2]
+
+    Responda em JSON:
     {
       "id": "...",
       "floor": ${input.floorNumber},
-      "title": "...",
-      "description": "...",
+      "title": "NOME DO DESAFIO",
+      "description": "Texto curto com o guia de execução...",
       "type": "special",
       "difficulty": "advanced",
-      "requirements": [{ "type": "skill_level_reached", "value": "Nome da Tarefa Intensificada", "target": 20 }],
-      "rewards": { "xp": 150, "fragments": 20 }
+      "requirements": [
+        { "type": "skill_level_reached", "value": "Nome Descritivo da Tarefa", "target": 20 }
+      ],
+      "rewards": { "xp": 350, "fragments": 50 }
     }
-  `;
-
-  try {
+  `;  try {
     return await generateWithAppwriteAI<GenerateTowerChallengeOutput>(prompt, true);
   } catch (error) {
     console.error("Erro na Arquiteta da Torre, ativando Protocolo de Emergência:", error);

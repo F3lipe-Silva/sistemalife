@@ -234,6 +234,7 @@
 @layer base {
   :root {
     --background: 224 71% 4%;
+    --background-rgb: 9 9 11; /* Example RGB for 224 71% 4% */
     --foreground: 210 40% 98%;
 
     --card: 220 40% 9%; 
@@ -243,7 +244,7 @@
     --popover-foreground: 210 40% 98%;
 
     /* Cor primária agora usa uma variável para o HSL */
-    --primary: var(--theme-accent-color, 198 90% 55%);
+    --primary: var(--theme-accent-color, 217 91% 67%); /* Default medium blue */
     --primary-foreground: 210 40% 9.8%;
 
     --secondary: 217 33% 17%; 
@@ -252,7 +253,7 @@
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: var(--theme-accent-color, 198 90% 48%);
+    --accent: var(--theme-accent-color, 217 91% 62%); /* Slightly darker default medium blue for accent */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
@@ -260,7 +261,7 @@
 
     --border: 217 33% 25%;
     --input: 217 33% 17%;
-    --ring: var(--theme-accent-color, 198 90% 58%);
+    --ring: var(--theme-accent-color, 217 91% 70%);
 
     --radius: 0.625rem;
     
@@ -276,24 +277,25 @@
 
   .dark {
     --background: 224 71% 4%;
+    --background-rgb: 9 9 11; /* Example RGB for 224 71% 4% */
     --foreground: 210 40% 98%;
     --card: 220 40% 9%; 
     --card-foreground: 210 40% 98%;
     --popover: 224 71% 4%;
     --popover-foreground: 210 40% 98%;
-    --primary: var(--theme-accent-color, 198 90% 55%);
+    --primary: var(--theme-accent-color, 217 91% 67%);
     --primary-foreground: 210 40% 9.8%;
     --secondary: 217 33% 17%; 
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: var(--theme-accent-color, 198 90% 48%);
+    --accent: var(--theme-accent-color, 217 91% 62%);
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 25%;
     --input: 217 33% 17%;
-    --ring: var(--theme-accent-color, 198 90% 58%);
+    --ring: var(--theme-accent-color, 217 91% 70%);
     
     /* Adding Cinzel Decorative font variable to dark theme */
     --font-cinzel: 'Cinzel Decorative', cursive;

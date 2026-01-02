@@ -29,15 +29,32 @@ const TowerMobileComponent = () => {
         try {
             const floor = profile.tower_floor || 1;
             
-            // Buscar a missão diária ativa de maior prioridade (ou a primeira disponível)
-            const activeMissions = missions.flatMap((m: any) => m.missoes_diarias || [])
-                                          .filter((d: any) => !d.concluido);
-            
-            const baseMission = activeMissions.length > 0 
-                ? JSON.stringify(activeMissions[0]) 
-                : "Nenhuma missão diária ativa encontrada.";
+            // 1. Identificar a missão diária ativa e sua missão ranqueada (pai)
+            let parentMission: any = null;
+            let activeDaily: any = null;
 
-            // 1. Gerar o desafio via IA intensificando a missão base
+            for (const m of missions) {
+                const daily = m.missoes_diarias?.find((d: any) => !d.concluido);
+                if (daily) {
+                    parentMission = m;
+                    activeDaily = daily;
+                    break;
+                }
+            }
+
+            if (!parentMission) {
+                setIsGenerating(false);
+                toast({ 
+                    title: "SEM MISSÕES ATIVAS", 
+                    description: "Você precisa de uma missão diária ativa para intensificá-la no Demon Castle.",
+                    variant: "destructive"
+                });
+                return;
+            }
+            
+            const baseMission = JSON.stringify(activeDaily);
+
+            // 2. Gerar o desafio via IA intensificando a missão base
             const challenge = await generateTowerChallenge({
                 floorNumber: floor,
                 userProfile: JSON.stringify(profile),
@@ -46,47 +63,51 @@ const TowerMobileComponent = () => {
                 currentActiveMission: baseMission
             });
 
-            // 2. Transformar o desafio em uma Missão de Demon Castle
-            const newDemonCastleMission = {
-                id: `tower_${floor}_${Date.now()}`,
-                nome: `ANDAR ${floor}: ${challenge.title}`,
-                descricao: challenge.description,
-                concluido: false,
-                rank: floor > 10 ? 'S' : floor > 5 ? 'A' : 'B',
-                level_requirement: floor,
-                meta_associada: 'DEMON CASTLE',
-                total_missoes_diarias: 1,
-                ultima_missao_concluida_em: null,
-                tipo: 'demon_castle',
-                is_epic: true,
-                missoes_diarias: [{
-                    id: Date.now() + 1,
-                    nome: "Prova de Ascensão",
-                    descricao: challenge.description,
-                    xp_conclusao: challenge.rewards.xp,
-                    fragmentos_conclusao: challenge.rewards.fragments,
-                    concluido: false,
-                    tipo: 'diaria',
-                    subTasks: challenge.requirements.map(req => ({
-                        name: req.value.toString(),
-                        target: req.target,
-                        unit: req.type.replace('_', ' '),
-                        current: 0
-                    }))
-                }]
-            };
-
-            // 3. Persistir no banco de dados
-            await persistData('missions', [...missions, newDemonCastleMission]);
-            
-            toast({ 
-                title: "DESAFIO GERADO", 
-                description: `A missão do ${floor}º andar foi adicionada ao seu Quest Log.`,
-                variant: "destructive"
+            // 3. Atualizar a missão existente para o modo Demon Castle
+            const updatedMissions = missions.map((m: any) => {
+                if (m.id === parentMission.id) {
+                    return {
+                        ...m,
+                        nome: `[DEMON CASTLE] ${challenge.title}`,
+                        tipo: 'demon_castle',
+                        is_epic: true,
+                        // Guardamos os dados originais se quisermos restaurar depois, 
+                        // mas a lógica de geração de missão diária já cuida de criar a próxima normal.
+                        missoes_diarias: m.missoes_diarias.map((d: any) => {
+                            if (d.id === activeDaily.id) {
+                                return {
+                                    ...d,
+                                    nome: `DESAFIO DO ANDAR ${floor}`,
+                                    descricao: challenge.description,
+                                    xp_conclusao: challenge.rewards.xp,
+                                    fragmentos_conclusao: challenge.rewards.fragments,
+                                    subTasks: challenge.requirements.map((req: any) => ({
+                                        name: req.value.toString(),
+                                        target: req.target,
+                                        unit: req.type.replace('_', ' '),
+                                        current: 0
+                                    }))
+                                };
+                            }
+                            return d;
+                        })
+                    };
+                }
+                return m;
             });
 
-            // Opcional: Redirecionar para as missões para ver o desafio
-            setTimeout(() => setCurrentPage('missions'), 1500);
+                        // Persistir a substituição
+                        await persistData('missions', updatedMissions);
+                        
+                        triggerHapticFeedback('heavy');
+                        
+                        toast({
+                            title: "MISSÃO CORROMPIDA",
+                            description: `Sua missão atual foi transformada pela Arquiteta da Torre.`,
+                            variant: "destructive"
+                        });
+            // Redirecionar para as missões
+            setCurrentPage('missions');
 
         } catch (error) {
             console.error("Erro ao gerar andar da torre:", error);
@@ -147,7 +168,7 @@ const TowerMobileComponent = () => {
                         {[5, 4, 3, 2, 1].map((floor) => {
                             const isCurrentFloor = floor === (profile.tower_floor || 1);
                             const isLocked = floor > (profile.tower_floor || 1);
-                            const isAlreadyGenerated = missions.some(m => m.id === `tower_${floor}_` || m.nome.startsWith(`ANDAR ${floor}`));
+                            const isAlreadyGenerated = (missions || []).some((m: any) => m.id === `tower_${floor}_` || m.nome.startsWith(`ANDAR ${floor}`));
                             
                             return (
                                 <div 

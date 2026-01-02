@@ -1,12 +1,12 @@
 "use client";
 
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2, Star, Zap, TrendingUp as TrendingUpIcon, Filter, SortAsc, CalendarClock, Target as TargetIcon, Activity, Flame } from 'lucide-react';
+import { Circle, CheckCircle, Timer, Sparkles, History, GitMerge, LifeBuoy, Link, Undo2, ChevronsDown, ChevronsUp, RefreshCw, Gem, Plus, Eye, EyeOff, LoaderCircle, AlertTriangle, Search, PlusCircle, Trophy, MessageSquare, Lock, Edit, Wand2, Star, Zap, TrendingUp as TrendingUpIcon, Filter, SortAsc, CalendarClock, Target as TargetIcon, Activity, Flame, BookOpen, Skull, ShieldAlert } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
@@ -782,6 +782,12 @@ const MissionsView = () => {
         for (const mission of missions) {
             if (mission.concluido) continue;
 
+            // EXCEÇÃO: Missões do Demon Castle sempre aparecem
+            if (mission.tipo === 'demon_castle') {
+                activeEpicMissions.set(`demon_${mission.id}`, mission);
+                continue;
+            }
+
             const existingMissionForGoal = activeEpicMissions.get(mission.meta_associada);
             const currentRankIndex = existingMissionForGoal ? rankOrder.indexOf(existingMissionForGoal.rank) : -1;
             const newRankIndex = rankOrder.indexOf(mission.rank);
@@ -1310,6 +1316,40 @@ const MissionsView = () => {
 
                                             {/* Action Buttons */}
                                             <div className="flex items-center gap-1 self-start">
+                                                {isDemonCastle && (
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-red-500/60 hover:text-red-400 hover:bg-red-500/10 rounded-none h-8 w-8"
+                                                            >
+                                                                <BookOpen className="h-4 w-4" />
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="bg-black/95 border-2 border-red-600/50 text-white max-w-xl">
+                                                            <DialogHeader>
+                                                                <DialogTitle className="font-cinzel text-2xl text-red-500 uppercase tracking-[0.2em] flex items-center gap-3">
+                                                                    <Skull className="h-6 w-6" /> ARQUIVO DO DEMON CASTLE
+                                                                </DialogTitle>
+                                                                <DialogDescription className="text-red-200/40 font-mono text-xs uppercase tracking-widest">
+                                                                    Sincronização de Lore: {mission.nome}
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                            <div className="py-6 font-mono text-sm leading-relaxed border-y border-red-900/30 mt-4 whitespace-pre-line text-red-50/90 max-h-[60vh] overflow-y-auto pr-4">
+                                                                {mission.descricao}
+                                                            </div>
+                                                            <div className="bg-red-950/30 border border-red-900/50 p-4 mt-2">
+                                                                <p className="text-xs text-red-500 uppercase font-black mb-2 tracking-tighter flex items-center gap-2">
+                                                                    <ShieldAlert className="h-4 w-4" /> PROTOCOLO DE PUNIÇÃO ATIVO
+                                                                </p>
+                                                                <p className="text-xs text-red-200/60 italic font-mono leading-relaxed">
+                                                                    "A falha neste desafio resultará em instabilidade do sistema e drenagem de força vital (HP). O tempo é o seu maior inimigo."
+                                                                </p>
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                )}
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>

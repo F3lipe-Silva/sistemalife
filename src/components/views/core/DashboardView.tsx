@@ -15,11 +15,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 const DashboardHeader = ({ profile, isMobile }: { profile: any; isMobile: boolean }) => (
     <header className="space-y-2 mb-6">
          {/* System Alert Bar */}
-         <div className="flex items-center justify-between bg-blue-950/30 border-y border-blue-900/50 py-2 px-4 backdrop-blur-sm">
+         <div className="flex items-center justify-between bg-primary/30 border-y border-primary/50 py-2 px-4 backdrop-blur-sm">
              <div className="flex items-center gap-3">
-                <Bell className="h-4 w-4 text-blue-400 animate-pulse" />
-                <span className="font-mono text-xs text-blue-300 uppercase tracking-widest">
-                    SYSTEM NOTIFICATIONS: <span className="text-white">NO NEW ALERTS</span>
+                <Bell className="h-4 w-4 text-primary animate-pulse" />
+                <span className="font-mono text-xs text-primary/70 uppercase tracking-widest">
+                    SYSTEM NOTIFICATIONS: <span className="text-foreground">NO NEW ALERTS</span>
                 </span>
              </div>
              <div className="flex items-center gap-2">
@@ -30,10 +30,10 @@ const DashboardHeader = ({ profile, isMobile }: { profile: any; isMobile: boolea
 
          {/* Welcome Message */}
          <div className="px-2">
-             <h1 className="font-cinzel text-3xl md:text-4xl font-bold text-white tracking-wider drop-shadow-[0_0_10px_rgba(37,99,235,0.5)]">
-                 BEM-VINDO, <span className="text-blue-400">{profile?.primeiro_nome?.toUpperCase() || 'JOGADOR'}</span>
+             <h1 className="font-cinzel text-3xl md:text-4xl font-bold text-foreground tracking-wider drop-shadow-[0_0_10px_var(--primary-shadow)]">
+                 BEM-VINDO, <span className="text-primary">{profile?.primeiro_nome?.toUpperCase() || 'JOGADOR'}</span>
              </h1>
-             <p className="text-blue-300/60 font-mono text-sm tracking-wide mt-1">
+             <p className="text-primary/60 font-mono text-sm tracking-wide mt-1">
                  PAINEL DE CONTROLE DO SISTEMA INICIADO.
              </p>
          </div>
@@ -62,12 +62,12 @@ const DashboardViewComponent = () => {
         return (
             <div className="flex h-full flex-col items-center justify-center p-8 gap-6">
                 <div className="relative">
-                    <Skeleton className="w-20 h-20 rounded-full bg-blue-900/20" />
-                    <Activity className="absolute inset-0 m-auto h-10 w-10 text-blue-500 animate-spin" />
+                    <Skeleton className="w-20 h-20 rounded-full bg-primary/20" />
+                    <Activity className="absolute inset-0 m-auto h-10 w-10 text-primary animate-spin" />
                 </div>
                 <div className="text-center space-y-2">
-                    <Skeleton className="h-6 w-48 mx-auto bg-blue-900/20" />
-                    <div className="text-blue-500/50 font-mono text-sm animate-pulse">LOADING SYSTEM DATA...</div>
+                    <Skeleton className="h-6 w-48 mx-auto bg-primary/20" />
+                    <div className="text-primary/50 font-mono text-sm animate-pulse">LOADING SYSTEM DATA...</div>
                 </div>
             </div>
         );
@@ -76,12 +76,12 @@ const DashboardViewComponent = () => {
     return (
         <section
             className={cn(
-                'relative flex h-full flex-col gap-4 font-sans text-white animate-fade-in',
+                'relative flex h-full flex-col gap-4 font-sans text-foreground animate-fade-in',
                 isMobile ? 'pb-32' : ''
             )}
         >
             {/* Background Grid Effect */}
-            <div className="fixed inset-0 pointer-events-none z-[-1] opacity-10 bg-[linear-gradient(rgba(18,18,18,1)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,1)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+            <div className="fixed inset-0 pointer-events-none z-[-1] opacity-10 bg-[linear-gradient(rgb(var(--background-rgb))_1px,transparent_1px),linear-gradient(90deg,rgb(var(--background-rgb))_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]"></div>
 
             <DashboardHeader profile={profile} isMobile={isMobile} />
 
@@ -90,8 +90,8 @@ const DashboardViewComponent = () => {
                 
                 {/* Profile Overview - Spans 2 cols on Large */}
                 <div className="lg:col-span-2 space-y-4">
-                     <div className="flex items-center justify-between px-2 border-b border-blue-500/30 pb-2 mb-2">
-                        <h3 className="font-mono text-sm text-blue-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                     <div className="flex items-center justify-between px-2 border-b border-primary/30 pb-2 mb-2">
+                        <h3 className="font-mono text-sm text-primary font-bold uppercase tracking-widest flex items-center gap-2">
                             <User className="h-4 w-4" /> STATUS DO JOGADOR
                         </h3>
                      </div>

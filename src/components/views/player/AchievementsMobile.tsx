@@ -5,9 +5,10 @@ import { usePlayerDataContext } from '@/hooks/use-player-data';
 import { cn } from '@/lib/utils';
 import { Trophy, Star, Shield, Zap, Search, Menu, CheckCircle, Lock, Sparkles, ChevronRight, Award } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { achievements as staticAchievements } from '@/lib/achievements';
 
 const AchievementsMobileComponent = () => {
-    const { profile } = usePlayerDataContext();
+    const { profile, metas, skills, missions } = usePlayerDataContext();
     const [searchTerm, setSearchTerm] = useState('');
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -18,11 +19,57 @@ const AchievementsMobileComponent = () => {
         }
     };
 
+    const getProgress = (achievement: any) => {
+        if (!achievement.criteria || !profile) return { current: 0, target: 0 };
+        
+        const { type, value, category } = achievement.criteria;
+        
+        switch (type) {
+            case 'missions_completed':
+                return { current: profile.missoes_concluidas_total || 0, target: value };
+            case 'level_reached':
+                return { current: profile.nivel || 1, target: value };
+            case 'goals_completed':
+                return { current: (metas || []).filter((m: any) => m.concluida).length, target: value };
+            case 'skill_level_reached':
+                 const skill = (skills || []).find((s: any) => s.categoria === category);
+                 return { current: skill ? skill.nivel_atual : 0, target: value };
+            case 'streak_maintained':
+                return { current: profile.streak_atual || 0, target: value };
+            case 'missions_in_category_completed':
+                const categoryGoals = (metas || []).filter((m: any) => m.categoria === category).map((m: any) => m.nome);
+                const count = (missions || [])
+                    .filter((m: any) => categoryGoals.includes(m.meta_associada))
+                    .flatMap((m: any) => m.missoes_diarias || [])
+                    .filter((dm: any) => dm.concluido).length;
+                return { current: count, target: value };
+            default:
+                return { current: 0, target: value };
+        }
+    };
+
     const achievements = useMemo(() => {
-        return (profile?.generated_achievements || []).filter((a: any) => 
+        const generated = (profile?.generated_achievements || []).map((a: any) => ({
+            ...a,
+            isStatic: false
+        }));
+
+        const statics = staticAchievements.map((a: any) => {
+            const { current, target } = getProgress(a);
+            const unlocked = current >= target;
+            return {
+                ...a,
+                unlocked,
+                current,
+                target,
+                isStatic: true
+            };
+        });
+
+        return [...statics, ...generated].filter((a: any) => 
             a.name.toLowerCase().includes(searchTerm.toLowerCase())
         ).sort((a: any, b: any) => (a.unlocked ? -1 : 1));
-    }, [profile, searchTerm]);
+    }, [profile, searchTerm, metas, skills, missions]);
 
     if (!profile) return null;
 
@@ -88,7 +135,11 @@ const AchievementsMobileComponent = () => {
                                     "w-16 h-16 rounded-3xl border-2 flex items-center justify-center shadow-inner relative",
                                     ach.unlocked ? "bg-yellow-500/10 border-yellow-500/30" : "bg-blue-500/5 border-blue-500/20"
                                 )}>
-                                    <Trophy className={cn("h-8 w-8", ach.unlocked ? "text-yellow-500" : "text-blue-500/30")} />
+                                    {ach.isStatic ? (
+                                        <ach.icon className={cn("h-8 w-8", ach.unlocked ? "text-yellow-500" : "text-blue-500/30")} />
+                                    ) : (
+                                        <Trophy className={cn("h-8 w-8", ach.unlocked ? "text-yellow-500" : "text-blue-500/30")} />
+                                    )}
                                     {ach.unlocked && <Sparkles className="absolute -top-2 -right-2 h-5 w-5 text-yellow-400 animate-pulse" />}
                                 </div>
 
@@ -104,7 +155,7 @@ const AchievementsMobileComponent = () => {
                                             "text-[9px] font-mono uppercase tracking-[0.15em] px-3 py-1 rounded-full font-bold",
                                             ach.unlocked ? "border-yellow-500/20 text-yellow-400 bg-yellow-500/5" : "border-blue-500/10 text-blue-400/40"
                                         )}>
-                                            {ach.rarity || 'COMMON'}
+                                            {ach.rarity || (ach.isStatic ? 'LEGACY' : 'COMMON')}
                                         </Badge>
                                         {ach.unlocked && (
                                             <span className="text-[9px] font-mono text-green-400 uppercase font-bold flex items-center gap-1">
@@ -116,11 +167,26 @@ const AchievementsMobileComponent = () => {
                             </div>
                             <div className="mt-4 pt-4 border-t border-white/5">
                                 <p className={cn(
-                                    "text-xs font-mono leading-relaxed uppercase tracking-tight",
+                                    "text-xs font-mono leading-relaxed uppercase tracking-tight mb-2",
                                     ach.unlocked ? "text-blue-100/60" : "text-blue-100/20"
                                 )}>
                                     {ach.description}
                                 </p>
+                                
+                                {ach.isStatic && !ach.unlocked && (
+                                    <div className="space-y-1.5 mt-2">
+                                        <div className="flex justify-between text-[8px] font-mono text-blue-400/50 uppercase font-bold tracking-widest">
+                                            <span>PROGRESS</span>
+                                            <span>{Math.min(ach.current, ach.target)} / {ach.target}</span>
+                                        </div>
+                                        <div className="h-1 bg-blue-950/40 rounded-full overflow-hidden border border-blue-500/10">
+                                            <div 
+                                                className="h-full bg-blue-500/40 shadow-[0_0_8px_#3b82f6]" 
+                                                style={{ width: `${Math.min(100, (ach.current / ach.target) * 100)}%` }} 
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

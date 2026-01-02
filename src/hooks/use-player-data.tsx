@@ -62,6 +62,8 @@ interface RankedMission {
     missoes_diarias: DailyMission[];
     isManual?: boolean;
     subTasks?: SubTask[];
+    tipo?: string;
+    is_epic?: boolean;
 }
 
 export interface Meta {
@@ -393,11 +395,20 @@ function playerDataReducer(state: PlayerState, action: PlayerAction): PlayerStat
                         newDailyMissionsList.push(newDailyMission);
                     }
 
-                    return {
+                    // Reset Demon Castle transformation if it was active
+                    let updatedRM = {
                         ...rm,
                         missoes_diarias: newDailyMissionsList,
                         ultima_missao_concluida_em: new Date().toISOString()
                     };
+
+                    if (rm.tipo === 'demon_castle') {
+                        updatedRM.tipo = 'diaria'; // ou o tipo original
+                        updatedRM.is_epic = false;
+                        updatedRM.nome = rm.nome.replace('[DEMON CASTLE] ', '');
+                    }
+
+                    return updatedRM;
                 }
                 return rm;
             });

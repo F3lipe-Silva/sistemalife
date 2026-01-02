@@ -58,12 +58,14 @@ import {
     Flame,
     ShieldAlert,
     PlusCircle,
-    LoaderCircle
+    LoaderCircle,
+    BookOpen,
+    Skull
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { MissionDetailsDialog } from './missions/MissionDetailsDialog';
 import { MissionCompletionAnimation } from './missions/MissionCompletionAnimation';
@@ -375,6 +377,12 @@ const MissionsMobileComponent = () => {
         // Lógica de "Uma por Meta": Pegar apenas a missão de menor rank ativa para cada meta
         for (const mission of missions) {
             if (mission.concluido) continue;
+
+            // EXCEÇÃO: Missões do Demon Castle sempre aparecem
+            if (mission.tipo === 'demon_castle') {
+                activeEpicMissions.set(`demon_${mission.id}`, mission);
+                continue;
+            }
 
             const existingMissionForGoal = activeEpicMissions.get(mission.meta_associada);
             const currentRankIndex = existingMissionForGoal ? rankOrder.indexOf(existingMissionForGoal.rank) : -1;
@@ -700,15 +708,41 @@ const MissionsMobileComponent = () => {
                                             </div>
 
                                             <div className="flex flex-col gap-1">
-                                                <button 
-                                                    className={cn(
-                                                        "p-2 transition-transform active:scale-125", 
-                                                        isPriority ? "text-yellow-500" : (isDemonCastle ? "text-red-500/30" : "text-blue-500/30")
+                                                    {isDemonCastle && (
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <button 
+                                                                    className="p-2 text-red-400/60 hover:text-red-400 active:scale-125 transition-transform"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <BookOpen className="h-5 w-5" />
+                                                                </button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="bg-black/95 border-2 border-red-600/50 text-white max-w-[90vw] rounded-3xl">
+                                                                <DialogHeader>
+                                                                    <DialogTitle className="font-cinzel text-lg text-red-500 uppercase tracking-widest flex items-center gap-2">
+                                                                        <Skull className="h-5 w-5" /> ARQUIVO SOMBRIO
+                                                                    </DialogTitle>
+                                                                </DialogHeader>
+                                                                <div className="py-4 font-mono text-xs leading-relaxed border-t border-red-900/30 mt-2 whitespace-pre-line text-red-50/80 max-h-[50vh] overflow-y-auto">
+                                                                    {mission.descricao}
+                                                                </div>
+                                                                <div className="bg-red-950/20 border border-red-900/30 p-3 rounded-2xl mt-2">
+                                                                    <p className="text-[8px] text-red-500 uppercase font-black mb-1">PROTOCOLO DE PUNIÇÃO</p>
+                                                                    <p className="text-[10px] text-red-200/60 italic">"A falha não é uma opção no Demon Castle. O Sistema cobrará seu preço em vitalidade."</p>
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
                                                     )}
-                                                    onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
-                                                >
-                                                    <Star className={cn("h-5 w-5", isPriority && "fill-yellow-500")} />
-                                                </button>
+                                                    <button 
+                                                        className={cn(
+                                                            "p-2 transition-transform active:scale-125", 
+                                                            isPriority ? "text-yellow-500" : (isDemonCastle ? "text-red-500/30" : "text-blue-500/30")
+                                                        )}
+                                                        onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
+                                                    >
+                                                        <Star className={cn("h-5 w-5", isPriority && "fill-yellow-400")} />
+                                                    </button>
                                                 {!isManualMission && (
                                                     <button 
                                                         className={cn(

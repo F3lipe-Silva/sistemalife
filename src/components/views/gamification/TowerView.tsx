@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, Calendar, Shield, Users, Trophy, CheckCircle, Gem, Zap, Clock, Ticket, LoaderCircle, Sparkles, Lock, ArrowUpCircle, Skull, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Flame, Calendar, Shield, Users, Trophy, CheckCircle, Gem, Zap, Clock, Ticket, LoaderCircle, Sparkles, Lock, ArrowUpCircle, Skull, AlertTriangle, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { usePlayerDataContext } from '@/hooks/use-player-data';
@@ -86,13 +87,67 @@ const TowerView = () => {
             return;
         }
 
-        const newChallenge = {
+        // 1. Identificar a missão diária ativa para substituir
+        let targetMission: any = null;
+        let activeDaily: any = null;
+
+        for (const m of missions) {
+            const daily = m.missoes_diarias?.find((d: any) => !d.concluido);
+            if (daily) {
+                targetMission = m;
+                activeDaily = daily;
+                break;
+            }
+        }
+
+        if (!targetMission) {
+            toast({ 
+                title: "NO TARGET FOUND", 
+                description: "You need an active mission to channel the Demon Castle's power.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // 2. Criar a versão intensificada da missão existente
+        const updatedMissions = missions.map((m: any) => {
+            if (m.id === targetMission.id) {
+                return {
+                    ...m,
+                    nome: `[DEMON CASTLE] ${challengeToAccept.title}`,
+                    tipo: 'demon_castle',
+                    is_epic: true,
+                    missoes_diarias: m.missoes_diarias.map((d: any) => {
+                        if (d.id === activeDaily.id) {
+                            return {
+                                ...d,
+                                nome: `FLOOR ${challengeToAccept.floor} CHALLENGE`,
+                                descricao: challengeToAccept.description,
+                                xp_conclusao: challengeToAccept.rewards.xp,
+                                fragmentos_conclusao: challengeToAccept.rewards.fragments,
+                                subTasks: challengeToAccept.requirements.map((req: any) => ({
+                                    name: req.value?.toString() || req.type,
+                                    target: req.target,
+                                    unit: req.type.replace('_', ' '),
+                                    current: 0
+                                }))
+                            };
+                        }
+                        return d;
+                    })
+                };
+            }
+            return m;
+        });
+
+        // 3. Atualizar o perfil (Tickets e Desafios Ativos internos da torre)
+        const newInternalChallenge = {
             ...challengeToAccept,
             startedAt: new Date().toISOString(),
             requirements: challengeToAccept.requirements.map((r: any) => ({...r, current: 0})),
         };
         
-        const updatedActiveChallenges = [...activeChallenges, newChallenge];
+        const updatedActiveChallenges = [...activeChallenges, newInternalChallenge];
         const updatedAvailableChallenges = availableChallenges.filter((c: any) => c.id !== challengeToAccept.id);
 
         const updatedProfile = {
@@ -104,9 +159,16 @@ const TowerView = () => {
                 tower_tickets: (towerProgress.tower_tickets || 0) - 1,
             }
         };
+
+        // 4. Persistir as mudanças
         await persistData('profile', updatedProfile);
+        await persistData('missions', updatedMissions);
         
-        toast({ title: "CHALLENGE ACCEPTED", description: `Objective "${challengeToAccept.title}" initiated. Ticket consumed.`});
+        toast({ 
+            title: "CHALLENGE SYNCED", 
+            description: `Mission "${targetMission.nome}" has been corrupted.`,
+            variant: "destructive"
+        });
     };
     
     const isLockedOut = towerProgress.tower_lockout_until && new Date(towerProgress.tower_lockout_until) > new Date();
@@ -207,8 +269,13 @@ const TowerView = () => {
                                         </div>
                                     ) : challengesForCurrentFloor.length > 0 ? (
                                         challengesForCurrentFloor.map((challenge: any) => {
-                                            const typeInfo = challengeTypes[challenge.type as keyof typeof challengeTypes];
-                                            const ChallengeIcon = typeInfo?.icon || Trophy;
+                                            const typeInfo = challengeTypes[challenge.type as keyof typeof challengeTypes] || { 
+                                                icon: Trophy, 
+                                                color: 'text-purple-400', 
+                                                borderColor: 'border-purple-500/30', 
+                                                label: 'CHALLENGE' 
+                                            };
+                                            const ChallengeIcon = typeInfo.icon;
                                             const isAccepted = !!challenge.startedAt;
                                             const progress = challenge.requirements && challenge.requirements.length > 0
                                                 ? (challenge.requirements.reduce((sum: number, r: any) => sum + (r.current || 0), 0) / challenge.requirements.reduce((sum: number, r: any) => sum + r.target, 0)) * 100
@@ -228,12 +295,40 @@ const TowerView = () => {
                                                                 <div className={cn("p-1 border bg-black", typeInfo.borderColor, typeInfo.color)}>
                                                                     <ChallengeIcon className="h-3 w-3" />
                                                                 </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <h3 className="font-bold text-white font-mono uppercase tracking-wide text-xs truncate">{challenge.title}</h3>
+                                                            <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <h3 className="font-bold text-white font-mono uppercase tracking-wide text-xs truncate">{challenge.title}</h3>
+                                                                        <Dialog>
+                                                                            <DialogTrigger asChild>
+                                                                                <Button variant="ghost" size="icon" className="h-5 w-5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-full">
+                                                                                    <BookOpen className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </DialogTrigger>
+                                                                            <DialogContent className="bg-black/95 border-2 border-purple-500/50 text-white max-w-lg">
+                                                                                <DialogHeader>
+                                                                                    <DialogTitle className="font-cinzel text-xl text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                                                                                        <Skull className="h-5 w-5" /> REVELAÇÃO DO SISTEMA
+                                                                                    </DialogTitle>
+                                                                                    <DialogDescription className="text-purple-200/60 font-mono text-[10px] uppercase">
+                                                                                        Arquivos de Lore Corrompidos: {challenge.title}
+                                                                                    </DialogDescription>
+                                                                                </DialogHeader>
+                                                                                <div className="py-4 space-y-4 font-mono text-sm leading-relaxed border-t border-purple-500/20 mt-4 whitespace-pre-line text-purple-50">
+                                                                                    {challenge.description}
+                                                                                </div>
+                                                                                <div className="bg-purple-950/20 border border-purple-500/30 p-3 rounded-sm">
+                                                                                    <p className="text-[10px] text-purple-400 uppercase font-black mb-1 tracking-tighter">PROTOCOLO DE PUNIÇÃO</p>
+                                                                                    <p className="text-xs text-red-400/80 italic font-mono">"A falha na conclusão deste ritual resultará em perda de vitalidade e bloqueio de acesso ao andar."</p>
+                                                                                </div>
+                                                                            </DialogContent>
+                                                                        </Dialog>
+                                                                    </div>
                                                                     <span className={cn("text-[8px] font-mono uppercase px-1 py-0.5 border bg-black/50", typeInfo.borderColor, typeInfo.color)}>{typeInfo.label}</span>
                                                                 </div>
                                                             </div>
-                                                            <p className="text-purple-200/60 text-[10px] md:text-xs font-mono pl-10 border-l border-purple-500/20">{challenge.description}</p>
+                                                            <p className="text-purple-200/60 text-[10px] md:text-xs font-mono pl-10 border-l border-purple-500/20 line-clamp-1 italic italic">
+                                                                {challenge.description ? `${challenge.description.split('\n')[0]}...` : "Carregando arquivos de lore..."}
+                                                            </p>
                                                         </div>
                                                         
                                                         <div className="flex items-center justify-between gap-2 w-full">
