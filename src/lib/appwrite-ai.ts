@@ -23,7 +23,7 @@ export async function generateWithAppwriteAI<T = string>(prompt: string, jsonMod
         console.log("Iniciando chamada Appwrite AI...");
         // Se estiver em modo JSON, adiciona instrução ao prompt
         const finalPrompt = jsonMode 
-            ? `${prompt}\n\nIMPORTANTE: Responda APENAS com um objeto JSON válido. NUNCA use aspas duplas (") dentro dos valores de texto, use apenas aspas simples (') se necessário. Não inclua blocos de código (markdown) ou texto explicativo.`
+            ? `${prompt}\n\nIMPORTANTE: Responda APENAS com um objeto JSON válido padrão (RFC 8259). Use aspas duplas (") para todas as chaves e valores de string. Escape aspas duplas internas com barra invertida (\\"). Não use aspas simples para chaves ou strings JSON. Não inclua blocos de código (markdown) ou texto explicativo.`
             : prompt;
 
         const execution = await functions.createExecution(
@@ -45,21 +45,37 @@ export async function generateWithAppwriteAI<T = string>(prompt: string, jsonMod
             if (responseData.success && responseData.text) {
                 if (jsonMode) {
                     let cleanJson = responseData.text.trim();
+                    // 1. Remove blocos de código markdown
+                    cleanJson = cleanJson.replace(/```json|```/g, '').trim();
+                    
                     try {
-                        // 1. Remove blocos de código markdown
-                        cleanJson = cleanJson.replace(/```json|```/g, '').trim();
                         return JSON.parse(cleanJson) as T;
                     } catch (e) {
-                        console.error('Erro crítico de parse JSON. Conteúdo bruto:', cleanJson);
-                        // Tenta uma limpeza mais agressiva se falhar
+                        console.error('Erro de parse JSON direto. Tentando reparar...', cleanJson);
+                        // Tenta reparar JSON com aspas simples (comum em LLMs)
                         try {
-                            const superClean = cleanJson
-                                .replace(/\n/g, ' ')
-                                .replace(/\r/g, ' ')
-                                .replace(/\t/g, ' ');
-                            return JSON.parse(superClean) as T;
+                            // Substitui aspas simples por duplas, mas tenta preservar as internas
+                            // Esta é uma heurística simples e pode não funcionar para todos os casos
+                            const repairedJson = cleanJson
+                                .replace(/'/g, '"') // Troca tudo por aspas duplas
+                                .replace(/"\s*:\s*"/g, '": "') // Normaliza separadores
+                                .replace(/,\s*"/g, ', "') // Normaliza inícios de chave
+                                .replace(/"\s*}/g, '"}'); // Normaliza fim de objeto
+                            
+                            // Uma tentativa mais segura para Python-dict style strings:
+                            // Se parecer um dict python ({'a': 'b'}), tente usar JSON5 ou eval seguro se estivesse disponível, 
+                            // mas aqui vamos tentar uma substituição mais agressiva apenas se a primeira falhar.
+                            
+                            return JSON.parse(repairedJson) as T;
                         } catch (e2) {
-                            throw new Error('A IA não retornou um formato JSON válido e não foi possível reparar');
+                             // Última tentativa: Se a string for algo como {'chave': 'valor'}, tenta substituir ' por " apenas nas bordas
+                             try {
+                                const aggressiveRepair = cleanJson.replace(/'/g, '"'); 
+                                return JSON.parse(aggressiveRepair) as T;
+                             } catch (e3) {
+                                console.error('Falha crítica no parse do JSON:', e);
+                                throw new Error('A IA não retornou um formato JSON válido e não foi possível reparar');
+                             }
                         }
                     }
                 }

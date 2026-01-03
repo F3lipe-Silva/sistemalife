@@ -869,7 +869,7 @@ const MissionsView = () => {
         if (generatingMission === mission.id) {
             return (
                 <div className={cn("bg-blue-950/20 border border-blue-500/30 border-dashed flex flex-col items-center justify-center text-center animate-in fade-in duration-300 relative", isMobile ? "p-3 h-32" : "p-4 h-48")}>
-                    <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-transparent opacity-10 pointer-events-none" />
                     <Sparkles className={cn("text-blue-400 animate-pulse-slow mb-4", isMobile ? "h-8 w-8" : "h-10 w-10")} />
                     <p className={cn("font-mono font-bold text-blue-300 uppercase tracking-widest", isMobile ? "text-sm" : "text-base")}>GENERATING NEW QUEST...</p>
                     <p className={cn("text-blue-400/60 font-mono text-xs mt-2", isMobile ? "text-[10px]" : "text-sm")}>System is analyzing player data.</p>
@@ -1218,177 +1218,163 @@ const MissionsView = () => {
                                 value={`item-${mission.id}`} 
                                 key={mission.id} 
                                 className={cn(
-                                    "relative border rounded-sm overflow-hidden transition-all duration-300 group",
+                                    "relative border-l-2 border-r-0 border-y-0 mb-4 transition-all duration-300 group overflow-visible",
                                     isDemonCastle 
-                                        ? "border-red-600/50 bg-red-950/20 shadow-[0_0_20px_rgba(220,38,38,0.15)] ring-1 ring-red-500/20" 
-                                        : "bg-black/60 backdrop-blur-sm",
-                                    priorityMissions.has(mission.id) && !isDemonCastle ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]" : "border-blue-900/40 hover:border-blue-500/50",
-                                    "data-[state=open]:border-blue-500 data-[state=open]:bg-blue-950/10"
+                                        ? "border-l-red-500 bg-gradient-to-r from-red-950/40 to-transparent" 
+                                        : "border-l-blue-500 bg-gradient-to-r from-blue-950/20 to-transparent",
+                                    priorityMissions.has(mission.id) && !isDemonCastle ? "border-l-yellow-500 from-yellow-950/20" : "",
+                                    "data-[state=open]:bg-blue-950/30 data-[state=open]:border-l-4"
                                 )}
                             >
+                                {/* Decorative Tech Elements */}
+                                <div className={cn("absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent", isDemonCastle && "via-red-500/20")} />
+                                <div className={cn("absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent", isDemonCastle && "via-red-500/20")} />
+                                
                                 {isDemonCastle && (
-                                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse" />
+                                    <div className="absolute inset-0 bg-transparent opacity-5 pointer-events-none" />
                                 )}
                                 
-                                {priorityMissions.has(mission.id) && !isDemonCastle && (
-                                    <div className="absolute top-0 right-0 w-0 h-0 border-t-[30px] border-r-[30px] border-t-transparent border-r-yellow-500/80 z-20 pointer-events-none" />
-                                )}
-                                
-                                <div className={cn("transition-all duration-300 overflow-x-hidden", generatingMission === mission.id ? 'opacity-50' : '', isMobile ? "p-3" : "p-4")}>
+                                <div className={cn("transition-all duration-300", generatingMission === mission.id ? 'opacity-50' : '', isMobile ? "p-3" : "p-4")}>
                                     <div className={cn("flex flex-col gap-2")}>
                                         <div className={cn("flex items-start gap-4")}>
                                             <TriggerWrapper>
-                                                <div className="flex-1 text-left min-w-0 flex items-start gap-4 overflow-x-hidden">
-                                                    {/* Rank Badge - System Style */}
-                                                    <div className={cn(
-                                                        "flex-shrink-0 flex items-center justify-center font-cinzel font-black border-2 bg-black shadow-lg relative group-hover:scale-105 transition-transform",
-                                                        isDemonCastle 
-                                                            ? "border-red-500 text-red-500 shadow-red-900/50" 
-                                                            : getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500'),
-                                                        isMobile ? "w-12 h-12 text-2xl" : "w-14 h-14 text-3xl"
-                                                    )}>
-                                                        <span className={cn(isDemonCastle ? "text-red-500" : getRankColor(mission.rank), "drop-shadow-[0_0_5px_currentColor]")}>
-                                                            {mission.rank}
-                                                        </span>
-                                                        <span className="absolute bottom-0.5 text-[8px] font-mono text-gray-500 uppercase tracking-wider">RANK</span>
+                                                <div className="flex-1 text-left min-w-0 flex items-center gap-6">
+                                                    {/* Rank Badge - Hexagon Style */}
+                                                    <div className="relative flex items-center justify-center w-16 h-16 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                                                        <svg viewBox="0 0 100 100" className={cn("absolute inset-0 w-full h-full drop-shadow-lg", isDemonCastle ? "text-red-500" : getRankColor(mission.rank).replace('text-', 'text-'))} fill="currentColor" opacity="0.1">
+                                                            <polygon points="50 1 95 25 95 75 50 99 5 75 5 25" />
+                                                        </svg>
+                                                        <svg viewBox="0 0 100 100" className={cn("absolute inset-0 w-full h-full", isDemonCastle ? "stroke-red-500" : getRankColor(mission.rank).replace('text-', 'stroke-'))} fill="none" strokeWidth="2">
+                                                            <polygon points="50 1 95 25 95 75 50 99 5 75 5 25" />
+                                                        </svg>
+                                                        <div className="flex flex-col items-center justify-center z-10">
+                                                            <span className={cn("font-black font-cinzel text-2xl leading-none", isDemonCastle ? "text-red-100" : "text-white")}>{mission.rank}</span>
+                                                            <span className={cn("text-[8px] font-mono uppercase tracking-widest mt-0.5", isDemonCastle ? "text-red-400" : "text-blue-400")}>RANK</span>
+                                                        </div>
                                                     </div>
 
-                                                    <div className="flex-1 min-w-0 overflow-x-hidden space-y-1">
-                                                        <div className="flex justify-between items-start gap-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <p className={cn("font-bold uppercase tracking-wider font-mono truncate", 
-                                                                    isMobile ? "text-sm" : "text-base",
-                                                                    isDemonCastle ? "text-red-50" : "text-white"
+                                                    <div className="flex-1 min-w-0 space-y-2">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-3">
+                                                                <h3 className={cn("font-bold uppercase tracking-wider font-cinzel text-lg truncate", 
+                                                                    isDemonCastle ? "text-red-100 drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]" : "text-blue-50 drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]"
                                                                 )}>
                                                                     {mission.nome}
-                                                                </p>
+                                                                </h3>
                                                                 {isEpic && (
-                                                                    <span className="px-2 py-0.5 bg-red-600 border border-red-400 rounded-none text-[8px] font-mono text-white font-black animate-pulse">
-                                                                        EPIC
-                                                                    </span>
+                                                                    <Badge variant="outline" className="border-red-500 text-red-400 bg-red-950/30 text-[10px] px-2 py-0 h-5 animate-pulse">EPIC</Badge>
+                                                                )}
+                                                                {isDemonCastle && (
+                                                                    <Badge variant="outline" className="border-red-600 text-red-500 bg-black text-[10px] px-2 py-0 h-5 font-bold border-2">DEMON</Badge>
                                                                 )}
                                                             </div>
-                                                            {!isManualMission && daysRemaining !== null && (
-                                                                <span className={cn("text-[10px] font-bold font-mono px-1.5 py-0.5 border flex items-center gap-1 uppercase tracking-wider whitespace-nowrap",
-                                                                    daysRemaining < 7 ? "border-red-500/50 text-red-400 bg-red-950/20" :
-                                                                        daysRemaining < 30 ? "border-yellow-500/50 text-yellow-400 bg-yellow-950/20" :
-                                                                            "border-green-500/50 text-green-400 bg-green-950/20")}>
-                                                                    {daysRemaining}D REMAINING
-                                                                </span>
-                                                            )}
+                                                            
+                                                            <div className="flex items-center gap-4 text-xs font-mono text-gray-400 mt-1">
+                                                                {associatedMeta && !isManualMission && (
+                                                                    <div className="flex items-center gap-1.5 text-blue-400/80">
+                                                                        <TargetIcon className="h-3 w-3" />
+                                                                        <span className="uppercase tracking-wide">{associatedMeta.nome}</span>
+                                                                    </div>
+                                                                )}
+                                                                {!isManualMission && daysRemaining !== null && (
+                                                                    <div className={cn("flex items-center gap-1.5", daysRemaining < 3 ? "text-red-400" : "text-gray-500")}>
+                                                                        <CalendarClock className="h-3 w-3" />
+                                                                        <span>{daysRemaining} DAYS LEFT</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         
-                                                        <div className="flex items-center gap-2">
-                                                            {associatedMeta && !isManualMission && (
-                                                                <div className={cn("flex items-center gap-1 text-[10px] font-mono uppercase tracking-wide",
-                                                                    isDemonCastle ? "text-red-400/60" : "text-blue-400/60"
-                                                                )}>
-                                                                    <Link className="h-3 w-3" />
-                                                                    <span className="truncate">{associatedMeta.nome}</span>
-                                                                </div>
-                                                            )}
-                                                            {isDemonCastle && (
-                                                                <div className="flex items-center gap-1 text-[10px] font-mono text-red-500 font-bold uppercase tracking-tighter">
-                                                                    <Flame className="h-3 w-3 animate-pulse" />
-                                                                    <span>Demon Castle Event</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        
-                                                        {/* Progress Bar - System Style */}
+                                                        {/* Progress Bar - Integrated */}
                                                         {!isManualMission && (
-                                                            <div className={cn("relative h-1.5 border mt-2 w-full max-w-[200px]",
-                                                                isDemonCastle ? "bg-red-950/50 border-red-900/30" : "bg-blue-950/50 border-blue-900/30"
-                                                            )}>
-                                                                <div 
-                                                                    className={cn("absolute inset-y-0 left-0 transition-all duration-1000",
-                                                                        isDemonCastle 
-                                                                            ? "bg-red-500 shadow-[0_0_8px_#ef4444]" 
-                                                                            : "bg-blue-500 shadow-[0_0_5px_#3b82f6]"
-                                                                    )}
-                                                                    style={{ width: `${missionProgress}%` }}
-                                                                />
+                                                            <div className="w-full flex items-center gap-3">
+                                                                <div className={cn("flex-1 h-1.5 bg-black/50 border border-white/10 rounded-full overflow-hidden")}>
+                                                                    <div 
+                                                                        className={cn("h-full transition-all duration-1000 relative",
+                                                                            isDemonCastle ? "bg-red-600" : "bg-blue-600"
+                                                                        )}
+                                                                        style={{ width: `${missionProgress}%` }}
+                                                                    >
+                                                                        <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]" />
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-[10px] font-mono text-gray-500">{Math.round(missionProgress)}%</span>
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
                                             </TriggerWrapper>
 
-                                            {/* Action Buttons */}
-                                            <div className="flex items-center gap-1 self-start">
-                                                {isDemonCastle && (
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="text-red-500/60 hover:text-red-400 hover:bg-red-500/10 rounded-none h-8 w-8"
-                                                            >
-                                                                <BookOpen className="h-4 w-4" />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="bg-black/95 border-2 border-red-600/50 text-white max-w-xl">
-                                                            <DialogHeader>
-                                                                <DialogTitle className="font-cinzel text-2xl text-red-500 uppercase tracking-[0.2em] flex items-center gap-3">
-                                                                    <Skull className="h-6 w-6" /> ARQUIVO DO DEMON CASTLE
-                                                                </DialogTitle>
-                                                                <DialogDescription className="text-red-200/40 font-mono text-xs uppercase tracking-widest">
-                                                                    Sincronização de Lore: {mission.nome}
-                                                                </DialogDescription>
-                                                            </DialogHeader>
-                                                            <div className="py-6 font-mono text-sm leading-relaxed border-y border-red-900/30 mt-4 whitespace-pre-line text-red-50/90 max-h-[60vh] overflow-y-auto pr-4">
-                                                                {mission.descricao}
-                                                            </div>
-                                                            <div className="bg-red-950/30 border border-red-900/50 p-4 mt-2">
-                                                                <p className="text-xs text-red-500 uppercase font-black mb-2 tracking-tighter flex items-center gap-2">
-                                                                    <ShieldAlert className="h-4 w-4" /> PROTOCOLO DE PUNIÇÃO ATIVO
-                                                                </p>
-                                                                <p className="text-xs text-red-200/60 italic font-mono leading-relaxed">
-                                                                    "A falha neste desafio resultará em instabilidade do sistema e drenagem de força vital (HP). O tempo é o seu maior inimigo."
-                                                                </p>
-                                                            </div>
-                                                        </DialogContent>
-                                                    </Dialog>
+                                            {/* Right Side Actions & Rewards */}
+                                            <div className="flex flex-col items-end gap-2 self-start pl-4 border-l border-white/5">
+                                                {/* Rewards Pill */}
+                                                {!isManualMission && !mission.concluido && (
+                                                    <div className="flex items-center gap-1 bg-black/40 border border-white/10 px-2 py-1 rounded-sm mb-1">
+                                                        <span className="text-[10px] font-mono text-yellow-500 font-bold flex items-center gap-1">
+                                                            <Gem className="h-3 w-3" /> REWARDS
+                                                        </span>
+                                                    </div>
                                                 )}
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className={cn("text-gray-500 hover:text-yellow-400 hover:bg-transparent rounded-none h-8 w-8",
-                                                                    priorityMissions.has(mission.id) && "text-yellow-400"
-                                                                )}
-                                                                onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
-                                                            >
-                                                                <Star className={cn("h-4 w-4", priorityMissions.has(mission.id) && "fill-yellow-400")} />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="font-mono text-xs bg-black border-blue-500/30">
-                                                            <p>TOGGLE PRIORITY</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
                                                 
-                                                {/* More buttons logic... */}
-                                                {!isManualMission && (
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className={cn("text-gray-500 hover:text-blue-400 hover:bg-transparent rounded-none h-8 w-8")} onClick={(e) => { e.stopPropagation(); handleShowProgression(mission) }}>
-                                                                    <GitMerge className="h-4 w-4" />
+                                                <div className="flex items-center gap-1">
+                                                    {isDemonCastle && (
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500/70 hover:text-red-400 hover:bg-red-950/30">
+                                                                    <BookOpen className="h-4 w-4" />
                                                                 </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent className="font-mono text-xs bg-black border-blue-500/30">
-                                                                <p>VIEW PROGRESSION TREE</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                )}
+                                                            </DialogTrigger>
+                                                            {/* ... Content stays same ... */}
+                                                            <DialogContent className="bg-black/95 border-2 border-red-600/50 text-white max-w-xl">
+                                                                <DialogHeader>
+                                                                    <DialogTitle className="font-cinzel text-2xl text-red-500 uppercase tracking-[0.2em] flex items-center gap-3">
+                                                                        <Skull className="h-6 w-6" /> ARQUIVO DO DEMON CASTLE
+                                                                    </DialogTitle>
+                                                                    <DialogDescription className="text-red-200/40 font-mono text-xs uppercase tracking-widest">
+                                                                        Sincronização de Lore: {mission.nome}
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+                                                                <div className="py-6 font-mono text-sm leading-relaxed border-y border-red-900/30 mt-4 whitespace-pre-line text-red-50/90 max-h-[60vh] overflow-y-auto pr-4">
+                                                                    {mission.descricao}
+                                                                </div>
+                                                                <div className="bg-red-950/30 border border-red-900/50 p-4 mt-2">
+                                                                    <p className="text-xs text-red-500 uppercase font-black mb-2 tracking-tighter flex items-center gap-2">
+                                                                        <ShieldAlert className="h-4 w-4" /> PROTOCOLO DE PUNIÇÃO ATIVO
+                                                                    </p>
+                                                                    <p className="text-xs text-red-200/60 italic font-mono leading-relaxed">
+                                                                        "A falha neste desafio resultará em instabilidade do sistema e drenagem de força vital (HP). O tempo é o seu maior inimigo."
+                                                                    </p>
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    )}
+                                                    
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={cn("h-8 w-8 rounded-sm transition-colors", 
+                                                            priorityMissions.has(mission.id) ? "text-yellow-400 hover:text-yellow-300" : "text-gray-600 hover:text-yellow-400"
+                                                        )}
+                                                        onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
+                                                    >
+                                                        <Star className={cn("h-4 w-4", priorityMissions.has(mission.id) && "fill-current")} />
+                                                    </Button>
+
+                                                    {!isManualMission && (
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-8 w-8 text-blue-500/50 hover:text-blue-400 hover:bg-blue-950/30 rounded-sm"
+                                                            onClick={(e) => { e.stopPropagation(); handleShowProgression(mission) }}
+                                                        >
+                                                            <GitMerge className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <AccordionContent className={cn("pt-4 border-t border-blue-500/10 mt-3")}>
+                                    <AccordionContent className={cn("pt-0 mt-4")}>
                                         {renderActiveMissionContent(mission)}
                                     </AccordionContent>
                                 </div>
@@ -1413,7 +1399,7 @@ const MissionsView = () => {
                     })}
                     {visibleMissions.length === 0 && (
                         <div className={cn("flex flex-col items-center justify-center text-center py-12 px-4 border border-blue-900/30 bg-blue-950/10 relative overflow-hidden")}>
-                            <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-5 pointer-events-none" />
+                            <div className="absolute inset-0 bg-transparent opacity-5 pointer-events-none" />
                             <Search className="h-12 w-12 text-blue-500/30 mb-4" />
                             <p className="font-mono font-bold text-blue-400 text-lg uppercase tracking-widest">NO DATA FOUND</p>
                             <p className="font-mono text-blue-300/50 text-xs mt-2 max-w-md">

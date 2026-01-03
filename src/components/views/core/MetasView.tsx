@@ -200,11 +200,11 @@ const MetasViewComponent = () => {
                         ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
                         : s
                     );
-                    persistData('skills', newSkills);
+                    persistData('skills', newSkills, true);
                 }
 
-                persistData('missions', updatedMissions);
-                persistData('metas', updatedMetas);
+                persistData('missions', updatedMissions, true);
+                persistData('metas', updatedMetas, true);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
 
             } else {
@@ -256,14 +256,14 @@ const MetasViewComponent = () => {
                                         goalDetails: JSON.stringify(newMetaWithId.detalhes_smart),
                                         userLevel: profile.nivel,
                                     });
-                                    roadmapData = roadmapResult.roadmap;
+                                    roadmapData = roadmapResult.roadmap || [];
                                 } catch (roadmapErr) {
                                     console.warn("Falha ao gerar roadmap inicial na versão desktop.");
                                 }
                 
                                 const newMetaWithRoadmap = {
                                     ...newMetaWithId,
-                                    roadmap: roadmapData
+                                    roadmap: Array.isArray(roadmapData) ? roadmapData : []
                                 };
                                 
                                 if (initialMissionResult.fallback) {
@@ -306,9 +306,9 @@ const MetasViewComponent = () => {
                                 const updatedMetas = [...metas, newMetaWithRoadmap];
                                 const updatedMissions = [...missions, ...newMissions];
                 
-                                persistData('skills', updatedSkills);
-                                persistData('metas', updatedMetas);
-                                persistData('missions', updatedMissions);                
+                                await persistData('skills', updatedSkills, true);
+                                await persistData('metas', updatedMetas, true);
+                                await persistData('missions', updatedMissions, true);                
                 // Gerar conquistas após salvar a meta
                 try {
                     const achievementResult = await generateUserAchievements({
@@ -368,11 +368,11 @@ const MetasViewComponent = () => {
             });
         }
 
-        await persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome));
-        await persistData('metas', metas.filter((m: any) => m.id !== metaToDelete.id));
+        await persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome), true);
+        await persistData('metas', metas.filter((m: any) => m.id !== metaToDelete.id), true);
         
         if (metaToDelete.habilidade_associada_id) {
-            await persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id));
+            await persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id), true);
         }
 
         setShowDeleteAlert(false);
@@ -665,7 +665,6 @@ const MetasViewComponent = () => {
             
             {sortedMetas.length === 0 && (
                 <div className={cn("flex flex-col items-center justify-center text-center py-16 px-4 border border-blue-900/30 bg-blue-950/10 relative overflow-hidden", isMobile ? "py-8" : "")}>
-                    <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-5 pointer-events-none" />
                     <div className="relative mb-6">
                         <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-xl" />
                         <div className="relative bg-black border border-blue-500/50 p-6 rounded-full">

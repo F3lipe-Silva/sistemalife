@@ -83,7 +83,7 @@ const DashboardMobileComponent = () => {
     return (
         <div className="h-screen bg-background overflow-hidden flex flex-col max-w-full relative">
             {/* Background System Effect */}
-            <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-[0.03] pointer-events-none z-50" />
+            <div className="absolute inset-0 bg-transparent opacity-[0.03] pointer-events-none z-50" />
             
             <header className="bg-background/90 backdrop-blur-2xl border-b border-primary/20 flex-shrink-0 z-40" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
                 {/* System Alert Bar */}

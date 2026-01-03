@@ -122,7 +122,7 @@ export const ProfileHeader = ({ profile, isMobile = false }: ProfileHeaderProps)
                                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-900 via-red-600 to-red-500 transition-all duration-500 ease-out"
                                     style={{ width: `${hpPercentage}%` }}
                                 >
-                                    <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-20" />
+                                    <div className="absolute inset-0 bg-transparent opacity-20" />
                                 </div>
                             </div>
                         </div>
@@ -140,7 +140,7 @@ export const ProfileHeader = ({ profile, isMobile = false }: ProfileHeaderProps)
                                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-900 via-blue-600 to-cyan-400 transition-all duration-500 ease-out"
                                     style={{ width: `${xpPercentage}%` }}
                                 >
-                                    <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-20" />
+                                    <div className="absolute inset-0 bg-transparent opacity-20" />
                                 </div>
                             </div>
                         </div>

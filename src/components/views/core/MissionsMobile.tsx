@@ -638,15 +638,14 @@ const MissionsMobileComponent = () => {
                                 <div
                                     key={mission.id}
                                     className={cn(
-                                        "relative border-2 rounded-[2rem] transition-all duration-300 active:scale-[0.97] overflow-hidden shadow-xl",
+                                        "relative border rounded-[1.5rem] transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-lg mb-4",
                                         isDemonCastle 
-                                            ? "border-red-600/50 from-red-950/40 via-black to-black shadow-red-900/40 bg-gradient-to-br ring-1 ring-red-500/20" 
+                                            ? "border-red-600/50 bg-gradient-to-br from-red-950/40 via-black to-black shadow-red-900/20" 
                                             : mission.concluido
-                                                ? "border-green-900/40 opacity-70"
+                                                ? "border-green-900/30 bg-black/40 opacity-70"
                                                 : isPriority 
-                                                    ? "border-yellow-500/60 shadow-yellow-500/10" 
-                                                    : "border-blue-900/50",
-                                        !isDemonCastle && "bg-gradient-to-br from-blue-950/20 to-black"
+                                                    ? "border-yellow-500/50 bg-gradient-to-br from-yellow-950/10 via-black to-black shadow-yellow-500/5" 
+                                                    : "border-blue-900/40 bg-gradient-to-br from-blue-950/20 via-black to-black shadow-blue-900/10"
                                     )}
                                     onClick={() => {
                                         triggerHapticFeedback('light');
@@ -655,169 +654,107 @@ const MissionsMobileComponent = () => {
                                     }}
                                 >
                                     {isDemonCastle && (
-                                        <div className="absolute top-0 right-0 p-3 flex gap-1 z-20">
-                                            <Flame className="w-4 h-4 text-red-500 animate-pulse" />
-                                            <span className="text-[8px] font-mono text-red-400 uppercase tracking-tighter font-bold">DEMON CASTLE EVENT</span>
-                                        </div>
+                                        <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse" />
                                     )}
-                                    <div className="flex flex-col p-5">
-                                        <div className="flex gap-4 items-start mb-4">
-                                            {/* Rank Badge - MD3 Style but System Theme */}
-                                            <div className={cn(
-                                                "flex-shrink-0 w-14 h-14 rounded-2xl border-2 flex flex-col items-center justify-center bg-black/80 shadow-inner",
-                                                isDemonCastle 
-                                                    ? "border-red-500 shadow-red-900/50" 
-                                                    : getRankColor(mission.rank).replace('text-', 'border-').replace('400', '500')
-                                            )}>
-                                                <span className={cn(
-                                                    "font-cinzel font-black text-2xl leading-none", 
-                                                    isDemonCastle ? "text-red-500" : getRankColor(mission.rank)
-                                                )}>
-                                                    {mission.rank}
-                                                </span>
-                                                <span className="text-[8px] font-mono text-gray-500 uppercase mt-1 font-bold">RANK</span>
-                                            </div>
 
+                                    <div className="p-5 flex flex-col gap-4">
+                                        <div className="flex justify-between items-start gap-3">
                                             <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={cn(
+                                                        "text-[10px] font-black font-mono px-1.5 py-0.5 rounded border uppercase tracking-wider",
+                                                        isDemonCastle ? "border-red-500 text-red-500" : getRankColor(mission.rank)
+                                                    )}>
+                                                        RANK {mission.rank}
+                                                    </span>
+                                                    {isEpic && (
+                                                        <span className="text-[10px] font-black font-mono text-red-500 animate-pulse">EPIC</span>
+                                                    )}
+                                                </div>
                                                 <h3 className={cn(
-                                                    "font-mono font-bold text-base text-wrap leading-tight",
-                                                    isDemonCastle ? "text-red-50" : "text-blue-50"
+                                                    "font-bold text-lg leading-tight uppercase tracking-wide font-cinzel",
+                                                    isDemonCastle ? "text-red-50" : "text-white"
                                                 )}>
                                                     {mission.nome}
                                                 </h3>
-                                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 border rounded-full text-[10px] font-mono font-bold uppercase",
-                                                        isDemonCastle 
-                                                            ? "bg-red-500/10 border-red-500/40 text-red-400" 
-                                                            : "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                                                    )}>
-                                                        {mission.meta_associada || "GENERAL"}
-                                                    </span>
-                                                    {isEpic && (
-                                                        <span className="px-2 py-0.5 bg-red-600 border border-red-400 rounded-full text-[8px] font-mono text-white font-black animate-pulse">
-                                                            EPIC
-                                                        </span>
-                                                    )}
-                                                    {mission.concluido && (
-                                                        <span className="text-[10px] font-mono text-green-400 uppercase font-bold flex items-center gap-1">
-                                                            <CheckCircle className="h-3 w-3" /> VERIFIED
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                <p className="text-xs text-gray-500 font-mono mt-1 truncate uppercase">
+                                                    {mission.meta_associada || "GENERAL OBJECTIVE"}
+                                                </p>
                                             </div>
 
-                                            <div className="flex flex-col gap-1">
-                                                    {isDemonCastle && (
-                                                        <Dialog>
-                                                            <DialogTrigger asChild>
-                                                                <button 
-                                                                    className="p-2 text-red-400/60 hover:text-red-400 active:scale-125 transition-transform"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                >
-                                                                    <BookOpen className="h-5 w-5" />
-                                                                </button>
-                                                            </DialogTrigger>
-                                                            <DialogContent className="bg-black/95 border-2 border-red-600/50 text-white max-w-[90vw] rounded-3xl">
-                                                                <DialogHeader>
-                                                                    <DialogTitle className="font-cinzel text-lg text-red-500 uppercase tracking-widest flex items-center gap-2">
-                                                                        <Skull className="h-5 w-5" /> ARQUIVO SOMBRIO
-                                                                    </DialogTitle>
-                                                                </DialogHeader>
-                                                                <div className="py-4 font-mono text-xs leading-relaxed border-t border-red-900/30 mt-2 whitespace-pre-line text-red-50/80 max-h-[50vh] overflow-y-auto">
-                                                                    {mission.descricao}
-                                                                </div>
-                                                                <div className="bg-red-950/20 border border-red-900/30 p-3 rounded-2xl mt-2">
-                                                                    <p className="text-[8px] text-red-500 uppercase font-black mb-1">PROTOCOLO DE PUNIÇÃO</p>
-                                                                    <p className="text-[10px] text-red-200/60 italic">"A falha não é uma opção no Demon Castle. O Sistema cobrará seu preço em vitalidade."</p>
-                                                                </div>
-                                                            </DialogContent>
-                                                        </Dialog>
+                                            <div className="flex flex-col gap-2">
+                                                <button 
+                                                    className={cn(
+                                                        "p-2 rounded-full border bg-black/50 backdrop-blur-sm transition-colors",
+                                                        isPriority ? "border-yellow-500 text-yellow-500" : "border-gray-800 text-gray-600"
                                                     )}
-                                                    <button 
-                                                        className={cn(
-                                                            "p-2 transition-transform active:scale-125", 
-                                                            isPriority ? "text-yellow-500" : (isDemonCastle ? "text-red-500/30" : "text-blue-500/30")
-                                                        )}
-                                                        onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
-                                                    >
-                                                        <Star className={cn("h-5 w-5", isPriority && "fill-yellow-400")} />
-                                                    </button>
-                                                {!isManualMission && (
-                                                    <button 
-                                                        className={cn(
-                                                            "p-2 transition-colors",
-                                                            isDemonCastle ? "text-red-500/30 hover:text-red-400" : "text-blue-500/30 hover:text-blue-400"
-                                                        )}
-                                                        onClick={(e) => { e.stopPropagation(); handleShowProgression(mission); }}
-                                                    >
-                                                        <GitMerge className="h-5 w-5" />
-                                                    </button>
-                                                )}
+                                                    onClick={(e) => { e.stopPropagation(); togglePriority(mission.id); }}
+                                                >
+                                                    <Star className={cn("h-5 w-5", isPriority && "fill-current")} />
+                                                </button>
                                             </div>
                                         </div>
 
-                                        {/* Active Content HUD */}
+                                        {/* Active Content HUD - Integrated Module */}
                                         {activeDaily && !mission.concluido && (
                                             <div className={cn(
-                                                "mt-2 border rounded-2xl p-4 space-y-4 shadow-inner",
+                                                "rounded-xl p-4 border relative overflow-hidden",
                                                 isDemonCastle 
-                                                    ? "bg-red-500/10 border-red-500/20" 
-                                                    : "bg-blue-500/5 border-blue-500/10"
+                                                    ? "bg-red-950/20 border-red-500/20" 
+                                                    : "bg-blue-950/20 border-blue-500/20"
                                             )}>
-                                                <div className="flex justify-between items-center">
-                                                    <span className={cn(
-                                                        "text-xs font-mono uppercase tracking-tighter font-bold flex items-center gap-2",
-                                                        isDemonCastle ? "text-red-400" : "text-blue-400"
-                                                    )}>
-                                                        <Zap className="h-4 w-4" /> {isDemonCastle ? 'DEMON_CHALLENGE' : 'CURRENT_TASK'}
-                                                    </span>
-                                                    <span className={cn(
-                                                        "text-xs font-mono px-2 py-1 rounded-lg",
-                                                        isDemonCastle ? "text-red-200 bg-red-500/20" : "text-blue-200 bg-blue-500/10"
-                                                    )}>{activeDaily.nome}</span>
+                                                {/* Background decorative element */}
+                                                <div className={cn("absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl opacity-20", isDemonCastle ? "bg-red-500" : "bg-blue-500")} />
+                                                
+                                                <div className="flex justify-between items-center mb-3 relative z-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <Zap className={cn("h-4 w-4", isDemonCastle ? "text-red-400" : "text-blue-400")} />
+                                                        <span className={cn("text-xs font-bold font-mono uppercase", isDemonCastle ? "text-red-200" : "text-blue-200")}>
+                                                            {activeDaily.nome}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 
-                                                {/* Progress Bars - Thick MD3 Style */}
-                                                <div className="space-y-3">
-                                                    {activeDaily.subTasks?.map((st: any, i: number) => (
-                                                        <div key={i} className="space-y-2">
-                                                            <div className="flex justify-between text-xs font-mono text-blue-100/70">
-                                                                <span className="truncate pr-4 font-bold uppercase">{st.name}</span>
-                                                                <span className={isDemonCastle ? "text-red-400" : "text-blue-400"}>
+                                                <div className="space-y-3 relative z-10">
+                                                    {activeDaily.subTasks?.slice(0, 2).map((st: any, i: number) => (
+                                                        <div key={i} className="space-y-1.5">
+                                                            <div className="flex justify-between text-[10px] font-mono font-bold text-gray-400 uppercase">
+                                                                <span>{st.name}</span>
+                                                                <span className={isDemonCastle ? "text-red-300" : "text-blue-300"}>
                                                                     {st.current || 0}/{st.target} {st.unit}
                                                                 </span>
                                                             </div>
-                                                            <div className={cn(
-                                                                "h-3 rounded-full overflow-hidden border",
-                                                                isDemonCastle ? "bg-red-950/40 border-red-500/20" : "bg-blue-950/40 border-blue-500/20"
-                                                            )}>
+                                                            <div className="h-2 bg-black/60 rounded-full overflow-hidden border border-white/5">
                                                                 <div
                                                                     className={cn(
-                                                                        "h-full transition-all duration-1000 ease-out",
-                                                                        isDemonCastle 
-                                                                            ? "bg-gradient-to-r from-red-600 to-orange-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" 
-                                                                            : "bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                                                        "h-full transition-all duration-1000",
+                                                                        isDemonCastle ? "bg-red-500" : "bg-blue-500"
                                                                     )}
                                                                     style={{ width: `${Math.min(100, ((st.current || 0) / st.target) * 100)}%` }}
                                                                 />
                                                             </div>
                                                         </div>
                                                     ))}
+                                                    {activeDaily.subTasks?.length > 2 && (
+                                                        <p className="text-[10px] text-center font-mono text-gray-600 pt-1">+{activeDaily.subTasks.length - 2} MORE TASKS</p>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
 
                                         {!activeDaily && !mission.concluido && (
-                                            <div className="mt-2 border-2 border-dashed border-blue-500/20 rounded-2xl p-6 flex flex-col items-center gap-2 opacity-60">
-                                                <Clock className="h-8 w-8 text-blue-500/40 animate-pulse" />
-                                                <span className="text-xs font-mono text-blue-500/60 uppercase font-bold tracking-widest">Awaiting system update...</span>
+                                            <div className="flex items-center justify-center gap-2 py-3 border border-dashed border-gray-800 rounded-xl bg-black/20">
+                                                <Clock className="h-4 w-4 text-gray-600" />
+                                                <span className="text-xs font-mono text-gray-500 uppercase tracking-wide">COOLDOWN ACTIVE</span>
                                             </div>
                                         )}
                                         
-                                        <div className="mt-4 flex items-center justify-end text-blue-500/40 text-xs font-mono gap-1 group-active:text-blue-400 transition-colors font-bold">
-                                            TAP TO EXPAND <ChevronRight className="h-4 w-4" />
-                                        </div>
+                                        {mission.concluido && (
+                                            <div className="flex items-center gap-2 py-2 px-3 bg-green-950/20 border border-green-900/30 rounded-lg self-start">
+                                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                                <span className="text-xs font-mono text-green-400 font-bold uppercase">MISSION COMPLETE</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );

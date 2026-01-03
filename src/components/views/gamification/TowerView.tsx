@@ -185,7 +185,7 @@ const TowerView = () => {
         <div className="w-full h-full flex flex-col bg-background relative">
              {/* Background Atmosphere */}
              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-background to-background -z-10 pointer-events-none"></div>
-             <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-5 pointer-events-none mix-blend-overlay -z-10"></div>
+             <div className="absolute inset-0 bg-transparent opacity-5 pointer-events-none mix-blend-overlay -z-10"></div>
 
             {/* Compact Header */}
             <div className="flex-shrink-0 p-3 md:p-4 border-b border-purple-500/10 bg-background/95 backdrop-blur-md">

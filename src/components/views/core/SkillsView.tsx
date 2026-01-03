@@ -330,7 +330,7 @@ const SkillsViewComponent = ({ onEnterDungeon }: { onEnterDungeon: () => void })
                     )}>
                         {/* Corruption Effect Overlay */}
                         {isDecaying && (
-                            <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-10 pointer-events-none mix-blend-overlay animate-pulse-slow" />
+                            <div className="absolute inset-0 bg-transparent opacity-10 pointer-events-none mix-blend-overlay animate-pulse-slow" />
                         )}
 
                         <div className={cn("flex flex-col gap-4", isMobile ? "sm:flex-row sm:items-start" : "sm:flex-row sm:items-start")}>

@@ -91,11 +91,11 @@ const MetasMobileComponent = () => {
             });
         }
 
-        await persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome));
-        await persistData('metas', metas.filter((m: any) => m.id !== metaToDelete.id));
+        await persistData('missions', missions.filter((mission: any) => mission.meta_associada !== metaToDelete.nome), true);
+        await persistData('metas', metas.filter((m: any) => m.id !== metaToDelete.id), true);
         
         if (metaToDelete.habilidade_associada_id) {
-            await persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id));
+            await persistData('skills', skills.filter((s: any) => s.id !== metaToDelete.habilidade_associada_id), true);
         }
 
         setShowDeleteAlert(false);
@@ -196,11 +196,11 @@ const MetasMobileComponent = () => {
                         ? {...s, nome: `Maestria em ${newOrUpdatedMeta.nome}`} 
                         : s
                     );
-                    await persistData('skills', newSkills);
+                    await persistData('skills', newSkills, true);
                 }
 
-                await persistData('missions', updatedMissions);
-                await persistData('metas', updatedMetas);
+                await persistData('missions', updatedMissions, true);
+                await persistData('metas', updatedMetas, true);
                 toast({ title: "Meta Atualizada!", description: "A sua meta foi atualizada com sucesso." });
             } else {
                 // Logic for new meta
@@ -282,9 +282,9 @@ const MetasMobileComponent = () => {
                     };
                 });
                 
-                await persistData('skills', [...skills, newSkill]);
-                await persistData('metas', [...metas, newMetaWithRoadmap]);
-                await persistData('missions', [...missions, ...newMissions]);
+                await persistData('skills', [...skills, newSkill], true);
+                await persistData('metas', [...metas, newMetaWithRoadmap], true);
+                await persistData('missions', [...missions, ...newMissions], true);
                 
                 toast({ title: "Meta Forjada!", description: "Seu novo objetivo e missão inicial estão prontos." });
             }
@@ -485,7 +485,7 @@ const MetasMobileComponent = () => {
     return (
         <div className="h-screen bg-black overflow-hidden flex flex-col max-w-full relative">
             {/* Background System Effect */}
-            <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-[0.03] pointer-events-none z-50" />
+            <div className="absolute inset-0 bg-transparent opacity-[0.03] pointer-events-none z-50" />
             
             <header className="bg-black/90 backdrop-blur-2xl border-b border-blue-500/20 flex-shrink-0 z-40 pt-safe">
                 {/* System Alert Bar */}
